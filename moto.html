@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <!-- =====================================================
+       DANILO MOTOS — DETALHES (moto.html)
+       -----------------------------------------------------
+       O que essa página faz:
+       - Mostra os detalhes de UMA moto:
+         • título/subtítulo
+         • carousel de fotos
+         • vídeo do YouTube (se existir)
+         • ficha técnica
+         • botões de WhatsApp
+       - O conteúdo é carregado pelo JS: assets/js/moto.js
+       ===================================================== -->
+
+  <!-- Meta básico / SEO -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <title>Danilo Motos | Detalhes</title>
+  <meta
+    name="description"
+    content="Detalhes da moto: fotos, vídeo, ficha técnica e negociação no WhatsApp."
+  />
+
+  <!-- CSS principal do site -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <!-- Ícone do site -->
+  <link rel="icon" href="./logo.png" type="image/png" />
+</head>
+
+<body>
+  <!-- =====================================================
+       HEADER FIXO (igual ao index)
+       -----------------------------------------------------
+       - Logo + nome
+       - Botão WhatsApp do topo (#waHeader)
+       ===================================================== -->
+  <header>
+    <div class="wrap headerRow">
+      <a class="brand" href="index.html" aria-label="Danilo Motos">
+        <div class="logo">
+          <img
+            src="logo.png"
+            alt="Danilo Motos"
+            onerror="this.style.display='none'"
+          />
+        </div>
+
+        <div class="brandText">
+          <div class="brandTop">
+            <strong>Danilo Motos</strong>
+          </div>
+          <span>Catálogo • Fotos • Vídeos • Ficha técnica</span>
+        </div>
+      </a>
+
+      <!-- Botão WhatsApp no topo (JS normalmente preenche o link) -->
+      <a class="btn" id="waHeader" target="_blank" rel="noopener">
+        WhatsApp
+      </a>
+    </div>
+  </header>
+
+  <!-- =====================================================
+       CONTEÚDO PRINCIPAL
+       -----------------------------------------------------
+       OBS: você tinha style inline aqui (padding-top:12px).
+       Ideal: criar classe no CSS. Sugestão:
+       .detailMain { padding-top: 12px; }
+       ===================================================== -->
+  <main class="wrap detailMain">
+    <!-- =====================================================
+         LINK DE VOLTAR (pro catálogo)
+         -----------------------------------------------------
+         Você tinha style inline aqui também.
+         Sugestão CSS:
+         .backLink { margin-bottom: 12px; }
+         .backLink a { font-weight: 800; color: var(--muted); }
+         ===================================================== -->
+    <div class="backLink">
+      <a href="index.html" class="muted">← Voltar para o catálogo</a>
+    </div>
+
+    <!-- =====================================================
+         TOPO DO DETALHE
+         -----------------------------------------------------
+         - Mostra título (#titulo) e subtítulo (#subtitulo)
+         - Botão principal WhatsApp (#btnWhatsapp)
+         ===================================================== -->
+    <section class="detailTop">
+      <div>
+        <!-- JS troca esse texto -->
+        <h1 id="titulo" class="detailTitle">Carregando...</h1>
+
+        <!-- JS preenche -->
+        <p id="subtitulo" class="detailSub"></p>
+      </div>
+
+      <!-- CTA WhatsApp principal do topo -->
+      <a class="btn primary" id="btnWhatsapp" target="_blank" rel="noopener">
+        Chamar no WhatsApp
+      </a>
+    </section>
+
+    <!-- =====================================================
+         GRID DE CONTEÚDO
+         -----------------------------------------------------
+         - Carousel
+         - Vídeo (se existir)
+         - Ficha técnica
+         - CTA final
+         ===================================================== -->
+    <section class="detailGrid">
+      <!-- =====================================================
+           1) CAROUSEL DE FOTOS
+           -----------------------------------------------------
+           Elementos controlados pelo JS:
+           - #galeria: recebe <img> dentro (slides)
+           - #prevFoto e #nextFoto: navegação
+           - #fotoInfo: texto "1/5" etc.
+           ===================================================== -->
+      <div>
+        <div class="carousel">
+          <button class="carouselBtn prev" id="prevFoto" type="button" aria-label="Foto anterior">‹</button>
+
+          <!-- Track com as imagens do carousel -->
+          <div class="carouselTrack" id="galeria"></div>
+
+          <button class="carouselBtn next" id="nextFoto" type="button" aria-label="Próxima foto">›</button>
+        </div>
+
+        <div class="carouselInfo" id="fotoInfo"></div>
+      </div>
+
+      <!-- =====================================================
+           2) VÍDEO (YouTube)
+           -----------------------------------------------------
+           - #videoBox pode ser escondido pelo JS se não houver vídeo
+           - #video recebe iframe (ou embed) criado no JS
+           ===================================================== -->
+      <div class="box" id="videoBox">
+        <div class="boxTitle">
+          <strong>Vídeo</strong>
+          <span class="muted">YouTube</span>
+        </div>
+
+        <!-- JS injeta o iframe aqui -->
+        <div id="video"></div>
+      </div>
+
+      <!-- =====================================================
+           3) FICHA TÉCNICA
+           -----------------------------------------------------
+           - #ficha recebe as linhas montadas pelo JS
+           ===================================================== -->
+      <div class="box">
+        <div class="boxTitle">
+          <strong>Ficha técnica</strong>
+        </div>
+
+        <div id="ficha" class="ficha"></div>
+      </div>
+
+      <!-- =====================================================
+           4) CTA FINAL (chamar no WhatsApp)
+           -----------------------------------------------------
+           - #waContato normalmente recebe link no JS
+           - Você tinha style inline aqui: removi e sugiro CSS
+           Sugestão CSS:
+           .ctaTitle { font-weight: 1000; }
+           .ctaSub { margin-top: 4px; }
+           ===================================================== -->
+      <div class="box ctaBox">
+        <div>
+          <div class="ctaTitle">Gostou dessa moto?</div>
+          <div class="muted ctaSub">Negocie direto no WhatsApp.</div>
+        </div>
+
+        <a class="btn primary" id="waContato" target="_blank" rel="noopener">
+          Chamar
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- =====================================================
+       WHATSAPP FLUTUANTE
+       -----------------------------------------------------
+       - #waFloat é preenchido via JS
+       - No seu CSS atual você está escondendo com:
+         .floatWA { display: none !important; }
+       ===================================================== -->
+  <a class="floatWA" id="waFloat" target="_blank" rel="noopener">
+    <span class="dot"></span> Negociar no WhatsApp
+  </a>
+
+  <!-- =====================================================
+       FOOTER (igual ao index)
+       -----------------------------------------------------
+       Adicionei #year pra não dar erro no script
+       ===================================================== -->
+  <footer class="footer">
+    <div class="wrap footerContent">
+      <div>
+        📍
+        <a
+          class="link"
+          href="https://www.google.com/maps/search/RUA%20MONTE%20SANTO%20186/@-10.5061,-39.0218,17z?hl=pt-BR"
+          target="_blank"
+          rel="noopener"
+        >
+          Euclides da Cunha
+        </a>
+      </div>
+
+      <div>
+        📞
+        <a class="link" href="https://wa.me/557599834731" target="_blank" rel="noopener">
+          +55 75 9983-4731
+        </a>
+      </div>
+
+      <div>
+        📸
+        <a class="link" href="https://www.instagram.com/danilo_motoss" target="_blank" rel="noopener">
+          @danilo_motoss
+        </a>
+      </div>
+
+      <div class="copyright">
+        © <span id="year"></span> — Todos os direitos reservados.
+      </div>
+    </div>
+  </footer>
+
+  <!-- =====================================================
+       SCRIPTS
+       -----------------------------------------------------
+       1) moto.js (module) carrega dados e renderiza tudo
+       2) script do ano preenche #year
+       ===================================================== -->
+  <script type="module" src="assets/js/moto.js"></script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

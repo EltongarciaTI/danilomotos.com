@@ -1,0 +1,662 @@
+/* =====================================================
+   DANILO MOTOS — STYLE.CSS (SITE PÚBLICO)
+   -----------------------------------------------------
+   Organização:
+   1) Reset / Base
+   2) Tokens (cores, radius, sombra)
+   3) Layout geral (wrap)
+   4) Header
+   5) Componentes (btn, chip, badges, cards, boxes, etc.)
+   6) Catálogo (index)
+   7) Detalhe (moto)
+   8) Footer
+   9) Extras (WhatsApp flutuante, estados)
+   ===================================================== */
+
+/* =====================================================
+   1) RESET (tira padrões do navegador)
+   - Evita bugs de espaçamento e largura
+   ===================================================== */
+* {
+  box-sizing: border-box; /* padding/border entram no tamanho */
+  margin: 0;
+  padding: 0;
+}
+
+/* =====================================================
+   2) TOKENS / VARIÁVEIS (tema do site)
+   - Você mexe aqui e o site todo acompanha
+   ===================================================== */
+:root {
+  /* Fundo / painéis */
+  --bg: #050607;       /* fundo geral */
+  --panel: #0d0f12;    /* cards/caixas */
+  --panel-2: #12151a;  /* linhas internas (ficha) */
+  --line: rgba(255, 255, 255, 0.08); /* bordas suaves */
+
+  /* Texto */
+  --text: #f5f7fa;     /* texto principal */
+  --muted: #b7c0cc;    /* texto secundário */
+
+  /* Cores de ação */
+  --red: #ff1d1d;      /* vermelho principal */
+  --red-dark: #d40f0f; /* vermelho escuro (degrade) */
+  --green: #25D366;    /* WhatsApp/Preço */
+
+  /* Arredondamento */
+  --radius: 16px;
+  --radius-lg: 22px;
+
+  /* Sombra padrão (cards/boxes) */
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+
+html {
+  scroll-behavior: smooth; /* rolagem suave */
+}
+
+body {
+  /* Fonte padrão */
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+
+  /* Tema */
+  background: var(--bg);
+  color: var(--text);
+
+  /* Leitura */
+  line-height: 1.4;
+
+  /* Espaço para o header fixo (IMPORTANTE) */
+  padding-top: 72px;
+}
+
+/* =====================================================
+   3) BASE (elementos comuns)
+   ===================================================== */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;      /* remove “gap” abaixo da imagem */
+  max-width: 100%;     /* não estoura no container */
+}
+
+/* Container padrão (centraliza conteúdo e dá padding) */
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px;
+}
+
+/* Texto “muted” (usado em vários lugares) */
+.muted {
+  color: var(--muted);
+}
+
+/* =====================================================
+   4) HEADER (topo fixo)
+   - Fica sempre visível
+   - Fundo com blur para parecer “app”
+   ===================================================== */
+header {
+  position: fixed; /* fixa no topo */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+
+  background: rgba(5, 6, 7, 0.85);
+  backdrop-filter: blur(12px);
+
+  border-bottom: 1px solid var(--line);
+}
+
+/* Linha interna do header */
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Marca/logo */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Quadradinho da logo */
+.logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+
+  background: #000;
+  border: 1px solid rgba(255, 29, 29, 0.3);
+
+  display: grid;
+  place-items: center;
+}
+
+/* Texto do header */
+.brandText strong {
+  display: block;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.brandText span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Linha superior do texto (pode ter badges futuramente) */
+.brandTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   5) COMPONENTES
+   ===================================================== */
+
+/* ---------- Botões ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 12px 14px;
+  border-radius: 14px;
+
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Botão principal (vermelho) */
+.btn.primary {
+  background: linear-gradient(180deg, var(--red), var(--red-dark));
+  border-color: rgba(255, 29, 29, 0.35);
+}
+
+.btn.primary:hover {
+  filter: brightness(1.05);
+}
+
+/* ---------- Chips (abas) ---------- */
+.chip {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+
+  padding: 10px 12px;
+  border-radius: 999px;
+
+  font-weight: 1000;
+  cursor: pointer;
+
+  /* estado inicial (antes de clicar) */
+  color: #ffffff;
+}
+
+/* Aba ativa (fundo vermelho suave) */
+.chip.isActive {
+  background: rgba(255, 29, 29, 0.14);
+  border-color: rgba(255, 29, 29, 0.35);
+}
+
+/* Cores específicas quando cada aba está ativa */
+#tabAtivas.chip.isActive { color: #25D366; }    /* disponível */
+#tabReservadas.chip.isActive { color: #FFD166; }/* reservada */
+#tabVendidas.chip.isActive { color: #ffffff; }  /* vendida */
+
+/* ---------- Badges (status dentro do card) ---------- */
+.badge {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+/* Badge disponível */
+.badge.isDisponivel {
+  background: rgba(37, 211, 102, 0.15);
+  color: #25D366;
+}
+
+/* Badge reservado */
+.badge.isReservado {
+  background: rgba(255, 209, 102, 0.18);
+  color: #FFD166;
+}
+
+/* Badge vendido */
+.badge.isVendido {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ---------- Cards/Boxes ---------- */
+.box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+/* Cabeçalho de caixas (título + info) */
+.boxTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Links do footer e outros links */
+.link {
+  color: #2d7ff9;
+  font-weight: 900;
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   6) CATÁLOGO (INDEX)
+   ===================================================== */
+
+/* Topo marketplace */
+.hero {
+  padding: 14px 0 6px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+
+  flex-wrap: wrap;
+}
+
+.heroTitle {
+  font-size: 22px;
+  font-weight: 1000;
+}
+
+.heroSub {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Área direita (contadores e CTA) */
+.heroRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Pill “Total” */
+.pillCount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 999px;
+
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+
+  font-weight: 900;
+}
+
+.pillCount span {
+  color: var(--muted);
+}
+
+/* Toolbar com abas */
+.toolbar {
+  margin-top: 10px;
+
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-lg);
+
+  padding: 10px 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  flex-wrap: wrap;
+}
+
+/* Lado esquerdo do toolbar (bolinha + texto) */
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Bolinha “online” */
+.dotLive {
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+
+  background: var(--green);
+  box-shadow: 0 0 0 6px rgba(37, 211, 102, 0.14);
+}
+
+/* Texto pequeno do toolbar */
+.mutedText {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Lado direito: abas */
+.toolbarRight {
+  display: flex;
+  gap: 8px;
+}
+
+/* Grid do catálogo */
+.marketGrid {
+  margin-top: 14px;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* Responsivo do grid */
+@media (min-width: 700px) {
+  .marketGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 980px) {
+  .marketGrid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Card da moto */
+.card-moto {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+
+  box-shadow: var(--shadow);
+}
+
+/* Imagem do card */
+.card-moto__img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Corpo do card */
+.card-moto__body {
+  padding: 14px;
+}
+
+.card-moto__titulo {
+  font-size: 15px;
+  font-weight: 1000;
+}
+
+.card-moto__meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Preço (verde WhatsApp) */
+.card-moto__preco {
+  display: block;
+  margin-top: 10px;
+
+  font-size: 20px;
+  font-weight: 1100;
+  color: var(--green);
+}
+
+/* Card “vendido” (sem clique) */
+.card-moto.isDisabled {
+  cursor: default;
+  opacity: 0.92;
+}
+.card-moto.isDisabled:hover {
+  transform: none;
+}
+
+/* =====================================================
+   7) DETALHE (MOTO)
+   ===================================================== */
+
+/* Espaço extra no topo do conteúdo do detalhe (tiramos inline do HTML) */
+.detailMain {
+  padding-top: 12px;
+}
+
+/* Bloco do “voltar” (tiramos inline do HTML) */
+.backLink {
+  margin-bottom: 12px;
+}
+.backLink a {
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* Topo do detalhe: título + CTA */
+.detailTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.detailTitle {
+  font-size: 22px;
+  font-weight: 1000;
+}
+
+.detailSub {
+  margin-top: 6px;
+  color: var(--muted);
+}
+
+/* Grid do detalhe */
+.detailGrid {
+  margin-top: 16px;
+  display: grid;
+  gap: 16px;
+}
+
+/* Carousel */
+.carousel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: #000;
+}
+
+.carouselTrack {
+  display: flex;
+  transition: transform 0.3s ease;
+}
+
+/* Imagens do carousel */
+.carouselTrack img {
+  min-width: 100%;
+  max-height: 65vh;     /* limita altura no celular */
+  aspect-ratio: 4 / 3;  /* evita “estourar” */
+  object-fit: contain;  /* não corta a moto */
+  background: #000;
+}
+
+/* Botões do carousel */
+.carouselBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.carouselBtn.prev { left: 10px; }
+.carouselBtn.next { right: 10px; }
+
+.carouselInfo {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Ficha técnica (linhas) */
+.ficha {
+  display: grid;
+  gap: 10px;
+}
+
+.linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+}
+
+.linha span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.linha strong {
+  font-weight: 1000;
+}
+
+/* Vídeo (por padrão 16:9; se quiser vertical, dá pra ativar por classe) */
+.videoWrap {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  border: 1px solid var(--line);
+  background: #000;
+}
+.videoWrap iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* CTA final */
+.ctaBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ctaTitle { font-weight: 1000; }
+.ctaSub { margin-top: 4px; }
+
+/* =====================================================
+   8) FOOTER
+   ===================================================== */
+.footer {
+  margin-top: 40px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px 0;
+}
+
+.footerContent {
+  display: grid;
+  gap: 10px;
+  text-align: center;
+
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.copyright {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* =====================================================
+   9) WHATSAPP FLUTUANTE
+   -----------------------------------------------------
+   OBS: você está escondendo ele no seu CSS original.
+   Se quiser reativar depois, é só remover o display:none.
+   ===================================================== */
+.floatWA {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+
+  padding: 12px 16px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-weight: 900;
+}
+
+.floatWA .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+
+  background: var(--green);
+  box-shadow: 0 0 0 6px rgba(37, 211, 102, 0.18);
+}
+
+/* ✅ Se você quer manter ele desativado por enquanto */
+.floatWA { display: none !important; }

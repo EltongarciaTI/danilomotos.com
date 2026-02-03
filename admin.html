@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Danilo Motos | Admin</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="./logo.png" type="image/png">
+  <style>
+    /* ===== FIX: SELECT/OPTIONS legíveis ===== */
+    .select {
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      border: 1px solid var(--line);
+    }
+
+    /* quando abre a lista, as opções ficam pretas no fundo branco */
+    .select option {
+      background: #fff;
+      color: #000;
+    }
+
+    /* algumas versões do Chrome/Edge respeitam isso pro dropdown */
+    .select optgroup {
+      background: #fff;
+      color: #000;
+    }
+
+    .adminWrap { 
+      max-width: 980px; 
+      margin: 0 auto; 
+      padding: 14px; 
+    }
+
+    .adminGrid { 
+      display: grid; 
+      gap: 14px; 
+    }
+
+    @media (min-width: 900px){ 
+      .adminGrid { 
+        grid-template-columns: 1fr 1.2fr; 
+        align-items: start; 
+      } 
+    }
+
+    .input, .select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font-weight: 800;
+      outline: none;
+    }
+
+    .input::placeholder { 
+      color: rgba(255,255,255,.45); 
+      font-weight: 700; 
+    }
+
+    .row { 
+      display: grid; 
+      gap: 10px; 
+    }
+
+    @media (min-width: 620px){ 
+      .row.two { 
+        grid-template-columns: 1fr 1fr; 
+      } 
+    }
+
+    .hint { 
+      color: var(--muted); 
+      font-size: 13px; 
+      margin-top: 6px; 
+    }
+
+    .ok { 
+      color: #25D366; 
+      font-weight: 900; 
+    }
+
+    .err { 
+      color: #ff6b6b; 
+      font-weight: 900; 
+    }
+
+    .miniGrid { 
+      display: grid; 
+      gap: 10px; 
+      grid-template-columns: repeat(2, 1fr); 
+    }
+
+    @media (min-width: 620px){ 
+      .miniGrid { 
+        grid-template-columns: repeat(3, 1fr); 
+      } 
+    }
+
+    .thumb {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      padding: 10px;
+    }
+
+    .thumb img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border-radius: 14px;
+      background: #000;
+      border: 1px solid var(--line);
+      margin-bottom: 8px;
+    }
+
+    .thumbTitle { 
+      font-weight: 1000; 
+      font-size: 13px; 
+      margin-bottom: 6px; 
+    }
+
+    .thumb input[type="file"] { 
+      width: 100%; 
+    }
+
+    .btnRow { 
+      display:flex; 
+      gap:10px; 
+      flex-wrap: wrap; 
+    }
+
+    /* ===== BOTÃO CADASTRAR NOVA ===== */
+    #btnNova {
+      background: #ffffff;
+      color: #000000;
+      border: 2px solid #ffffff;
+      font-weight: 1000;
+      box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    }
+
+    #btnNova:hover {
+      background: #f2f2f2;
+      color: #000000;
+    }
+
+    .btn.danger{
+      background: rgba(255,0,0,.15);
+      border: 1px solid rgba(255,0,0,.35);
+      color:#fff;
+      font-weight: 1000;
+    }
+
+    .btn.danger:hover{ 
+      filter: brightness(1.1); 
+    }
+
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap headerRow">
+      <a class="brand" href="index.html" aria-label="Danilo Motos">
+        <div class="logo">
+          <img src="logo.png" alt="Danilo Motos" onerror="this.style.display='none'">
+        </div>
+        <div class="brandText">
+          <div class="brandTop"><strong>Danilo Motos</strong></div>
+          <span>Admin • Fotos • Vídeos • Ficha técnica</span>
+        </div>
+      </a>
+      <button class="btn" id="btnLogout" type="button">Sair</button>
+    </div>
+  </header>
+
+  <main class="adminWrap" style="padding-top:12px">
+    <section class="box">
+      <div class="boxTitle">
+        <strong>Login</strong>
+        <span class="muted">Somente administrador</span>
+      </div>
+
+      <div id="loginBox" class="row two">
+        <input class="input" id="email" placeholder="Email do admin" />
+        <input class="input" id="senha" type="password" placeholder="Senha" />
+        <div class="btnRow" style="grid-column: 1 / -1;">
+          <button class="btn primary" id="btnLogin" type="button">Entrar</button>
+          <span id="loginMsg" class="hint"></span>
+        </div>
+      </div>
+
+      <div id="appBox" style="display:none">
+        <div class="adminGrid">
+          <!-- Coluna esquerda -->
+          <div class="box">
+            <div class="boxTitle">
+              <strong>Selecionar moto</strong>
+              <span class="muted">Editar dados</span>
+            </div>
+
+            <div class="row">
+              <select class="select" id="motoSelect"></select>
+
+              <div class="row two">
+                <input class="input" id="id" placeholder="ID (Ex: Pop100-2024)" />
+                <select class="select" id="status">
+                  <option value="ativo">Disponível</option>
+                  <option value="reservada">Reservada</option>
+                  <option value="vendida">Vendida</option>
+                </select>
+              </div>
+
+              <div class="row two">
+                <input class="input" id="titulo" placeholder="Título" />
+                <input class="input" id="preco" placeholder="Preço" />
+              </div>
+
+              <div class="row two">
+                <input class="input" id="ano" type="text" placeholder="Ano" />
+                <input class="input" id="km" type="text" inputmode="numeric" placeholder="KM" />
+              </div>
+
+              <div class="row two">
+                <input class="input" id="cor" placeholder="Cor" />
+                <input class="input" id="cilindrada" placeholder="Cilindrada" />
+              </div>
+
+              <div class="row two">
+                <select class="select" id="combustivel">
+                    <option value="">— Combustível —</option>
+                    <option value="Gasolina">Gasolina</option>
+                    <option value="Flex">Flex</option>
+                </select>
+
+                <select class="select" id="partida">
+                  <option value="">— Partida —</option>
+                  <option value="Pedal">Pedal</option>
+                  <option value="Elétrica">Elétrica</option>
+                  <option value="Pedal + Elétrica">Pedal + Elétrica</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <input class="input" id="youtube" placeholder="Link do YouTube (cole aqui)" />
+                
+                <textarea class="input" id="observacoes" rows="4" placeholder="Observações"></textarea>
+
+                <label class="hint" style="display:flex;gap:10px;align-items:center">
+                  <input id="emplacada" type="checkbox" />
+                  Emplacada (Sim/Não)
+                </label>
+
+                <div class="btnRow">
+                  <button class="btn primary" id="btnSalvar" type="button">Salvar / Criar moto</button>
+                  <button class="btn" id="btnNova" type="button">Cadastrar nova</button>
+                  <button class="btn danger" id="btnApagar" type="button">Apagar moto</button>
+                  <span id="saveMsg" class="hint"></span>
+                </div>
+
+                <div class="hint">
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna direita -->
+          <div class="box">
+            <div class="boxTitle">
+              <strong>Fotos</strong>
+              <span class="muted">Capa e Fotos</span>
+            </div>
+            <div class="row" style="margin-bottom:10px">
+  <input class="input" id="multiFotos" type="file" accept="image/*" multiple>
+  <div class="hint">Selecione até 5 fotos de uma vez: 1ª vira <b>Capa</b>, depois Foto 1, 2, 3 e 4.</div>
+</div>
+
+            <div class="miniGrid" id="fotosGrid"></div>
+            <div class="hint" id="fotoMsg"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="assets/js/admin.js"></script>
+</body>
+</html>
