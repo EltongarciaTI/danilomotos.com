@@ -408,8 +408,9 @@ header {
 /* Imagem do card */
 .card-moto__img {
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;        /* mais alto = menos zoom */
   object-fit: cover;
+  object-position: center 60%; /* desce um pouco (evita cortar guidão) */
   background: #000;
 }
 

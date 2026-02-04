@@ -95,6 +95,32 @@ function renderCarousel(fotos) {
     }
   }
 
+    // ===== Botões (corrige "Próxima/Anterior") =====
+  const prevBtn = $("#prevFoto");
+  const nextBtn = $("#nextFoto");
+
+  function totalSlides() {
+    return track.children?.length || 0;
+  }
+
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      const total = totalSlides();
+      if (total <= 1) return;
+      indexFoto = (indexFoto - 1 + total) % total;
+      update();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      const total = totalSlides();
+      if (total <= 1) return;
+      indexFoto = (indexFoto + 1) % total;
+      update();
+    });
+  }
+
 
 
   requestAnimationFrame(() => {
