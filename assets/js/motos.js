@@ -43,14 +43,14 @@ function sortMotos(list) {
     const oa = Number.isFinite(Number(a?.ordem)) ? Number(a.ordem) : 999;
     const ob = Number.isFinite(Number(b?.ordem)) ? Number(b.ordem) : 999;
 
-    // 1) ordem menor vem primeiro
+    // 1) Ordem definida no admin
     if (oa !== ob) return oa - ob;
 
-    // 2) desempate: ano maior primeiro
+    // 2) Desempate: ano mais novo primeiro
     const byAno = num(b.ano) - num(a.ano);
     if (byAno !== 0) return byAno;
 
-    // 3) desempate: menor km primeiro
+    // 3) Desempate final: menor km
     return num(a.km) - num(b.km);
   });
 }
