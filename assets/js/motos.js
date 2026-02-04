@@ -39,10 +39,18 @@ function formatBRL(value) {
   }).format(n);
 }
 function sortMotos(list) {
-  // Mais novas primeiro; se empatar, menor km primeiro
   return [...list].sort((a, b) => {
+    const oa = Number.isFinite(Number(a?.ordem)) ? Number(a.ordem) : 999;
+    const ob = Number.isFinite(Number(b?.ordem)) ? Number(b.ordem) : 999;
+
+    // 1) ordem menor vem primeiro
+    if (oa !== ob) return oa - ob;
+
+    // 2) desempate: ano maior primeiro
     const byAno = num(b.ano) - num(a.ano);
     if (byAno !== 0) return byAno;
+
+    // 3) desempate: menor km primeiro
     return num(a.km) - num(b.km);
   });
 }

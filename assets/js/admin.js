@@ -57,6 +57,7 @@ const els = {
   // formulário da moto
   motoSelect: $("motoSelect"),
   id: $("id"),
+  ordem: $("ordem"),
   status: $("status"),
   titulo: $("titulo"),
   preco: $("preco"),
@@ -498,6 +499,7 @@ function fillForm(m) {
   if (els.status) els.status.value = m?.status || "ativo";
   if (els.titulo) els.titulo.value = m?.titulo || "";
   if (els.preco) els.preco.value = m?.preco || "";
+  if (els.ordem) els.ordem.value = m?.ordem ?? "";
   if (els.ano) els.ano.value = m?.ano ?? "";
   if (els.km) els.km.value = m?.km ?? "";
   if (els.cor) els.cor.value = m?.cor || "";
@@ -524,10 +526,9 @@ function getFormData() {
     status: els.status?.value || "ativo",
     titulo: (els.titulo?.value || "").trim(),
     preco: els.preco?.value ? Number(onlyDigits(els.preco.value)) : null,
-
+    ordem: els.ordem?.value ? Number(els.ordem.value) : 999,
     ano: (els.ano?.value || "").trim(),
     km: els.km?.value ? Number(onlyDigits(els.km.value)) : null,
-
     cor: (els.cor?.value || "").trim(),
     cilindrada: (els.cilindrada?.value || "").trim(),
     combustivel: (els.combustivel?.value || "").trim(),
