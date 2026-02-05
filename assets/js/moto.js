@@ -72,6 +72,7 @@ function buildFotos(moto) {
 }
 
 /* ===== CAROUSEL ===== */
+/* ===== CAROUSEL ===== */
 function renderCarousel(fotos) {
   const track = $("#galeria");
   const info = $("#fotoInfo");
@@ -79,21 +80,92 @@ function renderCarousel(fotos) {
 
   let indexFoto = 0;
 
+  // cria imgs
   track.innerHTML = fotos
     .map(
       (src) => `
-        <img src="${src}" loading="lazy"
-             onerror="this.onerror=null; this.style.opacity='0.35';">
+        <img src="${src}" loading="lazy" alt="Foto da moto">
       `
     )
     .join("");
 
-  function update() {
-    track.style.transform = `translateX(-${indexFoto * 100}%)`;
-    if (info && track.children.length) {
-      info.textContent = `Foto ${indexFoto + 1} de ${track.children.length}`;
-    }
+  const prevBtn = $("#prevFoto");
+  const nextBtn = $("#nextFoto");
+
+  function totalSlides() {
+    return track.querySelectorAll("img").length;
   }
+
+  function clampIndex() {
+    const total = totalSlides();
+    if (total <= 0) {
+      indexFoto = 0;
+      return;
+    }
+    if (indexFoto < 0) indexFoto = 0;
+    if (indexFoto > total - 1) indexFoto = total - 1;
+  }
+
+  function update() {
+    clampIndex();
+    const total = totalSlides();
+
+    if (total <= 0) {
+      track.innerHTML = `<p class="muted">Sem fotos cadastradas.</p>`;
+      if (info) info.textContent = "";
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
+      return;
+    }
+
+    // mostra botões só se tiver mais de 1
+    if (prevBtn) prevBtn.style.display = total > 1 ? "" : "none";
+    if (nextBtn) nextBtn.style.display = total > 1 ? "" : "none";
+
+    track.style.transform = `translateX(-${indexFoto * 100}%)`;
+    if (info) info.textContent = `Foto ${indexFoto + 1} de ${total}`;
+  }
+
+  // ✅ remove imagens quebradas (assim some a “tela preta”)
+  track.querySelectorAll("img").forEach((img) => {
+    img.addEventListener("error", () => {
+      // remove o slide quebrado
+      img.remove();
+      update();
+    });
+  });
+
+  // botões
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      const total = totalSlides();
+      if (total <= 1) return;
+      indexFoto = (indexFoto - 1 + total) % total;
+      update();
+    };
+  }
+
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      const total = totalSlides();
+      if (total <= 1) return;
+      indexFoto = (indexFoto + 1) % total;
+      update();
+    };
+  }
+
+  // swipe
+  let startX = 0;
+  let endX = 0;
+  track.addEventListener("touchstart", (e) => (startX = e.touches[0].clientX));
+  track.addEventListener("touchend", (e) => {
+    endX = e.changedTouches[0].clientX;
+    if (startX - endX > 50) nextBtn?.click();
+    else if (endX - startX > 50) prevBtn?.click();
+  });
+
+  requestAnimationFrame(update);
+}
 
     // ===== Botões (corrige "Próxima/Anterior") =====
   const prevBtn = $("#prevFoto");
