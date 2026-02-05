@@ -57,21 +57,22 @@ function youtubeToEmbed(url) {
 
 /* Monta fotos: 1.jpg .. MAX_FOTOS.jpg */
 function buildFotos(moto) {
-  const base = moto.fotosBase;
+  const base = moto.fotosBase || `assets2/motos/${moto.id}/`;
   const fotos = [];
 
-  // sempre tenta a capa primeiro
-  fotos.push(`${base}capa.jpg`);
+  // usa a capa já montada com cache-bust (moto.capa), se existir
+  fotos.push((moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`);
 
-  // depois 1..4
+  // tenta 1..4
   for (let i = 1; i <= MAX_FOTOS; i++) {
     fotos.push(`${base}${i}.jpg`);
   }
 
-  return fotos;
+  // remove possíveis valores vazios
+  return fotos.filter(f => typeof f === "string" && f.trim() !== "");
 }
 
-/* ===== CAROUSEL ===== */
+
 /* ===== CAROUSEL ===== */
 function renderCarousel(fotos) {
   const track = $("#galeria");
@@ -80,13 +81,8 @@ function renderCarousel(fotos) {
 
   let indexFoto = 0;
 
-  // cria imgs
   track.innerHTML = fotos
-    .map(
-      (src) => `
-        <img src="${src}" loading="lazy" alt="Foto da moto">
-      `
-    )
+    .map((src) => `<img src="${src}" loading="lazy" alt="Foto da moto">`)
     .join("");
 
   const prevBtn = $("#prevFoto");
@@ -118,7 +114,6 @@ function renderCarousel(fotos) {
       return;
     }
 
-    // mostra botões só se tiver mais de 1
     if (prevBtn) prevBtn.style.display = total > 1 ? "" : "none";
     if (nextBtn) nextBtn.style.display = total > 1 ? "" : "none";
 
@@ -126,16 +121,14 @@ function renderCarousel(fotos) {
     if (info) info.textContent = `Foto ${indexFoto + 1} de ${total}`;
   }
 
-  // ✅ remove imagens quebradas (assim some a “tela preta”)
+  // remove imagens quebradas automaticamente
   track.querySelectorAll("img").forEach((img) => {
     img.addEventListener("error", () => {
-      // remove o slide quebrado
       img.remove();
       update();
     });
   });
 
-  // botões
   if (prevBtn) {
     prevBtn.onclick = () => {
       const total = totalSlides();
@@ -154,7 +147,6 @@ function renderCarousel(fotos) {
     };
   }
 
-  // swipe
   let startX = 0;
   let endX = 0;
   track.addEventListener("touchstart", (e) => (startX = e.touches[0].clientX));
@@ -167,52 +159,8 @@ function renderCarousel(fotos) {
   requestAnimationFrame(update);
 }
 
-    // ===== Botões (corrige "Próxima/Anterior") =====
-  const prevBtn = $("#prevFoto");
-  const nextBtn = $("#nextFoto");
 
-  function totalSlides() {
-    return track.children?.length || 0;
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener("click", () => {
-      const total = totalSlides();
-      if (total <= 1) return;
-      indexFoto = (indexFoto - 1 + total) % total;
-      update();
-    });
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
-      const total = totalSlides();
-      if (total <= 1) return;
-      indexFoto = (indexFoto + 1) % total;
-      update();
-    });
-  }
-
-
-
-  requestAnimationFrame(() => {
-    if (!track.children.length) {
-      track.innerHTML = `<p class="muted">Sem fotos cadastradas.</p>`;
-    } else {
-      update();
-    }
-  });
-
-  // swipe
-  let startX = 0;
-  let endX = 0;
-  track.addEventListener("touchstart", (e) => (startX = e.touches[0].clientX));
-  track.addEventListener("touchend", (e) => {
-    endX = e.changedTouches[0].clientX;
-    if (startX - endX > 50) $("#nextFoto")?.click();
-    else if (endX - startX > 50) $("#prevFoto")?.click();
-  });
-}
+    
 
 async function main() {
   try {
