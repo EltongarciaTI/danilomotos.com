@@ -194,33 +194,60 @@ async function listMotoFiles(motoId) {
 // - "keep_cover"  => apaga tudo exceto capa.jpg
 // - "delete_all"  => apaga tudo
 // - "delete_one"  => apaga um arquivo (precisa filename)
-async function deleteWorker(motoId, mode, filename = "") {
-  const payload = { moto_id: motoId, mode };
-  if (filename) payload.filename = filename;
+// precisa existir no seu config.js
+// export const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev";
 
-  const res = await fetch(IMG_DELETE_ENDPOINT, {
+async function uploadCincoEmUmCommit(motoId, files) {
+  const form = new FormData();
+  form.append("moto_id", motoId);
+
+  // manda como files[] na ordem: capa, 1,2,3,4 (os primeiros 5)
+  Array.from(files).slice(0, 5).forEach((f) => form.append("files", f));
+
+  const res = await fetch(`${WORKER_BASE.replace(/\/+$/, "")}/upload-multi`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: form,
   });
-  const data = await res.json().catch(() => ({}));
+
+  const data = await res.json();
   if (!res.ok || !data.ok) throw new Error(data?.error || `HTTP ${res.status}`);
   return data;
 }
 
-async function deleteAllExceptCover(motoId) {
-  const data = await deleteWorker(motoId, "keep_cover");
-  return { deleted: data.deleted || 0 };
+async function workerDelete({ motoId, mode, filename }) {
+  const res = await fetch(IMG_DELETE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      moto_id: String(motoId),
+      mode,
+      filename, // só usa quando mode === "delete_one"
+    }),
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || !data?.ok) {
+    const msg = data?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return data;
 }
 
-async function deleteAllMotoFiles(motoId) {
-  const data = await deleteWorker(motoId, "delete_all");
-  return { deleted: data.deleted || 0 };
-}
-
+// apagar 1 arquivo (ex: "4.jpg")
 async function deleteSingleFile(motoId, filename) {
-  const data = await deleteWorker(motoId, "delete_one", filename);
-  return { deleted: data.deleted || 0 };
+  return workerDelete({ motoId, mode: "delete_one", filename });
+}
+
+// apagar todas menos capa.jpg
+async function deleteKeepCover(motoId) {
+  return workerDelete({ motoId, mode: "keep_cover" });
+}
+
+// apagar tudo
+async function deleteAllFiles(motoId) {
+  return workerDelete({ motoId, mode: "delete_all" });
 }
 
 async function touchUpdatedAt(motoId) {
