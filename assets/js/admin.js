@@ -374,7 +374,7 @@ async function handleMultiUpload(fileList) {
 // ===== GRID DE FOTOS (PREVIEW + BOTÕES)
 // ======================================================
 
-async // --- Fotos grid render (com proteção contra re-render recursivo) ---
+// --- Fotos grid render (com proteção contra re-render recursivo) ---
 let __fotosRenderLock = false;
 let __fotosRenderPending = false;
 let __fotosRenderLastId = "";
