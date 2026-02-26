@@ -132,7 +132,7 @@ function formatPrecoBR(value) {
 // Monta URL pública do storage (bucket público)
 // Ex: publicUrl("xre-300-2022/capa.jpg")
 function publicUrl(path) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  return `${SITE_IMG_BASE}/${path}`;
 }
 
 // Cache-bust no preview do admin:
