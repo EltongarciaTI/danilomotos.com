@@ -1,7 +1,6 @@
 // assets/js/motos.js
-// Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Vendidas
+// Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Reservadas/Vendidas
 import { loadMotos } from "./loader.js";
-
 import { WHATSAPP_NUMBER } from "./config.js";
 
 function $(sel) {
@@ -22,15 +21,14 @@ function escapeHtml(s = "") {
     .replaceAll("'", "&#039;");
 }
 
-
 function num(v) {
   const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
 
-// 👇 COLE AQUI
 function formatBRL(value) {
-  const n = Number(value);
+  // aceita número, "45900", "45.900", "R$ 45.900" etc.
+  const n = typeof value === "number" ? value : num(value);
   if (!Number.isFinite(n) || n <= 0) return "";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -38,39 +36,43 @@ function formatBRL(value) {
     maximumFractionDigits: 0,
   }).format(n);
 }
+
 function sortMotos(list) {
-  return [...list].sort((a, b) => {
+  return [...(list || [])].sort((a, b) => {
     const oa = Number.isFinite(Number(a?.ordem)) ? Number(a.ordem) : 999;
     const ob = Number.isFinite(Number(b?.ordem)) ? Number(b.ordem) : 999;
 
-    // 1) Ordem definida no admin
     if (oa !== ob) return oa - ob;
 
-    // 2) Desempate: ano mais novo primeiro
-    const byAno = num(b.ano) - num(a.ano);
+    const byAno = num(b?.ano) - num(a?.ano);
     if (byAno !== 0) return byAno;
 
-    // 3) Desempate final: menor km
-    return num(a.km) - num(b.km);
+    return num(a?.km) - num(b?.km);
   });
 }
 
+function getImgFallback(m) {
+  const idSafe = encodeURIComponent(String(m?.id ?? ""));
+  const base = (m?.fotosBase || `assets2/motos/${idSafe}/`).replace(/\/\/+/g, "/");
+  return `${base}1.jpg`;
+}
+
 function renderCards(grid, motos) {
-  if (!motos.length) {
+  if (!motos?.length) {
     grid.innerHTML = `<p class="muted" style="color:var(--muted)">Nenhuma moto aqui no momento.</p>`;
     return;
   }
 
   grid.innerHTML = motos
     .map((m) => {
-      const id = encodeURIComponent(m.id);
-      const titulo = escapeHtml(m.titulo || m.id);
-      const ano = m.ano ? String(m.ano) : "";
-      const km = m.km ? String(m.km) : "";
+      const id = encodeURIComponent(String(m?.id ?? ""));
+      const titulo = escapeHtml(m?.titulo || m?.id || "Moto");
+      const anoTxt = m?.ano ? String(m.ano) : "";
+      const kmNum = m?.km ? num(m.km) : 0;
 
-      const status = String(m.status || "ativo").toLowerCase();
+      const status = String(m?.status || "ativo").toLowerCase();
 
-      let precoLabel = m.preco ? formatBRL(m.preco) : "Consultar";
+      let precoLabel = m?.preco ? formatBRL(m.preco) : "Consultar";
       let precoClass = "isDisponivel";
 
       if (status === "vendida") {
@@ -81,19 +83,22 @@ function renderCards(grid, motos) {
         precoClass = "isReservado";
       }
 
-      const meta = [ano, km ? `${Number(km).toLocaleString("pt-BR")} km` : ""]
+      const meta = [
+        anoTxt,
+        kmNum ? `${kmNum.toLocaleString("pt-BR")} km` : "",
+      ]
         .filter(Boolean)
         .join(" • ");
 
-      const imgCapa = m.capa || "";
-      const imgFallback = `${m.fotosBase || `assets2/motos/${m.id}/`}1.jpg`;
+      const imgCapa = String(m?.capa || "");
+      const imgFallback = getImgFallback(m);
 
       const isVendida = status === "vendida";
       const Tag = isVendida ? "div" : "a";
-      const href = isVendida ? "" : `href="moto.html?id=${id}"`;
+      const hrefAttr = isVendida ? "" : `href="moto.html?id=${id}"`;
 
       return `
-        <${Tag} class="card-moto ${isVendida ? "isDisabled" : ""}" ${href}>
+        <${Tag} class="card-moto ${isVendida ? "isDisabled" : ""}" ${hrefAttr}>
           <img class="card-moto__img"
                loading="lazy"
                src="${imgCapa}"
@@ -101,7 +106,7 @@ function renderCards(grid, motos) {
                onerror="this.onerror=null; this.src='${imgFallback}';">
           <div class="card-moto__body">
             <div class="card-moto__titulo">${titulo}</div>
-            <div class="card-moto__meta">${meta}</div>
+            <div class="card-moto__meta">${escapeHtml(meta)}</div>
             <strong class="card-moto__preco ${precoClass}">${precoLabel}</strong>
           </div>
         </${Tag}>
@@ -126,58 +131,43 @@ async function main() {
   const tabVendidas = $("#tabVendidas");
   const totalCount = $("#totalCount");
 
-  // Skeleton simples
   grid.innerHTML = `
     <div style="opacity:.7;color:var(--muted);font-weight:900;padding:10px">
       Carregando motos...
     </div>
   `;
 
-  // Carrega as três listas
   const [ativasRaw, reservadasRaw, vendidasRaw] = await Promise.all([
     loadMotos({ status: "ativo" }),
     loadMotos({ status: "reservada" }),
     loadMotos({ status: "vendida" }),
   ]);
 
-  const ativas = sortMotos(ativasRaw);
-  const reservadas = sortMotos(reservadasRaw);
-  const vendidas = sortMotos(vendidasRaw);
-
-  // Default: disponíveis
-  renderCards(grid, ativas);
-  if (totalCount) totalCount.textContent = String(ativas.length);
+  const lists = {
+    ativo: sortMotos(ativasRaw),
+    reservada: sortMotos(reservadasRaw),
+    vendida: sortMotos(vendidasRaw),
+  };
 
   function setActiveTab(active) {
-    if (tabAtivas) tabAtivas.classList.toggle("isActive", active === "ativo");
-    if (tabReservadas) tabReservadas.classList.toggle("isActive", active === "reservada");
-    if (tabVendidas) tabVendidas.classList.toggle("isActive", active === "vendida");
+    tabAtivas?.classList.toggle("isActive", active === "ativo");
+    tabReservadas?.classList.toggle("isActive", active === "reservada");
+    tabVendidas?.classList.toggle("isActive", active === "vendida");
   }
 
-  if (tabAtivas) {
-    tabAtivas.addEventListener("click", () => {
-      setActiveTab("ativo");
-      renderCards(grid, ativas);
-      if (totalCount) totalCount.textContent = String(ativas.length);
-      setActiveTab("ativo");
-    });
+  function show(status) {
+    setActiveTab(status);
+    const arr = lists[status] || [];
+    renderCards(grid, arr);
+    if (totalCount) totalCount.textContent = String(arr.length);
   }
 
-  if (tabReservadas) {
-    tabReservadas.addEventListener("click", () => {
-      setActiveTab("reservada");
-      renderCards(grid, reservadas);
-      if (totalCount) totalCount.textContent = String(reservadas.length);
-    });
-  }
+  tabAtivas?.addEventListener("click", () => show("ativo"));
+  tabReservadas?.addEventListener("click", () => show("reservada"));
+  tabVendidas?.addEventListener("click", () => show("vendida"));
 
-  if (tabVendidas) {
-    tabVendidas.addEventListener("click", () => {
-      setActiveTab("vendida");
-      renderCards(grid, vendidas);
-      if (totalCount) totalCount.textContent = String(vendidas.length);
-    });
-  }
+  // Default: disponíveis
+  show("ativo");
 }
 
 main().catch((err) => {
