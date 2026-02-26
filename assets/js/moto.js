@@ -61,7 +61,14 @@ function buildFotos(moto) {
   const fotos = [];
 
   // usa a capa já montada com cache-bust (moto.capa), se existir
-  fotos.push((moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`);
+  const capa = (moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`;
+
+  // Se for vendida, mostra só a capa (economiza banda e evita baixar extras)
+  if (String(moto.status || "").toLowerCase() === "vendida") {
+    return [capa];
+  }
+
+  fotos.push(capa);
 
   // tenta 1..4
   for (let i = 1; i <= MAX_FOTOS; i++) {

@@ -19,7 +19,9 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // URL do seu projeto e ANON KEY (cliente). Ideal: rotacionar se repo for público.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
 // Nome do bucket do Storage onde ficam as fotos
-const BUCKET = "motos";
+// ⚠️ NÃO usamos mais Supabase Storage (evita estourar banda). Imagens vão para GitHub via Cloudflare Worker.
+const IMG_UPLOAD_ENDPOINT = "https://blue-salad-b6ae.eltonng645.workers.dev/upload";
+const SITE_IMG_BASE = "https://danilomotos.com/assets/img/motos";
 
 // Cria o client do Supabase (Auth + Database + Storage)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -216,17 +218,23 @@ async function touchUpdatedAt(motoId) {
 // upsert:true = se já existir, substitui (perfeito pra trocar capa)
 // cacheControl alto = site carrega mais rápido
 async function uploadSingleToPath(path, file) {
+  // path vem como: `${id}/capa.jpg` ou `${id}/1.jpg` etc.
+  const [motoId, filename] = String(path || "").split("/");
+  if (!motoId || !filename) throw new Error("Path inválido para upload: " + path);
+
   msg(els.fotoMsg, "Enviando foto...");
+  const form = new FormData();
+  form.append("file", file);
+  form.append("moto_id", motoId);
+  form.append("filename", filename);
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    upsert: true,
-    cacheControl: "2592000", // 30 dias (CDN + navegador)
-    contentType: file.type || "image/jpeg",
-  });
+  const res = await fetch(IMG_UPLOAD_ENDPOINT, { method: "POST", body: form });
+  const data = await res.json().catch(() => ({}));
 
-  if (error) {
-    console.error("Erro upload:", error);
-    msg(els.fotoMsg, "Erro ao enviar: " + error.message, "err");
+  if (!res.ok || !data.ok) {
+    const errMsg = data?.error || `HTTP ${res.status}`;
+    console.error("Erro upload (worker):", errMsg, data);
+    msg(els.fotoMsg, "Erro ao enviar: " + errMsg, "err");
     return;
   }
 
@@ -290,339 +298,55 @@ async function renderFotosGrid(id) {
 
   const slots = fotosSlots(id);
 
-  // Descobre quais arquivos existem de verdade na pasta (pra mostrar preview)
-  let existing = new Set();
-  try {
-    const data = await listMotoFiles(id);
-    existing = new Set(data.map((x) => x.name));
-  } catch {
-    // se falhar list (policy, etc), ainda renderiza os slots (sem preview)
-  }
-
-  // Monta o HTML dos slots
+  // Preview baseado em URL pública do site (GitHub Pages).
+  // Se não existir ainda, o <img> vai falhar e a gente esconde.
+  const v = Date.now();
   els.fotosGrid.innerHTML = slots
-    .map((s) => {
-      const exists = existing.has(s.filename);
-      const src = exists ? publicUrlV(s.path) : ""; // cache-bust
-      const label = s.key === "capa" ? "Capa" : `Foto ${s.key}`;
-
+    .map(({ label, path, name }) => {
+      const src = `${SITE_IMG_BASE}/${id}/${name}?v=${v}`;
       return `
-        <div class="thumb">
-          <div class="thumbTitle">${label}</div>
+        <div class="fotoSlot box">
+          <div class="fotoSlotHead">
+            <strong>${label}</strong>
+            <small class="muted">${name}</small>
+          </div>
 
-          <img src="${src}" alt="${label}" onerror="this.style.display='none'">
+          <div class="fotoSlotPreview">
+            <img src="${src}" alt="${label}" loading="lazy"
+              onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">
+            <div class="noimgTxt">Sem foto</div>
+          </div>
 
-          <input type="file" data-path="${s.path}" accept="image/*" />
-
-          <button class="btn danger" type="button" data-del="${s.path}" style="width:100%;margin-top:8px">
-            Remover
-          </button>
+          <label class="btn small">
+            Enviar/Substituir
+            <input type="file" accept="image/*" data-path="${path}" style="display:none">
+          </label>
         </div>
       `;
     })
     .join("");
 
-  // ==========================
-  // Bind upload: quando escolhe arquivo em um slot
-  // ==========================
-  els.fotosGrid.querySelectorAll('input[type="file"][data-path]').forEach((inp) => {
-    inp.addEventListener("change", async () => {
-      const file = inp.files?.[0];
-      if (!file) return;
+  // listeners dos inputs
+  els.fotosGrid.querySelectorAll("input[type=file][data-path]").forEach((inp) => {
+    inp.addEventListener("change", async (ev) => {
+      const file = ev.target.files?.[0];
+      const path = ev.target.getAttribute("data-path");
+      if (!file || !path) return;
 
-      const path = inp.dataset.path;
-
-      await uploadSingleToPath(path, file);
-
-      // Se subiu a capa, ajuda o site público a refletir a mudança
-      if (String(path || "").endsWith("/capa.jpg")) {
+      try {
+        await uploadSingleToPath(path, file);
         await touchUpdatedAt(id);
+        await renderFotosGrid(id);
+      } catch (e) {
+        console.error(e);
+        msg(els.fotoMsg, "Erro: " + (e?.message || String(e)), "err");
+      } finally {
+        ev.target.value = "";
       }
-
-      inp.value = "";
-      await renderFotosGrid(id);
     });
   });
-
-  // ==========================
-  // Bind delete: botão remover por slot
-  // ==========================
-  els.fotosGrid.querySelectorAll("button[data-del]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const path = btn.dataset.del;
-      const ok = confirm("Remover essa foto? Isso apaga do Storage.");
-      if (!ok) return;
-
-      msg(els.fotoMsg, "Removendo foto...");
-
-      const { error } = await supabase.storage.from(BUCKET).remove([path]);
-      if (error) {
-        console.error(error);
-        msg(els.fotoMsg, "Erro ao remover: " + error.message, "err");
-        return;
-      }
-
-      if (String(path || "").endsWith("/capa.jpg")) {
-        await touchUpdatedAt(id);
-      }
-
-      msg(els.fotoMsg, "Foto removida ✅", "ok");
-      await renderFotosGrid(id);
-    });
-  });
-
-  msg(els.fotoMsg, "Clique em escolher arquivo para enviar/atualizar.", "");
 }
 
-// ======================================================
-// ===== DASHBOARD (CONTADORES)
-// ======================================================
-
-function renderDashboard() {
-  if (!els.dashGrid) return;
-
-  const total = motosCache.length;
-  const disp = motosCache.filter((m) => (m.status || "ativo") === "ativo").length;
-  const resv = motosCache.filter((m) => m.status === "reservada").length;
-  const vend = motosCache.filter((m) => m.status === "vendida").length;
-  const dest = motosCache.filter((m) => !!m.destaque).length;
-
-  els.dashGrid.innerHTML = `
-    <div class="thumb"><div class="thumbTitle">Total cadastradas</div><div style="font-size:22px;font-weight:1100">${total}</div></div>
-    <div class="thumb"><div class="thumbTitle">Disponíveis</div><div style="font-size:22px;font-weight:1100">${disp}</div></div>
-    <div class="thumb"><div class="thumbTitle">Reservadas</div><div style="font-size:22px;font-weight:1100">${resv}</div></div>
-    <div class="thumb"><div class="thumbTitle">Vendidas</div><div style="font-size:22px;font-weight:1100">${vend}</div></div>
-    <div class="thumb"><div class="thumbTitle">Destaques</div><div style="font-size:22px;font-weight:1100">${dest}</div></div>
-  `;
-}
-
-// ======================================================
-// ===== LOGIN / LOGOUT
-// ======================================================
-
-async function login() {
-  const email = (els.email?.value || "").trim();
-  const password = els.senha?.value || "";
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    msg(els.loginMsg, "Erro: " + error.message, "err");
-    return;
-  }
-
-  msg(els.loginMsg, "Logado ✅", "ok");
-  await refreshSessionUI();
-}
-
-async function logout() {
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    msg(els.loginMsg, "Erro ao sair: " + error.message, "err");
-    return;
-  }
-
-  msg(els.loginMsg, "Você saiu.", "");
-  await refreshSessionUI();
-}
-
-// Atualiza a interface dependendo se está logado ou não
-async function refreshSessionUI() {
-  const { data } = await supabase.auth.getSession();
-  const logged = !!data.session;
-
-  if (els.loginBox) els.loginBox.style.display = logged ? "none" : "grid";
-  if (els.appBox) els.appBox.style.display = logged ? "" : "none";
-  if (els.btnLogout) els.btnLogout.style.display = logged ? "" : "none";
-
-  if (logged) {
-    await loadMotosAndRender();
-  }
-}
-
-// ======================================================
-// ===== BANCO: CARREGAR / SALVAR / APAGAR
-// ======================================================
-
-// Carrega motos do banco e atualiza UI
-async function loadMotosAndRender() {
-  msg(els.saveMsg, "Carregando motos...");
-
-  const { data, error } = await supabase
-    .from("motos")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Erro ao carregar motos:", error);
-    msg(els.saveMsg, "Erro ao carregar motos: " + error.message, "err");
-    motosCache = [];
-    if (els.motoSelect) els.motoSelect.innerHTML = "";
-    renderDashboard();
-    return [];
-  }
-
-  motosCache = data || [];
-
-  // Preenche o select de motos
-  if (els.motoSelect) {
-    const options = motosCache
-      .map((m) => {
-        const st = (m.status || "ativo").toUpperCase();
-        const title = m.titulo ? ` — ${m.titulo}` : "";
-        return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
-      })
-      .join("");
-
-    els.motoSelect.innerHTML = `<option value="">➕ Criar nova moto…</option>` + options;
-
-    // começa sempre em "Criar nova"
-    els.motoSelect.value = "";
-  }
-
-  renderDashboard();
-  novaMoto();
-
-  msg(
-    els.saveMsg,
-    motosCache.length ? "Motos carregadas ✅" : "Nenhuma moto cadastrada ainda.",
-    motosCache.length ? "ok" : ""
-  );
-
-  return motosCache;
-}
-
-// Preenche os campos do formulário com a moto selecionada
-function fillForm(m) {
-  currentMoto = m;
-
-  if (els.id) els.id.value = m?.id || "";
-  if (els.status) els.status.value = m?.status || "ativo";
-  if (els.titulo) els.titulo.value = m?.titulo || "";
-  if (els.preco) els.preco.value = m?.preco || "";
-  if (els.ordem) els.ordem.value = m?.ordem ?? "";
-  if (els.ano) els.ano.value = m?.ano ?? "";
-  if (els.km) els.km.value = m?.km ?? "";
-  if (els.cor) els.cor.value = m?.cor || "";
-  if (els.cilindrada) els.cilindrada.value = m?.cilindrada || "";
-  if (els.combustivel) els.combustivel.value = m?.combustivel || m?.["combustível"] || "";
-  if (els.partida) els.partida.value = m?.partida || "";
-  if (els.youtube) els.youtube.value = m?.youtube || "";
-  if (els.whatsapp_texto) els.whatsapp_texto.value = m?.whatsapp_texto || "";
-  if (els.observacoes) els.observacoes.value = m?.observacoes || "";
-  if (els.emplacada) els.emplacada.checked = !!m?.emplacada;
-
-  // campos extras
-  if (els.obs_internas) els.obs_internas.value = m?.obs_internas || "";
-  if (els.destaque) els.destaque.checked = !!m?.destaque;
-
-  // atualiza grid de fotos
-  renderFotosGrid(m?.id);
-}
-
-// Lê o formulário e monta o payload do banco
-function getFormData() {
-  const payload = {
-    id: cleanId(els.id?.value),
-    status: els.status?.value || "ativo",
-    titulo: (els.titulo?.value || "").trim(),
-    preco: els.preco?.value ? Number(onlyDigits(els.preco.value)) : null,
-    ordem: els.ordem?.value ? Number(els.ordem.value) : 999,
-    ano: (els.ano?.value || "").trim(),
-    km: els.km?.value ? Number(onlyDigits(els.km.value)) : null,
-    cor: (els.cor?.value || "").trim(),
-    cilindrada: (els.cilindrada?.value || "").trim(),
-    combustivel: (els.combustivel?.value || "").trim(),
-    partida: (els.partida?.value || "").trim(),
-
-    youtube: (els.youtube?.value || "").trim(),
-    whatsapp_texto: (els.whatsapp_texto?.value || "").trim(),
-    observacoes: (els.observacoes?.value || "").trim(),
-
-    emplacada: !!els.emplacada?.checked,
-  };
-
-  // campos extras (se existirem na tabela)
-  if (els.obs_internas) payload.obs_internas = (els.obs_internas.value || "").trim();
-  if (els.destaque) payload.destaque = !!els.destaque.checked;
-
-  // limpa strings vazias -> null
-  Object.keys(payload).forEach((k) => {
-    if (payload[k] === "" || payload[k] === undefined) payload[k] = null;
-  });
-
-  return payload;
-}
-
-// Salva (cria ou atualiza) a moto no banco
-// Salva (cria ou atualiza) a moto no banco
-async function salvar() {
-  msg(els.saveMsg, "Salvando...");
-
-  const payload = getFormData();
-
-  // 🔒 garante boolean
-  payload.emplacada = payload.emplacada === true;
-
-  
-
-  if (!payload.id) {
-    msg(els.saveMsg, "O campo ID é obrigatório (ex: xre-300-2022).", "err");
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("motos")
-    .upsert(payload, { onConflict: "id" })
-    .select();
-
-  if (error) {
-    console.error("Erro upsert:", error);
-    msg(els.saveMsg, "Erro ao salvar: " + error.message, "err");
-    return;
-  }
-
-  msg(els.saveMsg, "Moto salva ✅", "ok");
-  await loadMotosAndRender();
-  fillForm(payload);
-}
-
-// Abre formulário em branco (nova moto)
-function novaMoto() {
-  fillForm({
-    id: "",
-    status: "ativo",
-    emplacada: false,
-  });
-  msg(els.saveMsg, "Preencha os campos e clique em Salvar.", "");
-}
-
-// Apaga a moto do banco e apaga a pasta toda do Storage
-async function apagarMoto() {
-  const id = cleanId(els.id?.value);
-  if (!id) return msg(els.saveMsg, "Informe o ID da moto para apagar.", "err");
-
-  const ok = confirm(`Tem certeza que quer apagar a moto "${id}"?\nIsso vai apagar também as fotos no Storage.`);
-  if (!ok) return;
-
-  msg(els.saveMsg, "Apagando...");
-
-  // 1) apaga storage primeiro (pra não sobrar lixo)
-  try {
-    await deleteAllMotoFiles(id);
-  } catch (e) {
-    console.error(e);
-    msg(els.saveMsg, "Erro ao apagar fotos: " + (e?.message || e), "err");
-    return;
-  }
-
-  // 2) apaga registro do banco
-  const { error } = await supabase.from("motos").delete().eq("id", id);
-  if (error) return msg(els.saveMsg, "Erro ao apagar: " + error.message, "err");
-
-  msg(els.saveMsg, "Moto apagada ✅", "ok");
-  await loadMotosAndRender();
-  novaMoto();
-}
 
 // ======================================================
 // ===== EVENTOS (bind de tudo)

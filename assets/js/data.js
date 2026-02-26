@@ -4,8 +4,7 @@ export const SUPABASE_URL = "https://zhivqujoneqzviasioug.supabase.co";
 export const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoaXZxdWpvbmVxenZpYXNpb3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2ODYwNzEsImV4cCI6MjA4NTI2MjA3MX0.ZvbcSoCPA4_cIIQoDBtZQMo7DrLGqqLHHiAQbvnpDL8";
 
-export const STORAGE_PUBLIC_BASE =
-  `${SUPABASE_URL}/storage/v1/object/public/motos`;
+export const STORAGE_PUBLIC_BASE = "https://danilomotos.com/assets/img/motos";
 
 /**
  * Busca motos do Supabase
