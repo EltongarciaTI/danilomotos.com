@@ -85,8 +85,9 @@ function renderCards(grid, motos) {
         .filter(Boolean)
         .join(" • ");
 
-      const imgCapa = m.capa || "";
-      const imgFallback = `${m.fotosBase || `assets2/motos/${m.id}/`}1.jpg`;
+      const ver = m.updated_at || Date.now();
+      const imgCapa = `${SITE_IMG_BASE}/${m.id}/capa.jpg?v=${ver}`;
+      const imgFallback = `assets/img/motos/${m.id}/1.jpg?v=${encodeURIComponent(ver)}`;
 
       const isVendida = status === "vendida";
       const Tag = isVendida ? "div" : "a";
