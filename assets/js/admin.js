@@ -291,22 +291,25 @@ async function handleMultiUpload(fileList) {
     return;
   }
 
-  const files = Array.from(fileList || []).filter(Boolean);
+  const files = Array.from(fileList || []).filter(Boolean).slice(0, 5);
   if (!files.length) return;
 
-  const picked = files.slice(0, 5);
-  const targets = [
-    `${id}/capa.jpg`,
-    `${id}/1.jpg`,
-    `${id}/2.jpg`,
-    `${id}/3.jpg`,
-    `${id}/4.jpg`,
-  ];
+  msg(els.fotoMsg, `Enviando ${files.length} foto(s)...`);
 
-  msg(els.fotoMsg, `Enviando ${picked.length} foto(s)...`);
+  const form = new FormData();
+  form.append("moto_id", id);
+  files.forEach(f => form.append("files", f));
 
-  for (let i = 0; i < picked.length; i++) {
-    await uploadSingleToPath(targets[i], picked[i]);
+  const res = await fetch(IMG_UPLOAD_MULTI_ENDPOINT, {
+    method: "POST",
+    body: form,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.ok) {
+    msg(els.fotoMsg, "Erro: " + (data?.error || "Falha upload"), "err");
+    return;
   }
 
   await touchUpdatedAt(id);
