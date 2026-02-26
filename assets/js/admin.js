@@ -2,41 +2,41 @@
 // ======================================================
 // DANILO MOTOS — ADMIN (Painel)
 // ------------------------------------------------------
-// O que este arquivo faz:
 // - Login / Logout (Supabase Auth)
-// - CRUD da moto (criar/editar/apagar no banco "motos")
-// - Upload de fotos para Supabase Storage (bucket "motos")
-// - Remover fotos individualmente
-// - Ao marcar como "vendida": apaga TODAS as fotos extras, deixa só "capa.jpg"
-// - Preview de fotos com cache-bust (?v=timestamp) pra mostrar a imagem nova na hora
+// - CRUD da moto (tabela "motos")
+// - Upload / substituição de fotos via Cloudflare Worker -> GitHub (GitHub Pages como CDN)
+// - Remoção de fotos (individual / manter só capa ao vender / apagar tudo ao deletar moto) via Worker
 // ======================================================
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
 
 // ======================================================
-// ===== CONFIG SUPABASE
+// ===== CONFIG
 // ======================================================
-// URL do seu projeto e ANON KEY (cliente). Ideal: rotacionar se repo for público.
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
-// Nome do bucket do Storage onde ficam as fotos
-// ⚠️ NÃO usamos mais Supabase Storage (evita estourar banda). Imagens vão para GitHub via Cloudflare Worker.
-const IMG_UPLOAD_ENDPOINT = "https://blue-salad-b6ae.eltonng645.workers.dev/upload";
+
+// Base do Worker (ajuste se mudar o domínio do Worker)
+const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev";
+
+// Endpoints do Worker
+const IMG_UPLOAD_ENDPOINT = `${WORKER_BASE}/upload`;  // multipart/form-data: file, moto_id, filename
+const IMG_LIST_ENDPOINT   = `${WORKER_BASE}/list`;    // GET ?moto_id=...
+const IMG_DELETE_ENDPOINT = `${WORKER_BASE}/delete`;  // POST json: {moto_id, mode, filename?}
+
+// Base pública (GitHub Pages)
 const SITE_IMG_BASE = "https://danilomotos.com/assets/img/motos";
 
-// Cria o client do Supabase (Auth + Database + Storage)
+// Client Supabase (Auth + Database)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ======================================================
-// ===== HELPERS BÁSICOS (DOM / MSG / FORMATAÇÃO)
+// ===== HELPERS (DOM / MSG / FORMATAÇÃO)
 // ======================================================
 
-// Seletor simples por ID (mais prático)
 function $(id) {
   return document.getElementById(id);
 }
 
-// Centraliza todos os elementos do HTML para fácil manutenção
-// (se mudar algum ID no HTML, ajusta aqui)
 const els = {
   // dashboard
   dashGrid: $("dashGrid"),
@@ -44,8 +44,6 @@ const els = {
 
   // fotos (multi-upload)
   multiFotos: $("multiFotos"),
-
-  
 
   // auth
   loginBox: $("loginBox"),
@@ -84,19 +82,15 @@ const els = {
   fotoMsg: $("fotoMsg"),
 };
 
-// cache local de motos (pra não ficar consultando toda hora)
 let motosCache = [];
 let currentMoto = null;
 
-// Mostra mensagens (ok/err/normal)
 function msg(el, text, type = "") {
   if (!el) return;
   el.className = "hint " + (type === "ok" ? "ok" : type === "err" ? "err" : "");
   el.textContent = text || "";
 }
 
-// Normaliza ID (usado como pasta no storage e PK na tabela)
-// Ex: "XRE 300 2022" -> "xre-300-2022"
 function cleanId(v) {
   return String(v || "")
     .trim()
@@ -105,19 +99,16 @@ function cleanId(v) {
     .replace(/[^\w-]/g, "");
 }
 
-// Remove tudo que não for dígito (pra km/preço)
 function onlyDigits(v) {
   return String(v || "").replace(/\D/g, "");
 }
 
-// Formata KM como "12.345"
 function formatKmBR(value) {
   const digits = onlyDigits(value);
   if (!digits) return "";
   return Number(digits).toLocaleString("pt-BR");
 }
 
-// Formata preço como "R$ 23.900"
 function formatPrecoBR(value) {
   const digits = onlyDigits(value);
   if (!digits) return "";
@@ -126,25 +117,65 @@ function formatPrecoBR(value) {
 }
 
 // ======================================================
-// ===== STORAGE (URL, LIST, DELETE, UPLOAD)
+// ===== AUTH (SUPABASE)
 // ======================================================
 
-// Monta URL pública do storage (bucket público)
-// Ex: publicUrl("xre-300-2022/capa.jpg")
+async function login() {
+  try {
+    msg(els.loginMsg, "Entrando...");
+    const email = String(els.email?.value || "").trim();
+    const senha = String(els.senha?.value || "").trim();
+
+    if (!email || !senha) {
+      msg(els.loginMsg, "Informe email e senha.", "err");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    if (error) throw error;
+
+    msg(els.loginMsg, "Login ok ✅", "ok");
+    await refreshSessionUI();
+  } catch (e) {
+    console.error(e);
+    msg(els.loginMsg, "Erro no login: " + (e?.message || String(e)), "err");
+  }
+}
+
+async function logout() {
+  try {
+    await supabase.auth.signOut();
+  } finally {
+    await refreshSessionUI();
+  }
+}
+
+async function refreshSessionUI() {
+  const { data } = await supabase.auth.getSession();
+  const session = data?.session;
+
+  if (session) {
+    if (els.loginBox) els.loginBox.style.display = "none";
+    if (els.appBox) els.appBox.style.display = "block";
+    await loadMotos();
+  } else {
+    if (els.appBox) els.appBox.style.display = "none";
+    if (els.loginBox) els.loginBox.style.display = "block";
+  }
+}
+
+// ======================================================
+// ===== WORKER (LIST / DELETE / UPLOAD)
+// ======================================================
+
 function publicUrl(path) {
   return `${SITE_IMG_BASE}/${path}`;
 }
 
-// Cache-bust no preview do admin:
-// força o navegador a puxar a imagem atualizada ao trocar capa/foto
 function publicUrlV(path) {
   return `${publicUrl(path)}?v=${Date.now()}`;
 }
 
-// Define os slots fixos de fotos que o admin mostra:
-// - capa.jpg
-// - 1.jpg .. 4.jpg
-// OBS: mesmo que você apague/lista outros arquivos, o grid só exibe esses slots.
 function fotosSlots(id) {
   return [
     { key: "capa", filename: "capa.jpg" },
@@ -155,54 +186,46 @@ function fotosSlots(id) {
   ].map((s) => ({ ...s, path: `${id}/${s.filename}` }));
 }
 
-// Lista tudo que existe dentro da pasta da moto no Storage (id/)
-// Isso é MUITO importante pra:
-// - apagar tudo ao vender
-// - apagar tudo ao deletar moto
 async function listMotoFiles(motoId) {
-  const { data, error } = await supabase.storage.from(BUCKET).list(motoId, {
-    limit: 100,
-    offset: 0,
-    sortBy: { column: "name", order: "asc" },
+  const res = await fetch(`${IMG_LIST_ENDPOINT}?moto_id=${encodeURIComponent(motoId)}`, { method: "GET" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  return data.files || [];
+}
+
+// mode:
+// - "keep_cover"  => apaga tudo exceto capa.jpg
+// - "delete_all"  => apaga tudo
+// - "delete_one"  => apaga um arquivo (precisa filename)
+async function deleteWorker(motoId, mode, filename = "") {
+  const payload = { moto_id: motoId, mode };
+  if (filename) payload.filename = filename;
+
+  const res = await fetch(IMG_DELETE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
-  if (error) throw error;
-  return data || [];
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+  return data;
 }
 
-// Apaga TUDO da pasta exceto a capa.
-// Usado quando moto vira "vendida" (fica só a capa).
 async function deleteAllExceptCover(motoId) {
-  const data = await listMotoFiles(motoId);
-
-  // monta lista completa com caminho id/arquivo
-  const toDelete = data
-    .filter((f) => f.name !== "capa.jpg") // mantém capa.jpg
-    .map((f) => `${motoId}/${f.name}`);
-
-  if (!toDelete.length) return { deleted: 0 };
-
-  const { error } = await supabase.storage.from(BUCKET).remove(toDelete);
-  if (error) throw error;
-
-  return { deleted: toDelete.length };
+  const data = await deleteWorker(motoId, "keep_cover");
+  return { deleted: data.deleted || 0 };
 }
 
-// Apaga TUDO da pasta (inclusive capa).
-// Usado quando o admin apaga a moto (delete total).
 async function deleteAllMotoFiles(motoId) {
-  const data = await listMotoFiles(motoId);
-
-  const toDelete = data.map((f) => `${motoId}/${f.name}`);
-  if (!toDelete.length) return { deleted: 0 };
-
-  const { error } = await supabase.storage.from(BUCKET).remove(toDelete);
-  if (error) throw error;
-
-  return { deleted: toDelete.length };
+  const data = await deleteWorker(motoId, "delete_all");
+  return { deleted: data.deleted || 0 };
 }
 
-// “Marca” a moto como atualizada no banco, se existir a coluna updated_at.
-// Isso ajuda o site público a trocar a imagem (usando ?v=updated_at).
+async function deleteSingleFile(motoId, filename) {
+  const data = await deleteWorker(motoId, "delete_one", filename);
+  return { deleted: data.deleted || 0 };
+}
+
 async function touchUpdatedAt(motoId) {
   try {
     await supabase
@@ -210,15 +233,11 @@ async function touchUpdatedAt(motoId) {
       .update({ updated_at: new Date().toISOString() })
       .eq("id", motoId);
   } catch {
-    // se a coluna não existir, a gente ignora sem quebrar o admin
+    // ignora se a coluna não existir
   }
 }
 
-// Faz upload de um arquivo para um caminho específico no Storage.
-// upsert:true = se já existir, substitui (perfeito pra trocar capa)
-// cacheControl alto = site carrega mais rápido
 async function uploadSingleToPath(path, file) {
-  // path vem como: `${id}/capa.jpg` ou `${id}/1.jpg` etc.
   const [motoId, filename] = String(path || "").split("/");
   if (!motoId || !filename) throw new Error("Path inválido para upload: " + path);
 
@@ -241,9 +260,6 @@ async function uploadSingleToPath(path, file) {
   msg(els.fotoMsg, "Foto enviada ✅", "ok");
 }
 
-// Multi-upload: usuário seleciona até 5 fotos no input
-// - a primeira vira capa
-// - as outras viram 1..4
 async function handleMultiUpload(fileList) {
   const id = cleanId(els.id?.value);
   if (!id) {
@@ -254,9 +270,7 @@ async function handleMultiUpload(fileList) {
   const files = Array.from(fileList || []).filter(Boolean);
   if (!files.length) return;
 
-  // pega no máximo 5 (capa + 4 extras)
   const picked = files.slice(0, 5);
-
   const targets = [
     `${id}/capa.jpg`,
     `${id}/1.jpg`,
@@ -271,9 +285,7 @@ async function handleMultiUpload(fileList) {
     await uploadSingleToPath(targets[i], picked[i]);
   }
 
-  // ajuda o site público a atualizar a capa quando trocamos fotos
   await touchUpdatedAt(id);
-
   msg(els.fotoMsg, "Fotos enviadas ✅", "ok");
   await renderFotosGrid(id);
 }
@@ -282,14 +294,9 @@ async function handleMultiUpload(fileList) {
 // ===== GRID DE FOTOS (PREVIEW + BOTÕES)
 // ======================================================
 
-// Renderiza os slots (capa, 1..4) com:
-// - preview se o arquivo existe
-// - input pra subir/substituir a foto
-// - botão pra remover do storage
 async function renderFotosGrid(id) {
   if (!els.fotosGrid) return;
 
-  // se não tem id, limpa o grid
   if (!id) {
     els.fotosGrid.innerHTML = "";
     msg(els.fotoMsg, "");
@@ -297,18 +304,17 @@ async function renderFotosGrid(id) {
   }
 
   const slots = fotosSlots(id);
-
-  // Preview baseado em URL pública do site (GitHub Pages).
-  // Se não existir ainda, o <img> vai falhar e a gente esconde.
   const v = Date.now();
+
   els.fotosGrid.innerHTML = slots
-    .map(({ label, path, name }) => {
-      const src = `${SITE_IMG_BASE}/${id}/${name}?v=${v}`;
+    .map(({ key, filename, path }) => {
+      const label = key === "capa" ? "Capa" : `Foto ${key}`;
+      const src = `${SITE_IMG_BASE}/${path}?v=${v}`;
       return `
         <div class="fotoSlot box">
           <div class="fotoSlotHead">
             <strong>${label}</strong>
-            <small class="muted">${name}</small>
+            <small class="muted">${filename}</small>
           </div>
 
           <div class="fotoSlotPreview">
@@ -317,16 +323,19 @@ async function renderFotosGrid(id) {
             <div class="noimgTxt">Sem foto</div>
           </div>
 
-          <label class="btn small">
-            Enviar/Substituir
-            <input type="file" accept="image/*" data-path="${path}" style="display:none">
-          </label>
+          <div class="fotoSlotActions">
+            <label class="btn small">
+              Enviar/Substituir
+              <input type="file" accept="image/*" data-path="${path}" style="display:none">
+            </label>
+            <button class="btn small danger" type="button" data-del="${filename}">Apagar</button>
+          </div>
         </div>
       `;
     })
     .join("");
 
-  // listeners dos inputs
+  // listeners upload
   els.fotosGrid.querySelectorAll("input[type=file][data-path]").forEach((inp) => {
     inp.addEventListener("change", async (ev) => {
       const file = ev.target.files?.[0];
@@ -345,11 +354,200 @@ async function renderFotosGrid(id) {
       }
     });
   });
+
+  // listeners delete
+  els.fotosGrid.querySelectorAll("button[data-del]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const filename = btn.getAttribute("data-del");
+      if (!filename) return;
+      if (!confirm(`Apagar ${filename}?`)) return;
+
+      try {
+        msg(els.fotoMsg, "Apagando foto...");
+        const { deleted } = await deleteSingleFile(id, filename);
+        msg(els.fotoMsg, `Foto apagada ✅ (${deleted})`, "ok");
+        await touchUpdatedAt(id);
+        await renderFotosGrid(id);
+      } catch (e) {
+        console.error(e);
+        msg(els.fotoMsg, "Erro ao apagar: " + (e?.message || String(e)), "err");
+      }
+    });
+  });
 }
 
+// ======================================================
+// ===== CRUD (SUPABASE DB)
+// ======================================================
+
+function readForm() {
+  const id = cleanId(els.id?.value);
+  return {
+    id,
+    ordem: els.ordem?.value ? Number(onlyDigits(els.ordem.value)) : null,
+    status: els.status?.value || "disponivel",
+    titulo: String(els.titulo?.value || "").trim(),
+    preco: onlyDigits(els.preco?.value),
+    ano: String(els.ano?.value || "").trim(),
+    km: onlyDigits(els.km?.value),
+    cor: String(els.cor?.value || "").trim(),
+    cilindrada: String(els.cilindrada?.value || "").trim(),
+    combustivel: String(els.combustivel?.value || "").trim(),
+    partida: String(els.partida?.value || "").trim(),
+    youtube: String(els.youtube?.value || "").trim(),
+    observacoes: String(els.observacoes?.value || "").trim(),
+    emplacada: !!(els.emplacada?.checked),
+  };
+}
+
+function fillForm(m) {
+  currentMoto = m || null;
+  if (!m) return;
+
+  if (els.id) els.id.value = m.id || "";
+  if (els.ordem) els.ordem.value = m.ordem ?? "";
+  if (els.status) els.status.value = m.status || "disponivel";
+  if (els.titulo) els.titulo.value = m.titulo || "";
+  if (els.preco) els.preco.value = m.preco ? formatPrecoBR(m.preco) : "";
+  if (els.ano) els.ano.value = m.ano || "";
+  if (els.km) els.km.value = m.km ? formatKmBR(m.km) : "";
+  if (els.cor) els.cor.value = m.cor || "";
+  if (els.cilindrada) els.cilindrada.value = m.cilindrada || "";
+  if (els.combustivel) els.combustivel.value = m.combustivel || "";
+  if (els.partida) els.partida.value = m.partida || "";
+  if (els.youtube) els.youtube.value = m.youtube || "";
+  if (els.observacoes) els.observacoes.value = m.observacoes || "";
+  if (els.emplacada) els.emplacada.checked = !!m.emplacada;
+
+  renderFotosGrid(m.id);
+}
+
+function clearForm() {
+  currentMoto = null;
+  [
+    "id","ordem","titulo","preco","ano","km","cor","cilindrada","combustivel","partida","youtube","observacoes"
+  ].forEach((k) => { if (els[k]) els[k].value = ""; });
+  if (els.status) els.status.value = "disponivel";
+  if (els.emplacada) els.emplacada.checked = false;
+  if (els.fotosGrid) els.fotosGrid.innerHTML = "";
+  msg(els.saveMsg, "");
+  msg(els.fotoMsg, "");
+}
+
+async function loadMotos() {
+  try {
+    msg(els.dashMsg, "Carregando motos...");
+    const { data, error } = await supabase
+      .from("motos")
+      .select("*")
+      .order("ordem", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    motosCache = data || [];
+
+    // select
+    if (els.motoSelect) {
+      els.motoSelect.innerHTML =
+        `<option value="">+ Criar nova</option>` +
+        motosCache.map((m) => `<option value="${m.id}">${m.titulo || m.id}</option>`).join("");
+    }
+
+    // dashboard simples
+    if (els.dashGrid) {
+      els.dashGrid.innerHTML = motosCache
+        .map((m) => {
+          const cover = publicUrlV(`${m.id}/capa.jpg`);
+          const status = m.status || "disponivel";
+          return `
+            <div class="cardMoto box" data-id="${m.id}">
+              <img src="${cover}" alt="${m.titulo || m.id}" loading="lazy"
+                onerror="this.style.display='none';">
+              <div class="cardMotoBody">
+                <strong>${m.titulo || m.id}</strong>
+                <div class="muted">${status}</div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      els.dashGrid.querySelectorAll("[data-id]").forEach((card) => {
+        card.addEventListener("click", () => {
+          const id = card.getAttribute("data-id");
+          const m = motosCache.find((x) => x.id === id);
+          if (m) fillForm(m);
+          if (els.motoSelect) els.motoSelect.value = id;
+        });
+      });
+    }
+
+    msg(els.dashMsg, `Motos: ${motosCache.length}`, "ok");
+  } catch (e) {
+    console.error(e);
+    msg(els.dashMsg, "Erro ao carregar motos: " + (e?.message || String(e)), "err");
+  }
+}
+
+async function novaMoto() {
+  clearForm();
+  if (els.id) els.id.focus();
+}
+
+async function salvar() {
+  try {
+    const payload = readForm();
+    if (!payload.id) {
+      msg(els.saveMsg, "Informe um ID válido.", "err");
+      return;
+    }
+
+    msg(els.saveMsg, "Salvando...");
+    // upsert: cria ou atualiza
+    const { error } = await supabase.from("motos").upsert(payload, { onConflict: "id" });
+    if (error) throw error;
+
+    msg(els.saveMsg, "Salvo ✅", "ok");
+    await loadMotos();
+
+    // re-seleciona
+    const m = motosCache.find((x) => x.id === payload.id);
+    if (m) fillForm(m);
+    if (els.motoSelect) els.motoSelect.value = payload.id;
+  } catch (e) {
+    console.error(e);
+    msg(els.saveMsg, "Erro ao salvar: " + (e?.message || String(e)), "err");
+  }
+}
+
+async function apagarMoto() {
+  const id = cleanId(els.id?.value);
+  if (!id) return;
+
+  const ok = confirm("Apagar esta moto do banco e remover TODAS as fotos?");
+  if (!ok) return;
+
+  try {
+    msg(els.saveMsg, "Apagando...");
+    // delete DB
+    const { error } = await supabase.from("motos").delete().eq("id", id);
+    if (error) throw error;
+
+    // delete imagens via worker
+    msg(els.fotoMsg, "Apagando fotos...");
+    await deleteAllMotoFiles(id);
+
+    msg(els.saveMsg, "Moto apagada ✅", "ok");
+    clearForm();
+    await loadMotos();
+  } catch (e) {
+    console.error(e);
+    msg(els.saveMsg, "Erro ao apagar: " + (e?.message || String(e)), "err");
+  }
+}
 
 // ======================================================
-// ===== EVENTOS (bind de tudo)
+// ===== EVENTOS (bind)
 // ======================================================
 
 function bind() {
@@ -374,13 +572,10 @@ function bind() {
   if (els.motoSelect) {
     els.motoSelect.addEventListener("change", () => {
       const id = els.motoSelect.value;
-
-      // Selecionou "Criar nova"
       if (!id) {
         novaMoto();
         return;
       }
-
       const m = motosCache.find((x) => x.id === id);
       if (m) fillForm(m);
     });
@@ -400,7 +595,7 @@ function bind() {
     });
   }
 
-  // Quando muda status: se virar "vendida", limpa fotos extras do Storage
+  // Quando muda status: se virar "vendida", apaga fotos extras (fica só capa)
   if (els.status) {
     els.status.addEventListener("change", async () => {
       const id = cleanId(els.id?.value);
@@ -414,15 +609,11 @@ function bind() {
           msg(els.fotoMsg, "Apagando fotos extras...");
           const { deleted } = await deleteAllExceptCover(id);
           msg(els.fotoMsg, `Fotos extras removidas ✅ (${deleted})`, "ok");
-
-          // marca updated_at pra site público atualizar a capa
           await touchUpdatedAt(id);
-
-
           await renderFotosGrid(id);
         } catch (e) {
           console.error(e);
-          msg(els.fotoMsg, "Erro ao apagar fotos: " + (e?.message || e), "err");
+          msg(els.fotoMsg, "Erro ao apagar fotos: " + (e?.message || String(e)), "err");
         }
       }
     });
