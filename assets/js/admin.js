@@ -19,19 +19,15 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
 const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev";
 
 // Endpoints do Worker
-const IMG_UPLOAD_ENDPOINT = `${WORKER_BASE}/upload`;  // multipart/form-data: file, moto_id, filename
-const IMG_LIST_ENDPOINT   = `${WORKER_BASE}/list`;    // GET ?moto_id=...
-const IMG_DELETE_ENDPOINT = `${WORKER_BASE}/delete`;  // POST json: {moto_id, mode, filename?}
+// - /upload        (1 arquivo)      multipart/form-data: file, moto_id, filename
+// - /upload-batch  (múltiplos)      multipart/form-data: moto_id, files[], filenames(JSON)
+// - /list          (lista diretório) GET ?moto_id=...
+// - /delete        (remove)         POST json: {moto_id, mode, filename?}
+const IMG_UPLOAD_ENDPOINT       = `${WORKER_BASE}/upload`;
+const IMG_UPLOAD_BATCH_ENDPOINT = `${WORKER_BASE}/upload-batch`;
+const IMG_LIST_ENDPOINT         = `${WORKER_BASE}/list`;
+const IMG_DELETE_ENDPOINT       = `${WORKER_BASE}/delete`;
 
-
-
-// Endpoint batch (múltiplos arquivos em 1 request)
-const IMG_UPLOAD_BATCH_ENDPOINT = `${WORKER_BASE}/upload-batch`; // multipart/form-data: moto_id, file0+path0, file1+path1, ...
-
-// Config de otimização (client-side) — mantém qualidade e acelera upload
-const IMG_MAX_W = 1600;     // largura máxima
-const IMG_QUALITY = 0.82;   // 0..1 (jpeg)
-const UPLOAD_CONCURRENCY = 3; // fallback parallel
 // Base pública (GitHub Pages)
 const SITE_IMG_BASE = "https://danilomotos.com/assets/img/motos";
 
@@ -112,6 +108,44 @@ function onlyDigits(v) {
   return String(v || "").replace(/\D/g, "");
 }
 
+// ======================================================
+// ===== IMAGEM (OTIMIZAÇÃO CLIENT-SIDE)
+// - Reduz tamanho/tempo de upload
+// - Converte para JPG e limita dimensões
+// ======================================================
+
+async function imageToJpegBlob(file, { maxW = 1600, maxH = 1200, quality = 0.82 } = {}) {
+  const isJpeg = /image\/(jpeg|jpg)/i.test(file?.type || "");
+  if (isJpeg && file.size <= 600_000) return file; // ~600KB
+
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    // navegadores antigos: sem otimização, envia original
+    return file;
+  }
+
+  const w = bitmap.width;
+  const h = bitmap.height;
+
+  const ratio = Math.min(1, maxW / w, maxH / h);
+  const tw = Math.max(1, Math.round(w * ratio));
+  const th = Math.max(1, Math.round(h * ratio));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = tw;
+  canvas.height = th;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  ctx.drawImage(bitmap, 0, 0, tw, th);
+
+  const blob = await new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
+  );
+
+  return blob || file;
+}
+
 function formatKmBR(value) {
   const digits = onlyDigits(value);
   if (!digits) return "";
@@ -124,62 +158,6 @@ function formatPrecoBR(value) {
   const n = Number(digits);
   return "R$ " + n.toLocaleString("pt-BR");
 }
-
-// ======================================================
-// ===== IMAGEM (otimização client-side para upload rápido)
-// ======================================================
-
-async function optimizeImage(file, { maxW = IMG_MAX_W, quality = IMG_QUALITY } = {}) {
-  if (!file) return file;
-
-  // Se não for imagem, envia como está (não deve ocorrer)
-  if (!file.type?.startsWith("image/")) return file;
-
-  // Heurística: se já for pequeno (<300KB), não mexe
-  if (file.size && file.size < 300 * 1024) return file;
-
-  const bmp = await createImageBitmap(file).catch(() => null);
-  if (!bmp) return file;
-
-  const w = bmp.width || 0;
-  const h = bmp.height || 0;
-  if (!w || !h) return file;
-
-  const scale = Math.min(1, maxW / w);
-  const outW = Math.max(1, Math.round(w * scale));
-  const outH = Math.max(1, Math.round(h * scale));
-
-  const canvas = document.createElement("canvas");
-  canvas.width = outW;
-  canvas.height = outH;
-
-  const ctx = canvas.getContext("2d", { alpha: false });
-  ctx.drawImage(bmp, 0, 0, outW, outH);
-
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-  if (!blob) return file;
-
-  // preserva nome "base" (o Worker escolhe o nome final pelo path)
-  return new File([blob], (file.name || "foto")?.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
-}
-
-async function runWithConcurrency(items, limit, workerFn) {
-  const results = new Array(items.length);
-  let next = 0;
-
-  async function runner() {
-    while (true) {
-      const i = next++;
-      if (i >= items.length) break;
-      results[i] = await workerFn(items[i]);
-    }
-  }
-
-  const n = Math.max(1, Math.min(limit || 1, items.length || 1));
-  await Promise.all(Array.from({ length: n }, runner));
-  return results;
-}
-
 
 // ======================================================
 // ===== AUTH (SUPABASE)
@@ -307,32 +285,17 @@ async function touchUpdatedAt(motoId) {
   }
 }
 
-async function uploadBatch(motoId, entries) {
-  const form = new FormData();
-  form.append("moto_id", motoId);
-
-  entries.forEach((e, i) => {
-    form.append(`path${i}`, e.path);
-    form.append(`file${i}`, e.file);
-  });
-
-  const res = await fetch(IMG_UPLOAD_BATCH_ENDPOINT, { method: "POST", body: form });
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok || !data.ok) {
-    const errMsg = data?.error || `HTTP ${res.status}`;
-    throw new Error(errMsg);
-  }
-  return data;
-}
-
 async function uploadSingleToPath(path, file) {
   const [motoId, filename] = String(path || "").split("/");
   if (!motoId || !filename) throw new Error("Path inválido para upload: " + path);
 
-  const optimized = await optimizeImage(file);
+  msg(els.fotoMsg, "Otimizando + enviando foto...");
+
+  const blob = await imageToJpegBlob(file);
+  const outFile = new File([blob], "upload.jpg", { type: "image/jpeg" });
+
   const form = new FormData();
-  form.append("file", optimized);
+  form.append("file", outFile);
   form.append("moto_id", motoId);
   form.append("filename", filename);
 
@@ -341,8 +304,31 @@ async function uploadSingleToPath(path, file) {
 
   if (!res.ok || !data.ok) {
     const errMsg = data?.error || `HTTP ${res.status}`;
-    throw new Error(errMsg);
+    console.error("Erro upload (worker):", errMsg, data);
+    msg(els.fotoMsg, "Erro ao enviar: " + errMsg, "err");
+    return;
   }
+
+  msg(els.fotoMsg, "Foto enviada ✅", "ok");
+}
+
+async function uploadBatch(motoId, files, filenames) {
+  const form = new FormData();
+  form.append("moto_id", motoId);
+
+  const optimized = await Promise.all(
+    files.map(async (f) => {
+      const blob = await imageToJpegBlob(f);
+      return new File([blob], "upload.jpg", { type: "image/jpeg" });
+    })
+  );
+
+  optimized.forEach((f) => form.append("files", f));
+  form.append("filenames", JSON.stringify(filenames));
+
+  const res = await fetch(IMG_UPLOAD_BATCH_ENDPOINT, { method: "POST", body: form });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data?.error || `HTTP ${res.status}`);
   return data;
 }
 
@@ -357,45 +343,69 @@ async function handleMultiUpload(fileList) {
   if (!files.length) return;
 
   const picked = files.slice(0, 5);
-  const targets = [
-    `${id}/capa.jpg`,
-    `${id}/1.jpg`,
-    `${id}/2.jpg`,
-    `${id}/3.jpg`,
-    `${id}/4.jpg`,
-  ].slice(0, picked.length);
+  const filenames = ["capa.jpg", "1.jpg", "2.jpg", "3.jpg", "4.jpg"].slice(0, picked.length);
 
-  msg(els.fotoMsg, `Otimizando ${picked.length} foto(s)...`);
+  msg(els.fotoMsg, `Otimizando + enviando ${picked.length} foto(s)...`);
 
-  // Otimiza em paralelo (rápido) antes de subir
-  const optimizedFiles = await Promise.all(picked.map((f) => optimizeImage(f)));
-
-  const entries = targets.map((path, i) => ({ path, file: optimizedFiles[i] }));
-
-  // 1) tenta batch (1 request só) — mais rápido
   try {
-    msg(els.fotoMsg, `Enviando ${picked.length} foto(s) (rápido)...`);
-    await uploadBatch(id, entries);
+    await uploadBatch(id, picked, filenames);
   } catch (e) {
-    console.warn("Batch falhou, usando fallback paralelo:", e?.message || e);
+    console.warn("Falha no /upload-batch (fallback para uploads individuais):", e);
+    const targets = filenames.map((fn) => `${id}/${fn}`);
 
-    // 2) fallback: uploads em paralelo com concorrência controlada
-    msg(els.fotoMsg, `Enviando ${picked.length} foto(s)...`);
-    await runWithConcurrency(entries, UPLOAD_CONCURRENCY, async (it) => {
-      await uploadSingleToPath(it.path, it.file);
+    const queue = targets.map((t, i) => ({ path: t, file: picked[i] }));
+    const CONCURRENCY = 3;
+    const workers = Array.from({ length: CONCURRENCY }).map(async () => {
+      while (queue.length) {
+        const job = queue.shift();
+        if (!job) break;
+        await uploadSingleToPath(job.path, job.file);
+      }
     });
+    await Promise.all(workers);
   }
 
   await touchUpdatedAt(id);
   msg(els.fotoMsg, "Fotos enviadas ✅", "ok");
-  await renderFotosGrid(id);
+  await refreshFotosGrid(id);
 }
 
 // ======================================================
 // ===== GRID DE FOTOS (PREVIEW + BOTÕES)
 // ======================================================
 
-async function renderFotosGrid(id) {
+async // --- Fotos grid render (com proteção contra re-render recursivo) ---
+let __fotosRenderLock = false;
+let __fotosRenderPending = false;
+let __fotosRenderLastId = "";
+
+/**
+ * Re-renderiza o grid de fotos sem estourar call stack.
+ * Se múltiplas ações chamarem "atualizar" ao mesmo tempo (upload batch + delete etc.),
+ * nós coalescemos em 1 render por tick.
+ */
+function refreshFotosGrid(id) {
+  __fotosRenderLastId = id || "";
+  if (__fotosRenderLock) {
+    __fotosRenderPending = true;
+    return;
+  }
+  __fotosRenderLock = true;
+  // quebra o call stack e evita reentrância
+  queueMicrotask(() => {
+    try {
+      _renderFotosGrid(__fotosRenderLastId);
+    } finally {
+      __fotosRenderLock = false;
+      if (__fotosRenderPending) {
+        __fotosRenderPending = false;
+        refreshFotosGrid(__fotosRenderLastId);
+      }
+    }
+  });
+}
+
+function _renderFotosGrid(id) {
   if (!els.fotosGrid) return;
 
   if (!id) {
@@ -446,7 +456,7 @@ async function renderFotosGrid(id) {
       try {
         await uploadSingleToPath(path, file);
         await touchUpdatedAt(id);
-        await renderFotosGrid(id);
+        await refreshFotosGrid(id);
       } catch (e) {
         console.error(e);
         msg(els.fotoMsg, "Erro: " + (e?.message || String(e)), "err");
@@ -468,7 +478,7 @@ async function renderFotosGrid(id) {
         const { deleted } = await deleteSingleFile(id, filename);
         msg(els.fotoMsg, `Foto apagada ✅ (${deleted})`, "ok");
         await touchUpdatedAt(id);
-        await renderFotosGrid(id);
+        await refreshFotosGrid(id);
       } catch (e) {
         console.error(e);
         msg(els.fotoMsg, "Erro ao apagar: " + (e?.message || String(e)), "err");
@@ -486,7 +496,7 @@ function readForm() {
   return {
     id,
     ordem: els.ordem?.value ? Number(onlyDigits(els.ordem.value)) : null,
-    status: els.status?.value || "disponivel",
+    status: els.status?.value || "ativo",
     titulo: String(els.titulo?.value || "").trim(),
     preco: onlyDigits(els.preco?.value),
     ano: String(els.ano?.value || "").trim(),
@@ -507,7 +517,7 @@ function fillForm(m) {
 
   if (els.id) els.id.value = m.id || "";
   if (els.ordem) els.ordem.value = m.ordem ?? "";
-  if (els.status) els.status.value = m.status || "disponivel";
+  if (els.status) els.status.value = m.status || "ativo";
   if (els.titulo) els.titulo.value = m.titulo || "";
   if (els.preco) els.preco.value = m.preco ? formatPrecoBR(m.preco) : "";
   if (els.ano) els.ano.value = m.ano || "";
@@ -520,7 +530,7 @@ function fillForm(m) {
   if (els.observacoes) els.observacoes.value = m.observacoes || "";
   if (els.emplacada) els.emplacada.checked = !!m.emplacada;
 
-  renderFotosGrid(m.id);
+  refreshFotosGrid(m.id);
 }
 
 function clearForm() {
@@ -528,7 +538,7 @@ function clearForm() {
   [
     "id","ordem","titulo","preco","ano","km","cor","cilindrada","combustivel","partida","youtube","observacoes"
   ].forEach((k) => { if (els[k]) els[k].value = ""; });
-  if (els.status) els.status.value = "disponivel";
+  if (els.status) els.status.value = "ativo";
   if (els.emplacada) els.emplacada.checked = false;
   if (els.fotosGrid) els.fotosGrid.innerHTML = "";
   msg(els.saveMsg, "");
@@ -571,7 +581,7 @@ async function loadMotos() {
       els.dashGrid.innerHTML = motosCache
         .map((m) => {
           const cover = publicUrlV(`${m.id}/capa.jpg`);
-          const status = m.status || "disponivel";
+          const status = m.status || "ativo";
           return `
             <div class="cardMoto box" data-id="${m.id}">
               <img src="${cover}" alt="${m.titulo || m.id}" loading="lazy"
@@ -622,18 +632,6 @@ async function salvar() {
 
     msg(els.saveMsg, "Salvo ✅", "ok");
     await loadMotos();
-
-    // Se marcou como vendida, mantém só a capa (economiza banda e evita foto antiga)
-    if (payload.status === "vendida") {
-      try {
-        msg(els.saveMsg, "Vendida: mantendo só a capa...");
-        await deleteAllExceptCover(payload.id);
-        await touchUpdatedAt(payload.id);
-        await renderFotosGrid(payload.id);
-      } catch (e) {
-        console.warn("Falha ao limpar fotos (vendida):", e);
-      }
-    }
 
     // re-seleciona
     const m = motosCache.find((x) => x.id === payload.id);
@@ -735,7 +733,7 @@ function bind() {
           const { deleted } = await deleteAllExceptCover(id);
           msg(els.fotoMsg, `Fotos extras removidas ✅ (${deleted})`, "ok");
           await touchUpdatedAt(id);
-          await renderFotosGrid(id);
+          await refreshFotosGrid(id);
         } catch (e) {
           console.error(e);
           msg(els.fotoMsg, "Erro ao apagar fotos: " + (e?.message || String(e)), "err");
