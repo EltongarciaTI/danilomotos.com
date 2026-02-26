@@ -9,19 +9,31 @@
 // ======================================================
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { SUPABASE_URL, SUPABASE_ANON_KEY, SITE_IMG_BASE, WORKER_BASE } from "./config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
 
 // ======================================================
 // ===== CONFIG
 // ======================================================
 
-// Base do Worker (config.js)
+// Base do Worker (ajuste se mudar o domínio do Worker)
+const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev";
+
 // Endpoints do Worker
 const IMG_UPLOAD_ENDPOINT = `${WORKER_BASE}/upload`;  // multipart/form-data: file, moto_id, filename
 const IMG_LIST_ENDPOINT   = `${WORKER_BASE}/list`;    // GET ?moto_id=...
 const IMG_DELETE_ENDPOINT = `${WORKER_BASE}/delete`;  // POST json: {moto_id, mode, filename?}
 
-// Base pública (GitHub Pages) (config.js)
+
+
+// Endpoint batch (múltiplos arquivos em 1 request)
+const IMG_UPLOAD_BATCH_ENDPOINT = `${WORKER_BASE}/upload-batch`; // multipart/form-data: moto_id, file0+path0, file1+path1, ...
+
+// Config de otimização (client-side) — mantém qualidade e acelera upload
+const IMG_MAX_W = 1600;     // largura máxima
+const IMG_QUALITY = 0.82;   // 0..1 (jpeg)
+const UPLOAD_CONCURRENCY = 3; // fallback parallel
+// Base pública (GitHub Pages)
+const SITE_IMG_BASE = "https://danilomotos.com/assets/img/motos";
 
 // Client Supabase (Auth + Database)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -114,6 +126,62 @@ function formatPrecoBR(value) {
 }
 
 // ======================================================
+// ===== IMAGEM (otimização client-side para upload rápido)
+// ======================================================
+
+async function optimizeImage(file, { maxW = IMG_MAX_W, quality = IMG_QUALITY } = {}) {
+  if (!file) return file;
+
+  // Se não for imagem, envia como está (não deve ocorrer)
+  if (!file.type?.startsWith("image/")) return file;
+
+  // Heurística: se já for pequeno (<300KB), não mexe
+  if (file.size && file.size < 300 * 1024) return file;
+
+  const bmp = await createImageBitmap(file).catch(() => null);
+  if (!bmp) return file;
+
+  const w = bmp.width || 0;
+  const h = bmp.height || 0;
+  if (!w || !h) return file;
+
+  const scale = Math.min(1, maxW / w);
+  const outW = Math.max(1, Math.round(w * scale));
+  const outH = Math.max(1, Math.round(h * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outW;
+  canvas.height = outH;
+
+  const ctx = canvas.getContext("2d", { alpha: false });
+  ctx.drawImage(bmp, 0, 0, outW, outH);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  if (!blob) return file;
+
+  // preserva nome "base" (o Worker escolhe o nome final pelo path)
+  return new File([blob], (file.name || "foto")?.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+}
+
+async function runWithConcurrency(items, limit, workerFn) {
+  const results = new Array(items.length);
+  let next = 0;
+
+  async function runner() {
+    while (true) {
+      const i = next++;
+      if (i >= items.length) break;
+      results[i] = await workerFn(items[i]);
+    }
+  }
+
+  const n = Math.max(1, Math.min(limit || 1, items.length || 1));
+  await Promise.all(Array.from({ length: n }, runner));
+  return results;
+}
+
+
+// ======================================================
 // ===== AUTH (SUPABASE)
 // ======================================================
 
@@ -154,7 +222,12 @@ async function refreshSessionUI() {
   if (session) {
     if (els.loginBox) els.loginBox.style.display = "none";
     if (els.appBox) els.appBox.style.display = "block";
-    await loadMotos();
+    try {
+      await loadMotos();
+    } catch (e) {
+      console.error(e);
+      msg(els.dashMsg, "Logado, mas não consegui carregar as motos: " + (e?.message || String(e)), "err");
+    }
   } else {
     if (els.appBox) els.appBox.style.display = "none";
     if (els.loginBox) els.loginBox.style.display = "block";
@@ -194,60 +267,33 @@ async function listMotoFiles(motoId) {
 // - "keep_cover"  => apaga tudo exceto capa.jpg
 // - "delete_all"  => apaga tudo
 // - "delete_one"  => apaga um arquivo (precisa filename)
-// precisa existir no seu config.js
-// export const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev";
+async function deleteWorker(motoId, mode, filename = "") {
+  const payload = { moto_id: motoId, mode };
+  if (filename) payload.filename = filename;
 
-async function uploadCincoEmUmCommit(motoId, files) {
-  const form = new FormData();
-  form.append("moto_id", motoId);
-
-  // manda como files[] na ordem: capa, 1,2,3,4 (os primeiros 5)
-  Array.from(files).slice(0, 5).forEach((f) => form.append("files", f));
-
-  const res = await fetch(`${WORKER_BASE.replace(/\/+$/, "")}/upload-multi`, {
+  const res = await fetch(IMG_DELETE_ENDPOINT, {
     method: "POST",
-    body: form,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
-
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
   if (!res.ok || !data.ok) throw new Error(data?.error || `HTTP ${res.status}`);
   return data;
 }
 
-async function workerDelete({ motoId, mode, filename }) {
-  const res = await fetch(IMG_DELETE_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      moto_id: String(motoId),
-      mode,
-      filename, // só usa quando mode === "delete_one"
-    }),
-  });
-
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok || !data?.ok) {
-    const msg = data?.error || `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-
-  return data;
+async function deleteAllExceptCover(motoId) {
+  const data = await deleteWorker(motoId, "keep_cover");
+  return { deleted: data.deleted || 0 };
 }
 
-// apagar 1 arquivo (ex: "4.jpg")
+async function deleteAllMotoFiles(motoId) {
+  const data = await deleteWorker(motoId, "delete_all");
+  return { deleted: data.deleted || 0 };
+}
+
 async function deleteSingleFile(motoId, filename) {
-  return workerDelete({ motoId, mode: "delete_one", filename });
-}
-
-// apagar todas menos capa.jpg
-async function deleteKeepCover(motoId) {
-  return workerDelete({ motoId, mode: "keep_cover" });
-}
-
-// apagar tudo
-async function deleteAllFiles(motoId) {
-  return workerDelete({ motoId, mode: "delete_all" });
+  const data = await deleteWorker(motoId, "delete_one", filename);
+  return { deleted: data.deleted || 0 };
 }
 
 async function touchUpdatedAt(motoId) {
@@ -261,13 +307,32 @@ async function touchUpdatedAt(motoId) {
   }
 }
 
+async function uploadBatch(motoId, entries) {
+  const form = new FormData();
+  form.append("moto_id", motoId);
+
+  entries.forEach((e, i) => {
+    form.append(`path${i}`, e.path);
+    form.append(`file${i}`, e.file);
+  });
+
+  const res = await fetch(IMG_UPLOAD_BATCH_ENDPOINT, { method: "POST", body: form });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || !data.ok) {
+    const errMsg = data?.error || `HTTP ${res.status}`;
+    throw new Error(errMsg);
+  }
+  return data;
+}
+
 async function uploadSingleToPath(path, file) {
   const [motoId, filename] = String(path || "").split("/");
   if (!motoId || !filename) throw new Error("Path inválido para upload: " + path);
 
-  msg(els.fotoMsg, "Enviando foto...");
+  const optimized = await optimizeImage(file);
   const form = new FormData();
-  form.append("file", file);
+  form.append("file", optimized);
   form.append("moto_id", motoId);
   form.append("filename", filename);
 
@@ -276,12 +341,9 @@ async function uploadSingleToPath(path, file) {
 
   if (!res.ok || !data.ok) {
     const errMsg = data?.error || `HTTP ${res.status}`;
-    console.error("Erro upload (worker):", errMsg, data);
-    msg(els.fotoMsg, "Erro ao enviar: " + errMsg, "err");
-    return;
+    throw new Error(errMsg);
   }
-
-  msg(els.fotoMsg, "Foto enviada ✅", "ok");
+  return data;
 }
 
 async function handleMultiUpload(fileList) {
@@ -291,25 +353,37 @@ async function handleMultiUpload(fileList) {
     return;
   }
 
-  const files = Array.from(fileList || []).filter(Boolean).slice(0, 5);
+  const files = Array.from(fileList || []).filter(Boolean);
   if (!files.length) return;
 
-  msg(els.fotoMsg, `Enviando ${files.length} foto(s)...`);
+  const picked = files.slice(0, 5);
+  const targets = [
+    `${id}/capa.jpg`,
+    `${id}/1.jpg`,
+    `${id}/2.jpg`,
+    `${id}/3.jpg`,
+    `${id}/4.jpg`,
+  ].slice(0, picked.length);
 
-  const form = new FormData();
-  form.append("moto_id", id);
-  files.forEach(f => form.append("files", f));
+  msg(els.fotoMsg, `Otimizando ${picked.length} foto(s)...`);
 
-  const res = await fetch(IMG_UPLOAD_MULTI_ENDPOINT, {
-    method: "POST",
-    body: form,
-  });
+  // Otimiza em paralelo (rápido) antes de subir
+  const optimizedFiles = await Promise.all(picked.map((f) => optimizeImage(f)));
 
-  const data = await res.json();
+  const entries = targets.map((path, i) => ({ path, file: optimizedFiles[i] }));
 
-  if (!res.ok || !data.ok) {
-    msg(els.fotoMsg, "Erro: " + (data?.error || "Falha upload"), "err");
-    return;
+  // 1) tenta batch (1 request só) — mais rápido
+  try {
+    msg(els.fotoMsg, `Enviando ${picked.length} foto(s) (rápido)...`);
+    await uploadBatch(id, entries);
+  } catch (e) {
+    console.warn("Batch falhou, usando fallback paralelo:", e?.message || e);
+
+    // 2) fallback: uploads em paralelo com concorrência controlada
+    msg(els.fotoMsg, `Enviando ${picked.length} foto(s)...`);
+    await runWithConcurrency(entries, UPLOAD_CONCURRENCY, async (it) => {
+      await uploadSingleToPath(it.path, it.file);
+    });
   }
 
   await touchUpdatedAt(id);
@@ -464,11 +538,23 @@ function clearForm() {
 async function loadMotos() {
   try {
     msg(els.dashMsg, "Carregando motos...");
-    const { data, error } = await supabase
+    let data, error;
+
+    // Primeiro tenta ordenar por "ordem" e depois por "created_at" (se existir).
+    ({ data, error } = await supabase
       .from("motos")
       .select("*")
       .order("ordem", { ascending: true })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }));
+
+    // Se a coluna created_at não existir, faz fallback sem ela (evita travar o admin).
+    if (error && String(error.message || "").toLowerCase().includes("created_at")) {
+      console.warn("Coluna created_at não existe. Fazendo fallback de ordenação...", error);
+      ({ data, error } = await supabase
+        .from("motos")
+        .select("*")
+        .order("ordem", { ascending: true }));
+    }
 
     if (error) throw error;
     motosCache = data || [];
@@ -536,6 +622,18 @@ async function salvar() {
 
     msg(els.saveMsg, "Salvo ✅", "ok");
     await loadMotos();
+
+    // Se marcou como vendida, mantém só a capa (economiza banda e evita foto antiga)
+    if (payload.status === "vendida") {
+      try {
+        msg(els.saveMsg, "Vendida: mantendo só a capa...");
+        await deleteAllExceptCover(payload.id);
+        await touchUpdatedAt(payload.id);
+        await renderFotosGrid(payload.id);
+      } catch (e) {
+        console.warn("Falha ao limpar fotos (vendida):", e);
+      }
+    }
 
     // re-seleciona
     const m = motosCache.find((x) => x.id === payload.id);
@@ -651,7 +749,5 @@ function bind() {
 // ===== STARTUP
 // ======================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  bind();
-  refreshSessionUI();
-});
+bind();
+refreshSessionUI();
