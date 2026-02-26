@@ -2,7 +2,7 @@
 // Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Vendidas
 import { loadMotos } from "./loader.js";
 
-const WHATSAPP_NUMBER = "557599834731"; // 55 + DDD + número
+import { WHATSAPP_NUMBER } from "./config.js";
 
 function $(sel) {
   return document.querySelector(sel);

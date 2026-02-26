@@ -9,22 +9,19 @@
 // ======================================================
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, SITE_IMG_BASE, WORKER_BASE } from "./config.js";
 
 // ======================================================
 // ===== CONFIG
 // ======================================================
 
-// Base do Worker (ajuste se mudar o domínio do Worker)
-const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev";
-
+// Base do Worker (config.js)
 // Endpoints do Worker
 const IMG_UPLOAD_ENDPOINT = `${WORKER_BASE}/upload`;  // multipart/form-data: file, moto_id, filename
 const IMG_LIST_ENDPOINT   = `${WORKER_BASE}/list`;    // GET ?moto_id=...
 const IMG_DELETE_ENDPOINT = `${WORKER_BASE}/delete`;  // POST json: {moto_id, mode, filename?}
 
-// Base pública (GitHub Pages)
-const SITE_IMG_BASE = "https://danilomotos.com/assets/img/motos";
+// Base pública (GitHub Pages) (config.js)
 
 // Client Supabase (Auth + Database)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -624,5 +621,7 @@ function bind() {
 // ===== STARTUP
 // ======================================================
 
-bind();
-refreshSessionUI();
+document.addEventListener("DOMContentLoaded", () => {
+  bind();
+  refreshSessionUI();
+});
