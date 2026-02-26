@@ -1,11 +1,8 @@
 // assets/js/motos.js
 // Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Vendidas
 import { loadMotos } from "./loader.js";
+
 import { WHATSAPP_NUMBER } from "./config.js";
-
-const SITE_IMG_BASE = "https://raw.githubusercontent.com/EltongarciaTI/danilomotos.com/main/assets/img/motos";
-
-
 
 function $(sel) {
   return document.querySelector(sel);
@@ -88,9 +85,8 @@ function renderCards(grid, motos) {
         .filter(Boolean)
         .join(" • ");
 
-      const ver = m.updated_at || Date.now();
-      const imgCapa = `${SITE_IMG_BASE}/${m.id}/capa.jpg?v=${ver}`;
-      const imgFallback = `${SITE_IMG_BASE}/${m.id}/1.jpg?v=${ver}`;
+      const imgCapa = m.capa || "";
+      const imgFallback = `${m.fotosBase || `assets2/motos/${m.id}/`}1.jpg`;
 
       const isVendida = status === "vendida";
       const Tag = isVendida ? "div" : "a";
