@@ -57,26 +57,26 @@ function youtubeToEmbed(url) {
 
 /* Monta fotos: 1.jpg .. MAX_FOTOS.jpg */
 function buildFotos(moto) {
+  // Se o loader já trouxe o array pronto (novo padrão), usa ele.
+  if (Array.isArray(moto?.fotos) && moto.fotos.length) {
+    // Se vendida, garante só capa
+    if ((moto.status || "").toLowerCase() === "vendida") {
+      return [moto.fotos[0]].filter(Boolean);
+    }
+    return moto.fotos.filter(Boolean);
+  }
+
+  // Fallback (padrão antigo): usa base + capa + 1..4
   const base = moto.fotosBase || `assets2/motos/${moto.id}/`;
   const fotos = [];
 
-  // usa a capa já montada com cache-bust (moto.capa), se existir
-  const capa = (moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`;
+  fotos.push((moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`);
 
-  // Se for vendida, mostra só a capa (economiza banda e evita baixar extras)
-  if (String(moto.status || "").toLowerCase() === "vendida") {
-    return [capa];
-  }
-
-  fotos.push(capa);
-
-  // tenta 1..4
   for (let i = 1; i <= MAX_FOTOS; i++) {
     fotos.push(`${base}${i}.jpg`);
   }
 
-  // remove possíveis valores vazios
-  return fotos.filter(f => typeof f === "string" && f.trim() !== "");
+  return fotos.filter((f) => typeof f === "string" && f.trim() !== "");
 }
 
 
