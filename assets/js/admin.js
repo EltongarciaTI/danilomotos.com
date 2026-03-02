@@ -57,10 +57,6 @@ const els = {
   // formulário da moto
   motoSelect: $("motoSelect"),
   buscaMoto: $("buscaMoto"),
-  filtroTodas: $("filtroTodas"),
-  filtroDisponiveis: $("filtroDisponiveis"),
-  filtroReservadas: $("filtroReservadas"),
-  filtroVendidas: $("filtroVendidas"),
   id: $("id"),
   ordem: $("ordem"),
   status: $("status"),
@@ -103,23 +99,7 @@ function msg(el, text, type = "") {
 // ===== FILTRO / BUSCA (Select de motos)
 // ======================================================
 
-let filtroStatus = "disponivel";
-
-function setFiltroStatus(next) {
-  filtroStatus = next || "todas";
-  // botão ativo
-  const map = {
-    todas: els.filtroTodas,
-    disponivel: els.filtroDisponiveis,
-    reservada: els.filtroReservadas,
-    vendida: els.filtroVendidas,
-  };
-  Object.entries(map).forEach(([key, btn]) => {
-    if (!btn) return;
-    btn.classList.toggle("isActive", key === filtroStatus);
-  });
-  renderMotoSelect();
-}
+let filtroStatus = "todas";
 
 function renderMotoSelect() {
   if (!els.motoSelect) return;
@@ -756,10 +736,6 @@ function bind() {
 
 
   // Filtros e busca do select
-  if (els.filtroTodas) els.filtroTodas.addEventListener("click", () => setFiltroStatus("todas"));
-  if (els.filtroDisponiveis) els.filtroDisponiveis.addEventListener("click", () => setFiltroStatus("disponivel"));
-  if (els.filtroReservadas) els.filtroReservadas.addEventListener("click", () => setFiltroStatus("reservada"));
-  if (els.filtroVendidas) els.filtroVendidas.addEventListener("click", () => setFiltroStatus("vendida"));
   if (els.buscaMoto) els.buscaMoto.addEventListener("input", () => renderMotoSelect());
   // Login / logout
   if (els.btnLogin) els.btnLogin.addEventListener("click", login);
@@ -829,7 +805,7 @@ function bind() {
  
 
   // Default: mostrar disponíveis no select
-  setFiltroStatus("disponivel");
+  renderMotoSelect();
 }
 
 }
