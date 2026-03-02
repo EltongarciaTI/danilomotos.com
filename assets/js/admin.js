@@ -136,15 +136,52 @@ function renderMotoSelect() {
     })
     .sort((a, b) => String(a.id).localeCompare(String(b.id), "pt-BR", { numeric: true }));
 
-  const options = list
-    .map((m) => {
-      const st = String(m.status || "disponivel").toUpperCase();
-      const title = m.titulo ? ` — ${m.titulo}` : "";
-      return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
-    })
-    .join("");
+  let options = "";
 
-  // mantém seleção atual se possível
+  // Se estiver em "todas" e sem busca, agrupa por status para ficar mais fácil achar.
+  if (filtroStatus === "todas" && !term) {
+    const labelMap = {
+      disponivel: "✅ Disponíveis",
+      reservada: "🟠 Reservadas",
+      vendida: "🔴 Vendidas",
+    };
+
+    const groups = {
+      disponivel: [],
+      reservada: [],
+      vendida: [],
+    };
+
+    list.forEach((m) => {
+      const st = String(m.status || "disponivel").toLowerCase();
+      if (groups[st]) groups[st].push(m);
+      else groups.disponivel.push(m);
+    });
+
+    options = Object.keys(groups)
+      .map((key) => {
+        const arr = groups[key];
+        if (!arr.length) return "";
+        const inner = arr
+          .map((m) => {
+            const st = String(m.status || "disponivel").toUpperCase();
+            const title = m.titulo ? ` — ${m.titulo}` : "";
+            return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
+          })
+          .join("");
+        return `<optgroup label="${labelMap[key]} (${arr.length})">${inner}</optgroup>`;
+      })
+      .join("");
+  } else {
+    options = list
+      .map((m) => {
+        const st = String(m.status || "disponivel").toUpperCase();
+        const title = m.titulo ? ` — ${m.titulo}` : "";
+        return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
+      })
+      .join("");
+  }
+// mantém seleção atual se possível
   const keep = els.motoSelect.value || "";
   els.motoSelect.innerHTML = `<option value="">➕ Criar nova moto…</option>` + options;
 

@@ -1,5 +1,5 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
-import { loadMotos } from "./loader.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301b";
+import { loadMotos } from "./loader.js?v=20260301b";
 
 const WHATSAPP_NUMBER = "557599834731"; // 55 + DDD + número
 const MAX_FOTOS = 4;
@@ -60,7 +60,7 @@ function buildFotos(moto) {
   // Se o loader já trouxe o array pronto (novo padrão), usa ele.
   if (Array.isArray(moto?.fotos) && moto.fotos.length) {
     // Se vendida, garante só capa
-    if ((moto.status || "").toLowerCase() === "vendida") {
+    if (["vendida","reservada"].includes((moto.status || "").toLowerCase())) {
       return [moto.fotos[0]].filter(Boolean);
     }
     return moto.fotos.filter(Boolean);
@@ -195,8 +195,8 @@ async function main() {
       return;
     }
 
-    const status = String(moto.status || "ativo").toLowerCase();
-    const isVendida = status === "vendida";
+    const status = String(moto.status || "disponivel").toLowerCase();
+    const isBloqueada = status === "vendida" || status === "reservada";
 
 
 
@@ -229,7 +229,7 @@ async function main() {
     const capaUrl = moto.capa || `${base}capa.jpg`;
 
     // ✅ VENDIDA: só capa + mensagem + botão (e para)
-    if (isVendida) {
+    if (isBloqueada) {
       // carrossel: só capa
       const track = $("#galeria");
       const info = $("#fotoInfo");
@@ -241,7 +241,7 @@ async function main() {
         `;
         track.style.transform = "translateX(0%)";
       }
-      if (info) info.textContent = "Vendida";
+      if (info) info.textContent = (status === "reservada" ? "Reservada" : "Vendida");
 
       // esconder botões do carrossel
       const prev = $("#prevFoto");
@@ -259,7 +259,7 @@ async function main() {
         `
           <div class="linha">
             <span>Status</span>
-            <strong>VENDIDA</strong>
+            <strong>${status === "reservada" ? "RESERVADA" : "VENDIDA"}</strong>
           </div>
 
           <div class="muted" style="margin-top:12px">

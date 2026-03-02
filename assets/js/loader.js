@@ -1,12 +1,13 @@
 // Centraliza o carregamento das motos e faz cache em memória
-import { fetchMotos } from "./data.js";
+import { fetchMotos } from "./data.js?v=20260301b";
 
 /**
  * Cache simples para evitar múltiplas chamadas à API
  * enquanto o usuário navega pelo site
  */
 const cache = {
-  ativo: null,
+  disponivel: null,
+  reservada: null,
   vendida: null,
   all: null,
 };
@@ -14,9 +15,9 @@ const cache = {
 /**
  * Carrega motos da API
  * @param {Object} options
- * @param {string} options.status - "ativo" | "vendida" | "all"
+ * @param {string} options.status - "disponivel" | "reservada" | "vendida" | "all"
  */
-export async function loadMotos({ status = "ativo" } = {}) {
+export async function loadMotos({ status = "disponivel" } = {}) {
   if (cache[status]) {
     return cache[status];
   }
