@@ -1,5 +1,5 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301b";
-import { loadMotos } from "./loader.js?v=20260301b";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301c";
+import { loadMotos } from "./loader.js?v=20260301c";
 
 const WHATSAPP_NUMBER = "557599834731"; // 55 + DDD + número
 const MAX_FOTOS = 4;

@@ -17,7 +17,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ===== CONFIG SUPABASE
 // ======================================================
 // URL do seu projeto e ANON KEY (cliente). Ideal: rotacionar se repo for público.
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301b";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301c";
 // Nome do bucket do Storage onde ficam as fotos
 const BUCKET = "motos";
 

@@ -1,5 +1,5 @@
 // Centraliza o carregamento das motos e faz cache em memória
-import { fetchMotos } from "./data.js?v=20260301b";
+import { fetchMotos } from "./data.js?v=20260301c";
 
 /**
  * Cache simples para evitar múltiplas chamadas à API

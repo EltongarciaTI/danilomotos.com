@@ -17,7 +17,13 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
   url.searchParams.set("select", "*");
 
   if (status !== "all") {
-    url.searchParams.set("status", `eq.${status}`);
+    if (status === "disponivel") {
+      // Compatibilidade: algumas motos antigas podem estar com status="ativo"
+      // Supabase REST: or=(status.eq.disponivel,status.eq.ativo)
+      url.searchParams.set("or", "(status.eq.disponivel,status.eq.ativo)");
+    } else {
+      url.searchParams.set("status", `eq.${status}`);
+    }
   }
 
   url.searchParams.set("order", "id.desc"); // ordena pelo ID (sempre existe)
