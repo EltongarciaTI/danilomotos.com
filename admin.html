@@ -202,12 +202,19 @@
             </div>
 
             <div class="row">
+              <div class="btnRow" style="margin-bottom:6px">
+                <button class="btn" id="filtroTodas" type="button">Todas</button>
+                <button class="btn" id="filtroDisponiveis" type="button">Disponíveis</button>
+                <button class="btn" id="filtroReservadas" type="button">Reservadas</button>
+                <button class="btn" id="filtroVendidas" type="button">Vendidas</button>
+              </div>
+              <input class="input" id="buscaMoto" placeholder="Buscar por ID ou título..." />
               <select class="select" id="motoSelect"></select>
 
               <div class="row two">
                 <input class="input" id="id" placeholder="ID (Ex: Pop100-2024)" />
                 <select class="select" id="status">
-                  <option value="ativo">Disponível</option>
+                  <option value="disponivel">Disponível</option>
                   <option value="reservada">Reservada</option>
                   <option value="vendida">Vendida</option>
                 </select>
@@ -296,6 +303,6 @@
     </section>
   </main>
 
-  <script type="module" src="assets/js/admin.js?v=20260226c"></script>
+  <script type="module" src="assets/js/admin.js?v=20260301b"></script>
 </body>
 </html>

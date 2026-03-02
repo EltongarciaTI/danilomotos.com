@@ -17,7 +17,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ===== CONFIG SUPABASE
 // ======================================================
 // URL do seu projeto e ANON KEY (cliente). Ideal: rotacionar se repo for público.
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301b";
 // Nome do bucket do Storage onde ficam as fotos
 const BUCKET = "motos";
 
@@ -56,6 +56,11 @@ const els = {
 
   // formulário da moto
   motoSelect: $("motoSelect"),
+  buscaMoto: $("buscaMoto"),
+  filtroTodas: $("filtroTodas"),
+  filtroDisponiveis: $("filtroDisponiveis"),
+  filtroReservadas: $("filtroReservadas"),
+  filtroVendidas: $("filtroVendidas"),
   id: $("id"),
   ordem: $("ordem"),
   status: $("status"),
@@ -93,6 +98,62 @@ function msg(el, text, type = "") {
   el.textContent = text || "";
 }
 
+
+// ======================================================
+// ===== FILTRO / BUSCA (Select de motos)
+// ======================================================
+
+let filtroStatus = "disponivel";
+
+function setFiltroStatus(next) {
+  filtroStatus = next || "todas";
+  // botão ativo
+  const map = {
+    todas: els.filtroTodas,
+    disponivel: els.filtroDisponiveis,
+    reservada: els.filtroReservadas,
+    vendida: els.filtroVendidas,
+  };
+  Object.entries(map).forEach(([key, btn]) => {
+    if (!btn) return;
+    btn.classList.toggle("isActive", key === filtroStatus);
+  });
+  renderMotoSelect();
+}
+
+function renderMotoSelect() {
+  if (!els.motoSelect) return;
+
+  const term = String(els.buscaMoto?.value || "").trim().toLowerCase();
+
+  const list = motosCache
+    .filter((m) => {
+      const st = String(m.status || "disponivel").toLowerCase();
+      if (filtroStatus !== "todas" && st !== filtroStatus) return false;
+      if (!term) return true;
+      const hay = `${m.id || ""} ${m.titulo || ""}`.toLowerCase();
+      return hay.includes(term);
+    })
+    .sort((a, b) => String(a.id).localeCompare(String(b.id), "pt-BR", { numeric: true }));
+
+  const options = list
+    .map((m) => {
+      const st = String(m.status || "disponivel").toUpperCase();
+      const title = m.titulo ? ` — ${m.titulo}` : "";
+      return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
+    })
+    .join("");
+
+  // mantém seleção atual se possível
+  const keep = els.motoSelect.value || "";
+  els.motoSelect.innerHTML = `<option value="">➕ Criar nova moto…</option>` + options;
+
+  if (keep && list.some((m) => String(m.id) === keep)) {
+    els.motoSelect.value = keep;
+  } else {
+    els.motoSelect.value = "";
+  }
+}
 // Normaliza ID (usado como pasta no storage e PK na tabela)
 // Ex: "XRE 300 2022" -> "xre-300-2022"
 function cleanId(v) {
@@ -414,7 +475,7 @@ function renderDashboard() {
   if (!els.dashGrid) return;
 
   const total = motosCache.length;
-  const disp = motosCache.filter((m) => (m.status || "ativo") === "ativo").length;
+  const disp = motosCache.filter((m) => (m.status || "disponivel") === "disponivel").length;
   const resv = motosCache.filter((m) => m.status === "reservada").length;
   const vend = motosCache.filter((m) => m.status === "vendida").length;
   const dest = motosCache.filter((m) => !!m.destaque).length;
@@ -495,21 +556,8 @@ async function loadMotosAndRender() {
 
   motosCache = data || [];
 
-  // Preenche o select de motos
-  if (els.motoSelect) {
-    const options = motosCache
-      .map((m) => {
-        const st = (m.status || "ativo").toUpperCase();
-        const title = m.titulo ? ` — ${m.titulo}` : "";
-        return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
-      })
-      .join("");
-
-    els.motoSelect.innerHTML = `<option value="">➕ Criar nova moto…</option>` + options;
-
-    // começa sempre em "Criar nova"
-    els.motoSelect.value = "";
-  }
+  // Preenche o select de motos (com filtro)
+  renderMotoSelect();
 
   renderDashboard();
   novaMoto();
@@ -528,7 +576,7 @@ function fillForm(m) {
   currentMoto = m;
 
   if (els.id) els.id.value = m?.id || "";
-  if (els.status) els.status.value = m?.status || "ativo";
+  if (els.status) els.status.value = m?.status || "disponivel";
   if (els.titulo) els.titulo.value = m?.titulo || "";
   if (els.preco) els.preco.value = m?.preco || "";
   if (els.ordem) els.ordem.value = m?.ordem ?? "";
@@ -555,7 +603,7 @@ function fillForm(m) {
 function getFormData() {
   const payload = {
     id: cleanId(els.id?.value),
-    status: els.status?.value || "ativo",
+    status: els.status?.value || "disponivel",
     titulo: (els.titulo?.value || "").trim(),
     preco: els.preco?.value ? Number(onlyDigits(els.preco.value)) : null,
     ordem: els.ordem?.value ? Number(els.ordem.value) : 999,
@@ -622,7 +670,7 @@ async function salvar() {
 function novaMoto() {
   fillForm({
     id: "",
-    status: "ativo",
+    status: "disponivel",
     emplacada: false,
   });
   msg(els.saveMsg, "Preencha os campos e clique em Salvar.", "");
@@ -669,6 +717,13 @@ function bind() {
     });
   }
 
+
+  // Filtros e busca do select
+  if (els.filtroTodas) els.filtroTodas.addEventListener("click", () => setFiltroStatus("todas"));
+  if (els.filtroDisponiveis) els.filtroDisponiveis.addEventListener("click", () => setFiltroStatus("disponivel"));
+  if (els.filtroReservadas) els.filtroReservadas.addEventListener("click", () => setFiltroStatus("reservada"));
+  if (els.filtroVendidas) els.filtroVendidas.addEventListener("click", () => setFiltroStatus("vendida"));
+  if (els.buscaMoto) els.buscaMoto.addEventListener("input", () => renderMotoSelect());
   // Login / logout
   if (els.btnLogin) els.btnLogin.addEventListener("click", login);
   if (els.btnLogout) els.btnLogout.addEventListener("click", logout);
@@ -734,7 +789,12 @@ function bind() {
         }
       }
     });
-  }
+ 
+
+  // Default: mostrar disponíveis no select
+  setFiltroStatus("disponivel");
+}
+
 }
 
 // ======================================================

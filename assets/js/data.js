@@ -12,7 +12,7 @@ export const STORAGE_PUBLIC_BASE =
  * @param {Object} options
  * @param {string} options.status - "ativo" | "vendida" | "all"
  */
-export async function fetchMotos({ status = "ativo" } = {}) {
+export async function fetchMotos({ status = "disponivel" } = {}) {
   const url = new URL(`${SUPABASE_URL}/rest/v1/motos`);
   url.searchParams.set("select", "*");
 

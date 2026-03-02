@@ -1,6 +1,6 @@
 // assets/js/motos.js
 // Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Vendidas
-import { loadMotos } from "./loader.js";
+import { loadMotos } from "./loader.js?v=20260301b";
 
 const WHATSAPP_NUMBER = "557599834731"; // 55 + DDD + número
 
@@ -68,7 +68,7 @@ function renderCards(grid, motos) {
       const ano = m.ano ? String(m.ano) : "";
       const km = m.km ? String(m.km) : "";
 
-      const status = String(m.status || "ativo").toLowerCase();
+      const status = String(m.status || "disponivel").toLowerCase();
 
       let precoLabel = m.preco ? formatBRL(m.preco) : "Consultar";
       let precoClass = "isDisponivel";
@@ -88,12 +88,12 @@ function renderCards(grid, motos) {
       const imgCapa = m.capa || "";
       const imgFallback = `${m.fotosBase || `assets2/motos/${m.id}/`}1.jpg`;
 
-      const isVendida = status === "vendida";
-      const Tag = isVendida ? "div" : "a";
-      const href = isVendida ? "" : `href="moto.html?id=${id}"`;
+      const isBloqueada = status === "vendida" || status === "reservada";
+      const Tag = isBloqueada ? "div" : "a";
+      const href = isBloqueada ? "" : `href="moto.html?id=${id}"`;
 
       return `
-        <${Tag} class="card-moto ${isVendida ? "isDisabled" : ""}" ${href}>
+        <${Tag} class="card-moto ${isBloqueada ? "isDisabled" : ""}" ${href}>
           <img class="card-moto__img"
                loading="lazy"
                src="${imgCapa}"
@@ -135,7 +135,7 @@ async function main() {
 
   // Carrega as três listas
   const [ativasRaw, reservadasRaw, vendidasRaw] = await Promise.all([
-    loadMotos({ status: "ativo" }),
+    loadMotos({ status: "disponivel" }),
     loadMotos({ status: "reservada" }),
     loadMotos({ status: "vendida" }),
   ]);
@@ -149,17 +149,17 @@ async function main() {
   if (totalCount) totalCount.textContent = String(ativas.length);
 
   function setActiveTab(active) {
-    if (tabAtivas) tabAtivas.classList.toggle("isActive", active === "ativo");
+    if (tabAtivas) tabAtivas.classList.toggle("isActive", active === "disponivel");
     if (tabReservadas) tabReservadas.classList.toggle("isActive", active === "reservada");
     if (tabVendidas) tabVendidas.classList.toggle("isActive", active === "vendida");
   }
 
   if (tabAtivas) {
     tabAtivas.addEventListener("click", () => {
-      setActiveTab("ativo");
+      setActiveTab("disponivel");
       renderCards(grid, ativas);
       if (totalCount) totalCount.textContent = String(ativas.length);
-      setActiveTab("ativo");
+      setActiveTab("disponivel");
     });
   }
 
