@@ -67,7 +67,8 @@ function buildFotos(moto) {
   }
 
   // Fallback (padrão antigo): usa base + capa + 1..4
-  const base = moto.fotosBase || `assets2/motos/${moto.id}/`;
+  // Fallback local (GitHub Pages): assets/img/motos/<id>/
+  const base = moto.fotosBase || `assets/img/motos/${moto.id}/`;
   const fotos = [];
 
   fotos.push((moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`);
@@ -88,8 +89,10 @@ function renderCarousel(fotos) {
 
   let indexFoto = 0;
 
+  const fallback = fotos[0] || "";
+
   track.innerHTML = fotos
-    .map((src) => `<img src="${src}" loading="lazy" alt="Foto da moto">`)
+    .map((src) => `<img src="${src || fallback}" loading="lazy" alt="Foto da moto" onerror="this.onerror=null; this.src='${fallback}';">`)
     .join("");
 
   const prevBtn = $("#prevFoto");
@@ -225,7 +228,8 @@ async function main() {
 
 
     // base/capa garantidas
-    const base = moto.fotosBase || `assets2/motos/${moto.id}/`;
+    // Fallback local (GitHub Pages): assets/img/motos/<id>/
+    const base = moto.fotosBase || `assets/img/motos/${moto.id}/`;
     const capaUrl = moto.capa || `${base}capa.jpg`;
 
     // ✅ VENDIDA: só capa + mensagem + botão (e para)

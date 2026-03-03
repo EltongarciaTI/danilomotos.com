@@ -85,6 +85,8 @@ const els = {
 
 // cache local de motos (pra não ficar consultando toda hora)
 let motosCache = [];
+let allowedStatusSet = null;
+
 let currentMoto = null;
 
 // Mostra mensagens (ok/err/normal)
@@ -179,7 +181,131 @@ function cleanId(v) {
     .toLowerCase()
     .replaceAll(" ", "-")
     .replace(/[^\w-]/g, "");
+
 }
+
+// Normaliza strings (lowercase, sem acento) para comparar status
+function normStr(v) {
+  return String(v || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Normaliza status e gera candidatos comuns
+function buildStatusCandidates(input) {
+  const raw = String(input || "").trim();
+  const n = normStr(raw);
+
+  const cands = new Set();
+  const add = (x) => x && cands.add(String(x));
+
+  // originais
+  add(raw);
+  add(raw.toLowerCase());
+  add(n);
+
+  // tira plural simples
+  if (n.endsWith("s")) add(n.slice(0, -1));
+
+  // mapeamentos comuns PT-BR
+  const base = n.replace(/[^a-z]/g, "");
+  const map = {
+    disponiveis: "disponivel",
+    disponivel: "disponivel",
+    disponivel: "disponivel",
+    reservadas: "reservada",
+    reservada: "reservada",
+    reservado: "reservado",
+    vendidas: "vendida",
+    vendida: "vendida",
+    vendido: "vendido",
+  };
+
+  if (map[base]) add(map[base]);
+
+  // tenta os 2 gêneros pra reservar/vender
+  if (base.startsWith("reservad")) {
+    add("reservado");
+    add("reservada");
+  }
+  if (base.startsWith("vendid")) {
+    add("vendido");
+    add("vendida");
+  }
+
+  // disponivel com acento (alguns bancos usam)
+  add("disponível");
+  add("disponiveis");
+  add("disponíveis");
+
+  return Array.from(cands);
+}
+
+// Dado um input, tenta achar o valor exato que existe no banco (allowedStatusSet)
+function pickAllowedStatus(input) {
+  if (!allowedStatusSet || !allowedStatusSet.size) return null;
+
+  const candidates = buildStatusCandidates(input);
+
+  // 1) match direto
+  for (const c of candidates) {
+    if (allowedStatusSet.has(c)) return c;
+  }
+
+  // 2) match por normalização
+  const allowedArr = Array.from(allowedStatusSet);
+  const candNorms = candidates.map((c) => normStr(c));
+  for (const a of allowedArr) {
+    const an = normStr(a);
+    if (candNorms.includes(an)) return a;
+  }
+
+  return null;
+}
+
+function prettyStatusLabel(v) {
+  const n = normStr(v);
+  if (n.startsWith("dispon")) return "Disponível";
+  if (n.startsWith("reser")) return "Reservada";
+  if (n.startsWith("vend")) return "Vendida";
+  return String(v || "Status");
+}
+
+function syncStatusSelectOptions() {
+  if (!els.status) return;
+
+  const current = els.status.value;
+
+  const defaults = ["disponivel", "reservada", "vendida", "reservado", "vendido", "disponível", "disponíveis"];
+  const set = new Set(defaults);
+
+  if (allowedStatusSet && allowedStatusSet.size) {
+    for (const s of allowedStatusSet) set.add(s);
+  }
+
+  const options = Array.from(set).filter(Boolean);
+
+  // ordena por "grupo" conhecido primeiro
+  const score = (v) => {
+    const n = normStr(v);
+    if (n.startsWith("dispon")) return 0;
+    if (n.startsWith("reser")) return 1;
+    if (n.startsWith("vend")) return 2;
+    return 9;
+  };
+  options.sort((a, b) => score(a) - score(b) || String(a).localeCompare(String(b)));
+
+  els.status.innerHTML = options
+    .map((v) => `<option value="${String(v).replace(/"/g, "&quot;")}">${prettyStatusLabel(v)}</option>`)
+    .join("");
+
+  // restaura seleção
+  const picked = pickAllowedStatus(current) || current || options[0];
+  els.status.value = picked;
+}
+
 
 // Remove tudo que não for dígito (pra km/preço)
 function onlyDigits(v) {
@@ -573,6 +699,10 @@ async function loadMotosAndRender() {
 
   motosCache = data || [];
 
+  // Descobre os status reais que existem no seu banco (pra bater com o check constraint)
+  allowedStatusSet = new Set((motosCache || []).map((m) => m?.status).filter(Boolean));
+  syncStatusSelectOptions();
+
   // Preenche o select de motos (com filtro)
   renderMotoSelect();
 
@@ -593,7 +723,7 @@ function fillForm(m) {
   currentMoto = m;
 
   if (els.id) els.id.value = m?.id || "";
-  if (els.status) els.status.value = m?.status || "disponivel";
+  if (els.status) { syncStatusSelectOptions(); els.status.value = pickAllowedStatus(m?.status) || m?.status || "disponivel"; }
   if (els.titulo) els.titulo.value = m?.titulo || "";
   if (els.preco) els.preco.value = m?.preco || "";
   if (els.ordem) els.ordem.value = m?.ordem ?? "";
@@ -620,7 +750,7 @@ function fillForm(m) {
 function getFormData() {
   const payload = {
     id: cleanId(els.id?.value),
-    status: els.status?.value || "disponivel",
+    status: (pickAllowedStatus(els.status?.value) || els.status?.value || "disponivel"),
     titulo: (els.titulo?.value || "").trim(),
     preco: els.preco?.value ? Number(onlyDigits(els.preco.value)) : null,
     ordem: els.ordem?.value ? Number(els.ordem.value) : 999,
@@ -667,10 +797,50 @@ async function salvar() {
     return;
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("motos")
     .upsert(payload, { onConflict: "id" })
     .select();
+
+  // Se bater no CHECK do status, tenta automaticamente outras variações aceitas pelo banco
+  if (error && String(error.message || "").includes("motos_status_check")) {
+    const inputStatus = payload.status;
+
+    // tenta bater exatamente com o que já existe no banco
+    const picked = pickAllowedStatus(inputStatus);
+    const candidates = [
+      picked,
+      ...buildStatusCandidates(inputStatus),
+      // também tenta os 3 básicos, caso seu banco use um padrão diferente
+      "disponivel",
+      "reservada",
+      "vendida",
+      "reservado",
+      "vendido",
+      "disponível",
+      "disponíveis",
+    ].filter(Boolean);
+
+    const tried = new Set();
+    for (const st of candidates) {
+      if (tried.has(st)) continue;
+      tried.add(st);
+
+      const p2 = { ...payload, status: st };
+
+      const r = await supabase.from("motos").upsert(p2, { onConflict: "id" }).select();
+
+      if (!r.error) {
+        data = r.data;
+        error = null;
+        payload.status = st;
+        // Atualiza opções e formulário
+        if (allowedStatusSet) allowedStatusSet.add(st);
+        syncStatusSelectOptions();
+        break;
+      }
+    }
+  }
 
   if (error) {
     console.error("Erro upsert:", error);

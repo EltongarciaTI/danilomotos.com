@@ -86,7 +86,8 @@ function renderCards(grid, motos) {
         .join(" • ");
 
       const imgCapa = m.capa || "";
-      const imgFallback = `${m.fotosBase || `assets2/motos/${m.id}/`}1.jpg`;
+      // Fallback local (GitHub Pages): assets/img/motos/<id>/1.jpg
+      const imgFallback = `${m.fotosBase || `assets/img/motos/${m.id}/`}1.jpg`;
 
       const isBloqueada = status === "vendida" || status === "reservada";
       const Tag = isBloqueada ? "div" : "a";
@@ -96,7 +97,7 @@ function renderCards(grid, motos) {
         <${Tag} class="card-moto ${isBloqueada ? "isDisabled" : ""}" ${href}>
           <img class="card-moto__img"
                loading="lazy"
-               src="${imgCapa}"
+               src="${imgCapa || imgFallback}"
                alt="${titulo}"
                onerror="this.onerror=null; this.src='${imgFallback}';">
           <div class="card-moto__body">
