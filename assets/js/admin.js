@@ -43,9 +43,10 @@ const els = {
   // fotos (multi-upload)
   multiFotos: $("multiFotos"),
 
-  
+
 
   // auth
+  loginSection: $("loginSection"),
   loginBox: $("loginBox"),
   appBox: $("appBox"),
   email: $("email"),
@@ -275,35 +276,9 @@ function prettyStatusLabel(v) {
 
 function syncStatusSelectOptions() {
   if (!els.status) return;
-
+  // opções fixas — não altera o select
   const current = els.status.value;
-
-  const defaults = ["disponivel", "reservada", "vendida", "reservado", "vendido", "disponível", "disponíveis"];
-  const set = new Set(defaults);
-
-  if (allowedStatusSet && allowedStatusSet.size) {
-    for (const s of allowedStatusSet) set.add(s);
-  }
-
-  const options = Array.from(set).filter(Boolean);
-
-  // ordena por "grupo" conhecido primeiro
-  const score = (v) => {
-    const n = normStr(v);
-    if (n.startsWith("dispon")) return 0;
-    if (n.startsWith("reser")) return 1;
-    if (n.startsWith("vend")) return 2;
-    return 9;
-  };
-  options.sort((a, b) => score(a) - score(b) || String(a).localeCompare(String(b)));
-
-  els.status.innerHTML = options
-    .map((v) => `<option value="${String(v).replace(/"/g, "&quot;")}">${prettyStatusLabel(v)}</option>`)
-    .join("");
-
-  // restaura seleção
-  const picked = pickAllowedStatus(current) || current || options[0];
-  els.status.value = picked;
+  if (!current) els.status.value = "disponivel";
 }
 
 
@@ -666,6 +641,7 @@ async function refreshSessionUI() {
   const { data } = await supabase.auth.getSession();
   const logged = !!data.session;
 
+  if (els.loginSection) els.loginSection.style.display = logged ? "none" : "";
   if (els.loginBox) els.loginBox.style.display = logged ? "none" : "grid";
   if (els.appBox) els.appBox.style.display = logged ? "" : "none";
   if (els.btnLogout) els.btnLogout.style.display = logged ? "" : "none";
@@ -730,7 +706,18 @@ function fillForm(m) {
   if (els.ano) els.ano.value = m?.ano ?? "";
   if (els.km) els.km.value = m?.km ?? "";
   if (els.cor) els.cor.value = m?.cor || "";
-  if (els.cilindrada) els.cilindrada.value = m?.cilindrada || "";
+  if (els.cilindrada) {
+    const val = m?.cilindrada || "";
+    els.cilindrada.value = val;
+    const sel = document.getElementById("cilindradaSel");
+    const outra = document.getElementById("cilindradaOutra");
+    if (sel) {
+      const known = ["100cc","110cc","125cc","150cc","160cc","300cc"];
+      if (!val) { sel.value = ""; }
+      else if (known.includes(val)) { sel.value = val; if(outra) outra.style.display="none"; }
+      else { sel.value = "outra"; if(outra){ outra.style.display="block"; outra.value=val; } }
+    }
+  }
   if (els.combustivel) els.combustivel.value = m?.combustivel || m?.["combustível"] || "";
   if (els.partida) els.partida.value = m?.partida || "";
   if (els.youtube) els.youtube.value = m?.youtube || "";
@@ -924,11 +911,14 @@ function bind() {
       // Selecionou "Criar nova"
       if (!id) {
         novaMoto();
-        return;
+      } else {
+        const m = motosCache.find((x) => x.id === id);
+        if (m) fillForm(m);
       }
 
-      const m = motosCache.find((x) => x.id === id);
-      if (m) fillForm(m);
+      // navega para tab moto no mobile
+      const tabMoto = document.querySelector('.tab[data-tab="moto"]');
+      if (tabMoto && !document.body.classList.contains('pcMode')) tabMoto.click();
     });
   }
 
