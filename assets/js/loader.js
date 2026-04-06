@@ -1,15 +1,12 @@
-import { fetchMotos } from "./data.js?v=20260406a";
+import { fetchMotos } from "./data.js?v=20260406e";
 
 const CACHE_KEY = "daniloMotosCache";
 const CACHE_TTL = 60 * 1000; // 1 minuto
-
 const mem = {};
 
 export async function loadMotos({ status = "disponivel" } = {}) {
-  // 1) cache em memória (mesma aba, mesma página)
   if (mem[status]) return mem[status];
 
-  // 2) sessionStorage (navegar entre páginas sem re-buscar)
   try {
     const raw = sessionStorage.getItem(`${CACHE_KEY}_${status}`);
     if (raw) {
@@ -21,12 +18,14 @@ export async function loadMotos({ status = "disponivel" } = {}) {
     }
   } catch {}
 
-  // 3) busca na API
   const motos = await fetchMotos({ status });
   mem[status] = motos;
 
   try {
-    sessionStorage.setItem(`${CACHE_KEY}_${status}`, JSON.stringify({ ts: Date.now(), data: motos }));
+    sessionStorage.setItem(
+      `${CACHE_KEY}_${status}`,
+      JSON.stringify({ ts: Date.now(), data: motos })
+    );
   } catch {}
 
   return motos;
