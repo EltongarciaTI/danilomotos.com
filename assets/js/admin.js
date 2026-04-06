@@ -784,44 +784,33 @@ async function salvar() {
     return;
   }
 
-  let { data, error } = await supabase
-    .from("motos")
-    .upsert(payload, { onConflict: "id" })
-    .select();
+  // Campos opcionais que podem não existir na tabela
+  const OPTIONAL_FIELDS = ["whatsapp_texto", "obs_internas", "destaque", "ordem", "youtube", "observacoes", "emplacada", "combustivel", "partida", "cilindrada", "cor"];
 
-  // Se bater no CHECK do status, tenta automaticamente outras variações aceitas pelo banco
+  async function tryUpsert(p) {
+    const r = await supabase.from("motos").upsert(p, { onConflict: "id" }).select();
+    return r;
+  }
+
+  let { data, error } = await tryUpsert(payload);
+
+  // Se der 400 por coluna inexistente, tenta remover campos opcionais um a um
+  if (error && error.code === "PGRST204" || (error && error.status === 400 && !String(error.message).includes("motos_status_check"))) {
+    console.warn("Payload completo falhou, tentando sem campos opcionais:", error.message);
+    const slim = { ...payload };
+    OPTIONAL_FIELDS.forEach(f => delete slim[f]);
+    const r2 = await tryUpsert(slim);
+    if (!r2.error) { data = r2.data; error = null; }
+    else error = r2.error;
+  }
+
+  // Se bater no CHECK do status, tenta variações
   if (error && String(error.message || "").includes("motos_status_check")) {
-    const inputStatus = payload.status;
-
-    // tenta bater exatamente com o que já existe no banco
-    const picked = pickAllowedStatus(inputStatus);
-    const candidates = [
-      picked,
-      ...buildStatusCandidates(inputStatus),
-      // também tenta os 3 básicos, caso seu banco use um padrão diferente
-      "disponivel",
-      "reservada",
-      "vendida",
-      "reservado",
-      "vendido",
-      "disponível",
-      "disponíveis",
-    ].filter(Boolean);
-
-    const tried = new Set();
+    const candidates = ["disponivel", "reservada", "vendida"].filter(Boolean);
     for (const st of candidates) {
-      if (tried.has(st)) continue;
-      tried.add(st);
-
-      const p2 = { ...payload, status: st };
-
-      const r = await supabase.from("motos").upsert(p2, { onConflict: "id" }).select();
-
+      const r = await tryUpsert({ ...payload, status: st });
       if (!r.error) {
-        data = r.data;
-        error = null;
-        payload.status = st;
-        // Atualiza opções e formulário
+        data = r.data; error = null; payload.status = st;
         if (allowedStatusSet) allowedStatusSet.add(st);
         syncStatusSelectOptions();
         break;
@@ -831,8 +820,7 @@ async function salvar() {
 
   if (error) {
     console.error("Erro upsert:", error);
-    const isAuthError = error.status === 401 || error.status === 400 && String(error.message).toLowerCase().includes("jwt");
-    if (isAuthError) {
+    if (error.status === 401 || String(error.message).toLowerCase().includes("jwt")) {
       await supabase.auth.signOut();
       msg(els.saveMsg, "Sessão expirada. Faça login novamente.", "err");
       await refreshSessionUI();
