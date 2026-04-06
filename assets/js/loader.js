@@ -1,7 +1,7 @@
-import { fetchMotos } from "./data.js?v=20260301c";
+import { fetchMotos } from "./data.js?v=20260406a";
 
 const CACHE_KEY = "daniloMotosCache";
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = 60 * 1000; // 1 minuto
 
 const mem = {};
 
