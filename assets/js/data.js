@@ -33,7 +33,7 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    cache: "default",
+   cache: "no-store",
   });
 
   if (!res.ok) {

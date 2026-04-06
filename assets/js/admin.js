@@ -271,7 +271,7 @@ function syncStatusSelectOptions() {
   if (!els.status) return;
   // opções fixas — não altera o select
   const current = els.status.value;
-  if (!current) els.status.value = "disponivel";
+  if (!current) els.status.value = "ativo";
 }
 
 
@@ -699,7 +699,7 @@ function fillForm(m) {
   _currentMoto = m;
 
   if (els.id) els.id.value = m?.id || "";
-  if (els.status) { syncStatusSelectOptions(); els.status.value = pickAllowedStatus(m?.status) || m?.status || "disponivel"; }
+  if (els.status) { syncStatusSelectOptions(); els.status.value = pickAllowedStatus(m?.status) || m?.status || "ativo"; }
   if (els.titulo) els.titulo.value = m?.titulo || "";
   if (els.preco) els.preco.value = m?.preco || "";
   if (els.ordem) els.ordem.value = m?.ordem ?? "";
@@ -871,7 +871,7 @@ async function tryUpsert(p) {
 function novaMoto() {
   fillForm({
     id: "",
-    status: "disponivel",
+    status: "ativo",
     emplacada: false,
   });
   msg(els.saveMsg, "Preencha os campos e clique em Salvar.", "");
