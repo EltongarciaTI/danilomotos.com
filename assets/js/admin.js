@@ -737,32 +737,31 @@ function fillForm(m) {
 function getFormData() {
   const payload = {
     id: cleanId(els.id?.value),
-    status: (pickAllowedStatus(els.status?.value) || els.status?.value || "disponivel"),
-    titulo: (els.titulo?.value || "").trim(),
-    preco: els.preco?.value ? Number(onlyDigits(els.preco.value)) : null,
-    ordem: els.ordem?.value ? Number(els.ordem.value) : 999,
-    ano: (els.ano?.value || "").trim(),
-    km: els.km?.value ? Number(onlyDigits(els.km.value)) : null,
-    cor: (els.cor?.value || "").trim(),
-    cilindrada: (els.cilindrada?.value || "").trim(),
-    combustivel: (els.combustivel?.value || "").trim(),
-    partida: (els.partida?.value || "").trim(),
+    status: (pickAllowedStatus(els.status?.value) || els.status?.value || "ativo"),
 
-    youtube: (els.youtube?.value || "").trim(),
-    whatsapp_texto: (els.whatsapp_texto?.value || "").trim(),
-    observacoes: (els.observacoes?.value || "").trim(),
+    titulo: (els.titulo?.value || "").trim() || null,
+
+    // preco no banco é TEXT
+    preco: (els.preco?.value || "").trim() || null,
+
+    ordem: els.ordem?.value ? Number(els.ordem.value) : 999,
+    ano: (els.ano?.value || "").trim() || null,
+    km: els.km?.value ? Number(onlyDigits(els.km.value)) : null,
+
+    cor: (els.cor?.value || "").trim() || null,
+    cilindrada: (els.cilindrada?.value || "").trim() || null,
+    combustivel: (els.combustivel?.value || "").trim() || null,
+    partida: (els.partida?.value || "").trim() || null,
+
+    youtube: (els.youtube?.value || "").trim() || null,
+    whatsapp_texto: (els.whatsapp_texto?.value || "").trim() || null,
+    observacoes: (els.observacoes?.value || "").trim() || null,
 
     emplacada: !!els.emplacada?.checked,
   };
 
-  // campos extras (se existirem na tabela)
-  if (els.obs_internas) payload.obs_internas = (els.obs_internas.value || "").trim();
+  if (els.obs_internas) payload.obs_internas = (els.obs_internas.value || "").trim() || null;
   if (els.destaque) payload.destaque = !!els.destaque.checked;
-
-  // limpa strings vazias -> null
-  Object.keys(payload).forEach((k) => {
-    if (payload[k] === "" || payload[k] === undefined) payload[k] = null;
-  });
 
   return payload;
 }
@@ -787,15 +786,48 @@ async function salvar() {
   // Campos opcionais que podem não existir na tabela
   const OPTIONAL_FIELDS = ["whatsapp_texto", "obs_internas", "destaque", "ordem", "youtube", "observacoes", "emplacada", "combustivel", "partida", "cilindrada", "cor"];
 
-  async function tryUpsert(p) {
-    const r = await supabase.from("motos").upsert(p, { onConflict: "id" }).select();
-    return r;
-  }
+async function tryUpsert(p) {
+  const clean = {
+    id: p.id,
+    status: p.status,
+    titulo: p.titulo,
+    preco: p.preco,
+    ordem: p.ordem,
+    ano: p.ano,
+    km: p.km,
+    cor: p.cor,
+    cilindrada: p.cilindrada,
+    combustivel: p.combustivel,
+    partida: p.partida,
+    youtube: p.youtube,
+    whatsapp_texto: p.whatsapp_texto,
+    observacoes: p.observacoes,
+    emplacada: p.emplacada,
+    destaque: p.destaque,
+    obs_internas: p.obs_internas
+  };
+
+  console.log("PAYLOAD MOTOS:", clean);
+
+  const r = await supabase
+    .from("motos")
+    .upsert(clean, { onConflict: "id" })
+    .select();
+
+  console.log("RESPOSTA UPSERT:", r);
+  return r;
+}
 
   let { data, error } = await tryUpsert(payload);
 
   // Se der 400 por coluna inexistente, tenta remover campos opcionais um a um
-  if (error && error.code === "PGRST204" || (error && error.status === 400 && !String(error.message).includes("motos_status_check"))) {
+  if (
+  error &&
+  (
+    error.code === "PGRST204" ||
+    (error.status === 400 && !String(error.message || "").includes("motos_status_check"))
+  )
+) {
     console.warn("Payload completo falhou, tentando sem campos opcionais:", error.message);
     const slim = { ...payload };
     OPTIONAL_FIELDS.forEach(f => delete slim[f]);
@@ -806,7 +838,7 @@ async function salvar() {
 
   // Se bater no CHECK do status, tenta variações
   if (error && String(error.message || "").includes("motos_status_check")) {
-    const candidates = ["disponivel", "reservada", "vendida"].filter(Boolean);
+    const candidates = ["ativo", "reservada", "vendida"].filter(Boolean);
     for (const st of candidates) {
       const r = await tryUpsert({ ...payload, status: st });
       if (!r.error) {
