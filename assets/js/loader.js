@@ -1,7 +1,7 @@
-import { fetchMotos } from "./data.js?v=20260406e";
+import { fetchMotos } from "./data.js?v=20260406f";
 
 const CACHE_KEY = "daniloMotosCache";
-const CACHE_TTL = 65 * 1000; // 65 segundos
+const CACHE_TTL = 5 * 1000;
 const mem = {};
 
 export async function loadMotos({ status = "disponivel" } = {}) {

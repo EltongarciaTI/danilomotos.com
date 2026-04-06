@@ -111,7 +111,7 @@ function renderMotoSelect() {
 
   const list = motosCache
     .filter((m) => {
-      const st = String(m.status || "disponivel").toLowerCase();
+      const st = String(m.status || "ativo").toLowerCase();
       if (filtroStatus !== "todas" && st !== filtroStatus) return false;
       if (!term) return true;
       const hay = `${m.id || ""} ${m.titulo || ""}`.toLowerCase();
@@ -123,20 +123,20 @@ function renderMotoSelect() {
 
   // Se estiver em "todas" e sem busca, agrupa por status para ficar mais fácil achar.
   if (filtroStatus === "todas" && !term) {
-    const labelMap = {
-      disponivel: "✅ Disponíveis",
-      reservada: "🟠 Reservadas",
-      vendida: "🔴 Vendidas",
-    };
+   const labelMap = {
+  ativo: "✅ Ativas",
+  reservada: "🟠 Reservadas",
+  vendida: "🔴 Vendidas",
+};
 
     const groups = {
-      disponivel: [],
-      reservada: [],
-      vendida: [],
-    };
+  ativo: [],
+  reservada: [],
+  vendida: [],
+};
 
     list.forEach((m) => {
-      const st = String(m.status || "disponivel").toLowerCase();
+      const st = String(m.status || "ativo").toLowerCase();
       if (groups[st]) groups[st].push(m);
       else groups.disponivel.push(m);
     });
@@ -147,7 +147,7 @@ function renderMotoSelect() {
         if (!arr.length) return "";
         const inner = arr
           .map((m) => {
-            const st = String(m.status || "disponivel").toUpperCase();
+            const st = String(m.status || "ativo").toUpperCase();
             const title = m.titulo ? ` — ${m.titulo}` : "";
             return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
           })
@@ -158,7 +158,7 @@ function renderMotoSelect() {
   } else {
     options = list
       .map((m) => {
-        const st = String(m.status || "disponivel").toUpperCase();
+        const st = String(m.status || "ativo").toUpperCase();
         const title = m.titulo ? ` — ${m.titulo}` : "";
         return `<option value="${m.id}">${m.id} [${st}]${title}</option>`;
       })
@@ -213,16 +213,15 @@ function buildStatusCandidates(input) {
   // mapeamentos comuns PT-BR
   const base = n.replace(/[^a-z]/g, "");
   const map = {
-    disponiveis: "disponivel",
-    disponivel: "disponivel",
-    disponivel: "disponivel",
-    reservadas: "reservada",
-    reservada: "reservada",
-    reservado: "reservado",
-    vendidas: "vendida",
-    vendida: "vendida",
-    vendido: "vendido",
-  };
+  disponiveis: "ativo",
+  disponivel: "ativo",
+  reservadas: "reservada",
+  reservada: "reservada",
+  reservado: "reservada",
+  vendidas: "vendida",
+  vendida: "vendida",
+  vendido: "vendida",
+};
 
   if (map[base]) add(map[base]);
 
@@ -237,9 +236,10 @@ function buildStatusCandidates(input) {
   }
 
   // disponivel com acento (alguns bancos usam)
-  add("disponível");
-  add("disponiveis");
-  add("disponíveis");
+add("ativo");
+add("disponível");
+add("disponiveis");
+add("disponíveis");
 
   return Array.from(cands);
 }
@@ -586,14 +586,14 @@ function renderDashboard() {
   if (!els.dashGrid) return;
 
   const total = motosCache.length;
-  const disp = motosCache.filter((m) => (m.status || "disponivel") === "disponivel").length;
+  const disp = motosCache.filter((m) => (m.status || "ativo") === "ativo").length;
   const resv = motosCache.filter((m) => m.status === "reservada").length;
   const vend = motosCache.filter((m) => m.status === "vendida").length;
   const dest = motosCache.filter((m) => !!m.destaque).length;
 
   els.dashGrid.innerHTML = `
     <div class="thumb"><div class="thumbTitle">Total cadastradas</div><div style="font-size:22px;font-weight:1100">${total}</div></div>
-    <div class="thumb"><div class="thumbTitle">Disponíveis</div><div style="font-size:22px;font-weight:1100">${disp}</div></div>
+    <div class="thumb"><div class="thumbTitle">Ativas</div><div style="font-size:22px;font-weight:1100">${disp}</div></div>
     <div class="thumb"><div class="thumbTitle">Reservadas</div><div style="font-size:22px;font-weight:1100">${resv}</div></div>
     <div class="thumb"><div class="thumbTitle">Vendidas</div><div style="font-size:22px;font-weight:1100">${vend}</div></div>
     <div class="thumb"><div class="thumbTitle">Destaques</div><div style="font-size:22px;font-weight:1100">${dest}</div></div>
@@ -862,9 +862,15 @@ async function tryUpsert(p) {
     return;
   }
 
-  msg(els.saveMsg, "Moto salva ✅", "ok");
-  await loadMotosAndRender();
-  fillForm(payload);
+ msg(els.saveMsg, "Moto salva ✅", "ok");
+
+// limpa o cache do site público
+sessionStorage.removeItem("daniloMotosCache_ativo");
+sessionStorage.removeItem("daniloMotosCache_reservada");
+sessionStorage.removeItem("daniloMotosCache_vendida");
+
+await loadMotosAndRender();
+fillForm(payload);
 }
 
 // Abre formulário em branco (nova moto)
