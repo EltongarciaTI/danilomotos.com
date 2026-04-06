@@ -373,7 +373,7 @@
   <!-- ══════════════ LOGIN ══════════════ -->
   <div id="loginSection">
     <div class="aWrap" id="screenLogin">
-      <div class="loginCard">
+      <form class="loginCard" id="loginBox" onsubmit="event.preventDefault();document.getElementById('btnLogin').click()">
         <div class="loginLogo">
           <img src="logo.png" onerror="this.style.display='none'" alt="">
           <strong>Acesso Admin</strong>
@@ -388,9 +388,9 @@
           <label>Senha</label>
           <input class="inp" id="senha" type="password" placeholder="••••••••" autocomplete="current-password" />
         </div>
-        <button class="aBtnPrimary" id="btnLogin" type="button">Entrar</button>
+        <button class="aBtnPrimary" id="btnLogin" type="submit">Entrar</button>
         <div id="loginMsg" class="aMsg"></div>
-      </div>
+      </form>
     </div>
   </div>
 

@@ -1,358 +1,287 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301c";
 import { loadMotos } from "./loader.js?v=20260301c";
 
-const WHATSAPP_NUMBER = "557599834731"; // 55 + DDD + número
+const WHATSAPP_NUMBER = "557599834731";
 const MAX_FOTOS = 4;
 
-function $(sel) {
-  return document.querySelector(sel);
-}
+function $(sel) { return document.querySelector(sel); }
+function setText(sel, txt) { const e=$(sel); if(e) e.textContent=txt??''; }
+function setHtml(sel, html) { const e=$(sel); if(e) e.innerHTML=html??''; }
 
-function setText(sel, txt) {
-  const el = $(sel);
-  if (el) el.textContent = txt ?? "";
-}
-
-function setHtml(sel, html) {
-  const el = $(sel);
-  if (el) el.innerHTML = html ?? "";
-}
-
-// 👇 COLE AQUI
 function formatBRL(value) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return "";
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
-  }).format(n);
+  return new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL", maximumFractionDigits:0 }).format(n);
 }
 
 function makeWhatsLink(texto) {
-  const msg = encodeURIComponent(texto || "Olá! Quero negociar uma moto do catálogo.");
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(texto||"Olá! Quero negociar uma moto do catálogo.")}`;
 }
 
-/* Converte link do YouTube para embed */
 function youtubeToEmbed(url) {
   try {
     const u = new URL(url);
     let id = "";
-
-    if (u.hostname.includes("youtu.be")) {
-      id = u.pathname.replace("/", "");
-    } else if (u.pathname.includes("/shorts/")) {
-      id = u.pathname.split("/shorts/")[1]?.split("/")[0] || "";
-    } else {
-      id = u.searchParams.get("v") || "";
-    }
-
-    if (!id) return "";
-    return `https://www.youtube.com/embed/${id}`;
-  } catch {
-    return "";
-  }
+    if (u.hostname.includes("youtu.be")) id = u.pathname.replace("/","");
+    else if (u.pathname.includes("/shorts/")) id = u.pathname.split("/shorts/")[1]?.split("/")[0]||"";
+    else id = u.searchParams.get("v")||"";
+    return id ? `https://www.youtube.com/embed/${id}` : "";
+  } catch { return ""; }
 }
 
-/* Monta fotos: 1.jpg .. MAX_FOTOS.jpg */
 function buildFotos(moto) {
-  // Se o loader já trouxe o array pronto (novo padrão), usa ele.
   if (Array.isArray(moto?.fotos) && moto.fotos.length) {
-    // Se vendida, garante só capa
-    if (["vendida","reservada"].includes((moto.status || "").toLowerCase())) {
-      return [moto.fotos[0]].filter(Boolean);
-    }
+    if (["vendida","reservada"].includes((moto.status||"").toLowerCase())) return [moto.fotos[0]].filter(Boolean);
     return moto.fotos.filter(Boolean);
   }
-
-  // Fallback (padrão antigo): usa base + capa + 1..4
-  // Fallback local (GitHub Pages): assets/img/motos/<id>/
   const base = moto.fotosBase || `assets/img/motos/${moto.id}/`;
-  const fotos = [];
-
-  fotos.push((moto.capa && String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`);
-
-  for (let i = 1; i <= MAX_FOTOS; i++) {
-    fotos.push(`${base}${i}.jpg`);
-  }
-
-  return fotos.filter((f) => typeof f === "string" && f.trim() !== "");
+  const fotos = [(moto.capa&&String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`];
+  for (let i=1;i<=MAX_FOTOS;i++) fotos.push(`${base}${i}.jpg`);
+  return fotos.filter(f => typeof f==="string"&&f.trim()!=="");
 }
 
-
-/* ===== CAROUSEL ===== */
+/* ── CAROUSEL COM DOTS ── */
 function renderCarousel(fotos) {
   const track = $("#galeria");
-  const info = $("#fotoInfo");
+  const dotsEl = $("#fotoDots");
   if (!track) return;
 
-  let indexFoto = 0;
-
+  let idx = 0;
   const fallback = fotos[0] || "";
 
-  track.innerHTML = fotos
-    .map((src) => `<img src="${src || fallback}" loading="lazy" alt="Foto da moto" onerror="this.onerror=null; this.src='${fallback}';">`)
-    .join("");
+  track.innerHTML = fotos.map((src, i) =>
+    `<img src="${src||fallback}" ${i===0?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" alt="Foto da moto" onerror="this.onerror=null;this.src='${fallback}';">`
+  ).join("");
 
   const prevBtn = $("#prevFoto");
   const nextBtn = $("#nextFoto");
 
-  function totalSlides() {
-    return track.querySelectorAll("img").length;
-  }
+  function totalSlides() { return track.querySelectorAll("img").length; }
 
-  function clampIndex() {
-    const total = totalSlides();
-    if (total <= 0) {
-      indexFoto = 0;
-      return;
-    }
-    if (indexFoto < 0) indexFoto = 0;
-    if (indexFoto > total - 1) indexFoto = total - 1;
+  function updateDots(total) {
+    if (!dotsEl || total <= 1) { if(dotsEl) dotsEl.innerHTML=""; return; }
+    dotsEl.innerHTML = Array.from({length:total}, (_,i) =>
+      `<div class="fotoDot${i===idx?' active':''}"></div>`
+    ).join("");
   }
 
   function update() {
-    clampIndex();
     const total = totalSlides();
+    if (idx < 0) idx = 0;
+    if (idx > total-1) idx = total-1;
 
     if (total <= 0) {
-      track.innerHTML = `<p class="muted">Sem fotos cadastradas.</p>`;
-      if (info) info.textContent = "";
-      if (prevBtn) prevBtn.style.display = "none";
-      if (nextBtn) nextBtn.style.display = "none";
+      track.innerHTML = `<p class="muted" style="padding:20px">Sem fotos.</p>`;
+      if(prevBtn) prevBtn.style.display="none";
+      if(nextBtn) nextBtn.style.display="none";
+      updateDots(0);
       return;
     }
-
-    if (prevBtn) prevBtn.style.display = total > 1 ? "" : "none";
-    if (nextBtn) nextBtn.style.display = total > 1 ? "" : "none";
-
-    track.style.transform = `translateX(-${indexFoto * 100}%)`;
-    if (info) info.textContent = `Foto ${indexFoto + 1} de ${total}`;
+    if(prevBtn) prevBtn.style.display = total>1 ? "" : "none";
+    if(nextBtn) nextBtn.style.display = total>1 ? "" : "none";
+    track.style.transform = `translateX(-${idx*100}%)`;
+    updateDots(total);
   }
 
-  // remove imagens quebradas automaticamente
-  track.querySelectorAll("img").forEach((img) => {
-    img.addEventListener("error", () => {
-      img.remove();
-      update();
-    });
+  track.querySelectorAll("img").forEach(img => {
+    img.addEventListener("error", () => { img.remove(); update(); });
   });
 
-  if (prevBtn) {
-    prevBtn.onclick = () => {
-      const total = totalSlides();
-      if (total <= 1) return;
-      indexFoto = (indexFoto - 1 + total) % total;
-      update();
-    };
-  }
-
-  if (nextBtn) {
-    nextBtn.onclick = () => {
-      const total = totalSlides();
-      if (total <= 1) return;
-      indexFoto = (indexFoto + 1) % total;
-      update();
-    };
-  }
+  if (prevBtn) prevBtn.onclick = () => { const t=totalSlides(); if(t>1){ idx=(idx-1+t)%t; update(); } };
+  if (nextBtn) nextBtn.onclick = () => { const t=totalSlides(); if(t>1){ idx=(idx+1)%t; update(); } };
 
   let startX = 0;
-  let endX = 0;
-  track.addEventListener("touchstart", (e) => (startX = e.touches[0].clientX));
-  track.addEventListener("touchend", (e) => {
-    endX = e.changedTouches[0].clientX;
-    if (startX - endX > 50) nextBtn?.click();
-    else if (endX - startX > 50) prevBtn?.click();
+  track.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener("touchend", e => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (diff > 50) nextBtn?.click();
+    else if (diff < -50) prevBtn?.click();
   });
 
   requestAnimationFrame(update);
 }
 
+/* ── ÍCONES DA FICHA ── */
+const ICONS = {
+  "Preço":      `<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>`,
+  "Ano":        `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
+  "KM":         `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+  "Cor":        `<circle cx="12" cy="12" r="10"/><path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/>`,
+  "Emplacada":  `<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/>`,
+  "Cilindrada": `<path d="M18 3a3 3 0 00-3 3v12a3 3 0 003 3 3 3 0 003-3 3 3 0 00-3-3H6a3 3 0 00-3 3 3 3 0 003 3 3 3 0 003-3V6a3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3h12a3 3 0 003-3 3 3 0 00-3-3z"/>`,
+  "Combustível":`<path d="M3 22V8l9-6 9 6v14"/><path d="M12 22v-6"/><path d="M9 10h6"/>`,
+  "Partida":    `<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>`,
+  "Observações":`<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>`,
+};
 
-    
+function icon(key) {
+  const d = ICONS[key] || `<circle cx="12" cy="12" r="3"/>`;
+  return `<svg viewBox="0 0 24 24">${d}</svg>`;
+}
+
+function buildFichaHtml(rows) {
+  return rows.map(([k, v, extra]) => `
+    <div class="fichaLinha">
+      <span class="fichaKey">${icon(k)}${k}</span>
+      <span class="fichaVal${extra||''}">${v}</span>
+    </div>
+  `).join("");
+}
+
+/* ── STATUS CHIP ── */
+function setStatusChip(status) {
+  const chip = $("#statusChip");
+  if (!chip) return;
+  const map = {
+    disponivel: {cls:"disp", label:"Disponível"},
+    reservada:  {cls:"resv", label:"Reservada"},
+    vendida:    {cls:"vend", label:"Vendida"},
+  };
+  const s = map[status] || {cls:"disp", label:"Disponível"};
+  chip.className = `statusChip ${s.cls}`;
+  chip.innerHTML = `<span class="statusDot"></span>${s.label}`;
+}
+
+/* ── PREÇO DESTAQUE ── */
+function setPreco(valor) {
+  const box = $("#precoDestaque");
+  const el  = $("#precoValor");
+  if (!box || !el || !valor) return;
+  el.textContent = valor;
+  box.style.display = "block";
+}
 
 async function main() {
   try {
-    // ano no footer
     const yearEl = $("#year");
     if (yearEl) yearEl.textContent = new Date().getFullYear();
 
     const params = new URLSearchParams(location.search);
-    const id = decodeURIComponent(params.get("id") || "").trim();
+    const id = decodeURIComponent(params.get("id")||"").trim();
 
     if (!id) {
       setText("#titulo", "Moto não encontrada");
-      setText("#subtitulo", "Faltou o parâmetro ?id=");
+      setText("#subtitulo", "Parâmetro ?id= ausente");
       return;
     }
 
-    // 🔥 pega TODAS (ativo + reservada + vendida)
-    const motos = await loadMotos({ status: "all" });
-    const moto = motos.find((m) => String(m.id) === id);
+    const motos = await loadMotos({ status:"all" });
+    const moto = motos.find(m => String(m.id)===id);
 
     if (!moto) {
       setText("#titulo", "Moto não encontrada");
-      setText("#subtitulo", `ID não localizado: ${id}`);
-      console.error("Moto não encontrada:", { id, motos });
+      setText("#subtitulo", `ID: ${id}`);
       return;
     }
 
-    const status = String(moto.status || "disponivel").toLowerCase();
-    const isBloqueada = status === "vendida" || status === "reservada";
+    const status = String(moto.status||"disponivel").toLowerCase();
+    const isBloqueada = status==="vendida" || status==="reservada";
 
-
-
-    // título/subtítulo normal
-    setText("#titulo", moto.titulo || moto.id);
-    const subtitulo = [
-      moto.ano ? moto.ano : "",
+    /* Título / subtítulo */
+    document.title = `${moto.titulo||moto.id} | Danilo Motos`;
+    setText("#titulo", moto.titulo||moto.id);
+    setText("#subtitulo", [
+      moto.ano,
       moto.km ? `${Number(moto.km).toLocaleString("pt-BR")} km` : "",
-      moto.cor ? moto.cor : "",
-    ]
-      .filter(Boolean)
-      .join(" • ");
-    setText("#subtitulo", subtitulo);
+      moto.cor,
+    ].filter(Boolean).join(" · "));
 
-    // WhatsApp
-    const msg =
-      moto.whatsapp_texto ||
-      `Olá! Tenho interesse na ${moto.titulo || "moto"}${moto.ano ? " " + moto.ano : ""}.`;
+    setStatusChip(status);
 
+    /* WhatsApp */
+    const msg = moto.whatsapp_texto || `Olá! Tenho interesse na ${moto.titulo||"moto"}${moto.ano?" "+moto.ano:""}.`;
     const waLink = makeWhatsLink(msg);
-    ["#btnWhatsapp", "#waContato", "#waFloat"].forEach((sel) => {
+    ["#btnWhatsapp","#waContato","#waFloat","#waHeader"].forEach(sel => {
       const a = $(sel);
       if (a) a.href = waLink;
     });
 
-
-
-    // base/capa garantidas
-    // Fallback local (GitHub Pages): assets/img/motos/<id>/
     const base = moto.fotosBase || `assets/img/motos/${moto.id}/`;
     const capaUrl = moto.capa || `${base}capa.jpg`;
 
-    // ✅ VENDIDA: só capa + mensagem + botão (e para)
+    /* ── BLOQUEADA ── */
     if (isBloqueada) {
-      // carrossel: só capa
       const track = $("#galeria");
-      const info = $("#fotoInfo");
       if (track) {
-        track.innerHTML = `
-          <img src="${capaUrl}" loading="lazy"
-               alt="${moto.titulo || moto.id}"
-               onerror="this.onerror=null; this.src='${base}capa.jpg';">
-        `;
+        track.innerHTML = `<img src="${capaUrl}" loading="eager" fetchpriority="high" decoding="async" alt="${moto.titulo||moto.id}" onerror="this.onerror=null;this.src='${base}capa.jpg';">`;
         track.style.transform = "translateX(0%)";
       }
-      if (info) info.textContent = (status === "reservada" ? "Reservada" : "Vendida");
+      const prev = $("#prevFoto"); const next = $("#nextFoto");
+      if(prev) prev.style.display="none";
+      if(next) next.style.display="none";
+      if($("#fotoDots")) $("#fotoDots").innerHTML="";
+      if($("#videoBox")) $("#videoBox").style.display="none";
+      if($("#fichaSection")) $("#fichaSection").style.display="none";
 
-      // esconder botões do carrossel
-      const prev = $("#prevFoto");
-      const next = $("#nextFoto");
-      if (prev) prev.style.display = "none";
-      if (next) next.style.display = "none";
+      const label = status==="reservada" ? "Reservada" : "Vendida";
+      const emoji = status==="reservada" ? "🟠" : "🔴";
+      const sub   = status==="reservada"
+        ? "Essa moto está reservada. Entre em contato para saber mais ou ver outras opções."
+        : "Essa moto já foi vendida. Fale conosco para encontrar uma similar!";
 
-      // esconder vídeo
-      const videoBox = $("#videoBox");
-      if (videoBox) videoBox.style.display = "none";
-
-      // ficha vira mensagem + botão
-      setHtml(
-        "#ficha",
-        `
-          <div class="linha">
-            <span>Status</span>
-            <strong>${status === "reservada" ? "RESERVADA" : "VENDIDA"}</strong>
-          </div>
-
-          <div class="muted" style="margin-top:12px">
-            Consulte o nosso WhatsApp pra que possamos conseguir uma pra você.
-          </div>
-
-          <div style="margin-top:14px">
-            <a class="btn primary" target="_blank" rel="noopener" href="${waLink}">
-              Consultar no WhatsApp
-            </a>
-          </div>
-        `
-      );
-
+      const bloq = $("#bloqueadaBox");
+      if (bloq) {
+        bloq.style.display = "";
+        bloq.innerHTML = `
+          <div class="bloqueadaIcon">${emoji}</div>
+          <div class="bloqueadaTitle">${label}</div>
+          <div class="bloqueadaSub">${sub}</div>
+          <a class="btn primary" href="${waLink}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+            Consultar no WhatsApp
+          </a>
+        `;
+      }
       return;
     }
 
-    // ✅ NÃO VENDIDA: fotos normais
-    const fotos = buildFotos(moto);
-    renderCarousel(fotos);
+    /* ── DISPONÍVEL ── */
 
-    // vídeo
+    /* Fotos */
+    renderCarousel(buildFotos(moto));
+
+    /* Preço */
+    const precoFmt = formatBRL(moto.preco);
+    if (precoFmt) setPreco(precoFmt);
+
+    /* Vídeo */
     const videoBox = $("#videoBox");
     if (moto.youtube) {
       const embed = youtubeToEmbed(moto.youtube);
       if (embed) {
-        setHtml(
-          "#video",
-          `
-            <div class="videoWrap">
-              <iframe
-                src="${embed}"
-                title="Vídeo da moto"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-              ></iframe>
-            </div>
-            <div style="margin-top:10px">
-              <a class="btn" href="${moto.youtube}" target="_blank" rel="noopener">
-                Abrir no YouTube
-              </a>
-            </div>
-          `
-        );
-        if (videoBox) videoBox.style.display = "";
+        setHtml("#video", `<div class="videoWrap"><iframe src="${embed}" title="Vídeo da moto" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>`);
+        const vLink = $("#videoLink");
+        if (vLink) vLink.href = moto.youtube;
+        if (videoBox) videoBox.style.display="";
       } else {
-        if (videoBox) videoBox.style.display = "none";
+        if (videoBox) videoBox.style.display="none";
       }
     } else {
-      if (videoBox) videoBox.style.display = "none";
+      if (videoBox) videoBox.style.display="none";
     }
 
-    // ficha técnica
-   let precoParaFicha = moto.preco ? formatBRL(moto.preco) : null;
-if (status === "reservada") precoParaFicha = "Reservado";
+    /* Ficha */
+    const rows = [
+      moto.preco   ? ["Preço",      formatBRL(moto.preco), " preco"] : null,
+      moto.ano     ? ["Ano",        moto.ano]           : null,
+      moto.km      ? ["KM",         Number(moto.km).toLocaleString("pt-BR")+" km"] : null,
+      moto.cor     ? ["Cor",        moto.cor]           : null,
+                     ["Emplacada",  moto.emplacada ? "Sim" : "Não"],
+      moto.cilindrada  ? ["Cilindrada",  moto.cilindrada]  : null,
+      moto.combustivel ? ["Combustível", moto.combustivel] : null,
+      moto.partida     ? ["Partida",     moto.partida]     : null,
+      moto.observacoes ? ["Observações", moto.observacoes] : null,
+    ].filter(Boolean);
 
-    const ficha = [
-      ["Preço", precoParaFicha],
-      ["Ano", moto.ano],
-      ["KM", moto.km ? Number(moto.km).toLocaleString("pt-BR") : null],
-      ["Cor", moto.cor],
-      ["Emplacada", moto.emplacada ? "Sim" : "Não"],
-      ["Cilindrada", moto.cilindrada],
-      ["Combustível", moto.combustivel],
-      ["Partida", moto.partida],
-      ["Observações", moto.observacoes],
-    ].filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== "");
-
-    if (!ficha.length) {
-      setHtml("#ficha", `<p class="muted">Sem informações cadastradas.</p>`);
+    if (rows.length) {
+      setHtml("#ficha", buildFichaHtml(rows));
     } else {
-      setHtml(
-        "#ficha",
-        ficha
-          .map(
-            ([k, v]) => `
-              <div class="linha">
-                <span>${k}</span>
-                <strong>${String(v)}</strong>
-              </div>
-            `
-          )
-          .join("")
-      );
+      setHtml("#ficha", `<p class="muted" style="padding:16px">Sem informações cadastradas.</p>`);
     }
+
   } catch (err) {
     console.error("Erro no moto.js:", err);
     setText("#titulo", "Erro ao carregar");
-    setText("#subtitulo", "Abra o console (F12) pra ver o motivo.");
+    setText("#subtitulo", "Abra o console (F12) para ver o motivo.");
   }
 }
 

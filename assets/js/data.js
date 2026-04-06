@@ -33,7 +33,7 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-    cache: "no-store",
+    cache: "default",
   });
 
   if (!res.ok) {
@@ -58,7 +58,6 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
     const coverUrl = `${STORAGE_PUBLIC_BASE}/${coverRel}${v ? `?v=${v}` : ""}`;
 
     // Monta array de URLs para o detalhe (capa + extras do banco)
-    // Se a moto estiver vendida, o site público deve mostrar apenas a capa.
     let fotosUrl = [coverUrl];
 
     if ((m.status || "").toLowerCase() !== "vendida") {
@@ -69,7 +68,6 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
           .map((p) => `${STORAGE_PUBLIC_BASE}/${p}${v ? `?v=${v}` : ""}`);
         fotosUrl = [coverUrl, ...extras];
       } else {
-        // fallback para o padrão antigo (id/1.jpg..4.jpg)
         const legacyExtras = [1,2,3,4].map((i) => `${STORAGE_PUBLIC_BASE}/${m.id}/${i}.jpg${v ? `?v=${v}` : ""}`);
         fotosUrl = [coverUrl, ...legacyExtras];
       }

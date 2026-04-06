@@ -88,7 +88,7 @@ const els = {
 let motosCache = [];
 let allowedStatusSet = null;
 
-let currentMoto = null;
+let _currentMoto = null;
 
 // Mostra mensagens (ok/err/normal)
 function msg(el, text, type = "") {
@@ -266,13 +266,6 @@ function pickAllowedStatus(input) {
   return null;
 }
 
-function prettyStatusLabel(v) {
-  const n = normStr(v);
-  if (n.startsWith("dispon")) return "Disponível";
-  if (n.startsWith("reser")) return "Reservada";
-  if (n.startsWith("vend")) return "Vendida";
-  return String(v || "Status");
-}
 
 function syncStatusSelectOptions() {
   if (!els.status) return;
@@ -651,6 +644,13 @@ async function refreshSessionUI() {
   }
 }
 
+// Detecta sessão expirada automaticamente e força re-login
+supabase.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+    refreshSessionUI();
+  }
+});
+
 // ======================================================
 // ===== BANCO: CARREGAR / SALVAR / APAGAR
 // ======================================================
@@ -696,7 +696,7 @@ async function loadMotosAndRender() {
 
 // Preenche os campos do formulário com a moto selecionada
 function fillForm(m) {
-  currentMoto = m;
+  _currentMoto = m;
 
   if (els.id) els.id.value = m?.id || "";
   if (els.status) { syncStatusSelectOptions(); els.status.value = pickAllowedStatus(m?.status) || m?.status || "disponivel"; }
@@ -831,6 +831,13 @@ async function salvar() {
 
   if (error) {
     console.error("Erro upsert:", error);
+    const isAuthError = error.status === 401 || error.status === 400 && String(error.message).toLowerCase().includes("jwt");
+    if (isAuthError) {
+      await supabase.auth.signOut();
+      msg(els.saveMsg, "Sessão expirada. Faça login novamente.", "err");
+      await refreshSessionUI();
+      return;
+    }
     msg(els.saveMsg, "Erro ao salvar: " + error.message, "err");
     return;
   }

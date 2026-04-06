@@ -1,250 +1,415 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <!-- =====================================================
-       DANILO MOTOS — DETALHES (moto.html)
-       -----------------------------------------------------
-       O que essa página faz:
-       - Mostra os detalhes de UMA moto:
-         • título/subtítulo
-         • carousel de fotos
-         • vídeo do YouTube (se existir)
-         • ficha técnica
-         • botões de WhatsApp
-       - O conteúdo é carregado pelo JS: assets/js/moto.js
-       ===================================================== -->
-
-  <!-- Meta básico / SEO -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-  <title>Danilo Motos | Detalhes</title>
-  <meta
-    name="description"
-    content="Detalhes da moto: fotos, vídeo, ficha técnica e negociação no WhatsApp."
-  />
-
-  <!-- CSS principal do site -->
+  <title>Danilo Motos</title>
+  <meta name="description" content="Detalhes da moto: fotos, ficha técnica e negociação no WhatsApp." />
   <link rel="stylesheet" href="assets/css/style.css?v=3" />
-
-  <!-- Ícone do site -->
   <link rel="icon" href="./logo.png" type="image/png" />
+  <style>
+
+    /* ── RESET PARA ESTA PÁGINA ── */
+    body { padding-bottom: 90px; }
+
+    /* ── HEADER CUSTOMIZADO ── */
+    .motoHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .backBtn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--muted);
+      padding: 8px 0;
+      white-space: nowrap;
+    }
+    .backBtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; }
+    #waHeader {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      border-radius: 12px;
+      background: #25D366;
+      border: none;
+      color: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    #waHeader svg { width: 16px; height: 16px; fill: #fff; flex-shrink: 0; }
+
+    /* ── CAROUSEL MELHORADO ── */
+    .carousel {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0;
+      border: none;
+      background: #000;
+      margin: 0 -14px;
+    }
+    .carouselTrack img {
+      max-height: 72vw;
+      min-height: 220px;
+    }
+    .carouselBtn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,.15);
+      font-size: 20px;
+      color: #fff;
+    }
+    .carouselBtn.prev { left: 10px; }
+    .carouselBtn.next { right: 10px; }
+
+    /* Dots do carousel */
+    #fotoDots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 0 4px;
+    }
+    .fotoDot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      transition: background .2s, width .2s;
+    }
+    .fotoDot.active {
+      background: #fff;
+      width: 18px;
+      border-radius: 3px;
+    }
+
+    /* ── HERO INFO ── */
+    .motoHero {
+      padding: 16px 14px 0;
+    }
+    .statusRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .statusChip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .statusChip.disp { background: rgba(37,211,102,.15); color: #25D366; border: 1px solid rgba(37,211,102,.25); }
+    .statusChip.resv { background: rgba(255,170,0,.15); color: #ffaa00; border: 1px solid rgba(255,170,0,.25); }
+    .statusChip.vend { background: rgba(255,60,60,.15); color: #ff6b6b; border: 1px solid rgba(255,60,60,.25); }
+    .statusDot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    #titulo {
+      font-size: 22px;
+      font-weight: 1000;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    #subtitulo {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Preço em destaque */
+    #precoDestaque {
+      display: none;
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: rgba(37,211,102,.08);
+      border: 1px solid rgba(37,211,102,.2);
+      border-radius: 16px;
+    }
+    #precoDestaque .precoLabel { font-size: 11px; color: var(--muted); font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+    #precoDestaque .precoValor { font-size: 30px; font-weight: 1100; color: #25D366; line-height: 1.1; margin-top: 2px; }
+
+    /* ── SEÇÃO FICHA ── */
+    .motoSection {
+      margin: 14px 14px 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .motoSectionHead {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .3px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .motoSectionBody { padding: 4px 0; }
+
+    /* Linhas da ficha */
+    .fichaLinha {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 16px;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .fichaLinha:last-child { border-bottom: none; }
+    .fichaKey {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .fichaKey svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; opacity: .7; flex-shrink: 0; }
+    .fichaVal {
+      font-size: 14px;
+      font-weight: 900;
+      text-align: right;
+    }
+    .fichaVal.preco { color: #25D366; font-size: 16px; }
+
+    /* Observações */
+    .obsBox {
+      margin: 14px 14px 0;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── VÍDEO ── */
+    #videoBox {
+      margin: 14px 14px 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .videoWrap {
+      aspect-ratio: 16/9;
+      border-radius: 0;
+      border: none;
+    }
+    .videoActions {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+    }
+    .videoActions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .videoActions svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    /* ── CTA WHATSAPP FIXO ── */
+    #waFixo {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 300;
+      padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+      background: rgba(5,6,7,.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 10px;
+    }
+    #btnWhatsapp {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 15px;
+      border-radius: 14px;
+      background: #25D366;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(37,211,102,.3);
+      text-decoration: none;
+    }
+    #btnWhatsapp svg { width: 20px; height: 20px; fill: #fff; flex-shrink: 0; }
+    #btnShareMoto {
+      padding: 15px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    #btnShareMoto svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* ── BLOQUEADA (vendida/reservada) ── */
+    .bloqueadaBox {
+      margin: 14px 14px 0;
+      padding: 20px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      text-align: center;
+    }
+    .bloqueadaIcon { font-size: 36px; margin-bottom: 10px; }
+    .bloqueadaTitle { font-size: 18px; font-weight: 1000; margin-bottom: 6px; }
+    .bloqueadaSub { font-size: 14px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+    /* ── FOOTER ── */
+    .footer { margin-top: 24px; }
+
+    /* esconde o float antigo */
+    .floatWA { display: none !important; }
+
+  </style>
 </head>
 
 <body>
-  <!-- =====================================================
-       HEADER FIXO (igual ao index)
-       -----------------------------------------------------
-       - Logo + nome
-       - Botão WhatsApp do topo (#waHeader)
-       ===================================================== -->
   <header>
-    <div class="wrap headerRow">
-      <a class="brand" href="index.html" aria-label="Danilo Motos">
-        <div class="logo">
-          <img
-            src="logo.png"
-            alt="Danilo Motos"
-            onerror="this.style.display='none'"
-          />
-        </div>
-
-        <div class="brandText">
-          <div class="brandTop">
-            <strong>Danilo Motos</strong>
-          </div>
-          <span>Catálogo • Fotos • Vídeos • Ficha técnica</span>
-        </div>
+    <div class="wrap motoHeader">
+      <a class="backBtn" href="index.html">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Catálogo
       </a>
-
-      <!-- Botão WhatsApp no topo (JS normalmente preenche o link) -->
-      <a class="btn" id="waHeader" target="_blank" rel="noopener">
+      <a id="waHeader" target="_blank" rel="noopener" href="#">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.046 22l4.932-1.364A9.945 9.945 0 0011.999 22c5.523 0 10-4.477 10-10S17.522 2 11.999 2z"/></svg>
         WhatsApp
       </a>
     </div>
   </header>
 
-  <!-- =====================================================
-       CONTEÚDO PRINCIPAL
-       -----------------------------------------------------
-       OBS: você tinha style inline aqui (padding-top:12px).
-       Ideal: criar classe no CSS. Sugestão:
-       .detailMain { padding-top: 12px; }
-       ===================================================== -->
-  <main class="wrap detailMain">
-    <!-- =====================================================
-         LINK DE VOLTAR (pro catálogo)
-         -----------------------------------------------------
-         Você tinha style inline aqui também.
-         Sugestão CSS:
-         .backLink { margin-bottom: 12px; }
-         .backLink a { font-weight: 800; color: var(--muted); }
-         ===================================================== -->
-    <div class="backLink">
-      <a href="index.html" class="muted">← Voltar para o catálogo</a>
+  <main style="padding-top:12px">
+
+    <!-- CAROUSEL -->
+    <div>
+      <div class="carousel">
+        <button class="carouselBtn prev" id="prevFoto" type="button" aria-label="Foto anterior">‹</button>
+        <div class="carouselTrack" id="galeria"></div>
+        <button class="carouselBtn next" id="nextFoto" type="button" aria-label="Próxima foto">›</button>
+      </div>
+      <div id="fotoDots"></div>
     </div>
 
-    <!-- =====================================================
-         TOPO DO DETALHE
-         -----------------------------------------------------
-         - Mostra título (#titulo) e subtítulo (#subtitulo)
-         - Botão principal WhatsApp (#btnWhatsapp)
-         ===================================================== -->
-    <section class="detailTop">
-      <div>
-        <!-- JS troca esse texto -->
-        <h1 id="titulo" class="detailTitle">Carregando...</h1>
-
-        <!-- JS preenche -->
-        <p id="subtitulo" class="detailSub"></p>
+    <!-- HERO INFO -->
+    <div class="motoHero">
+      <div class="statusRow">
+        <span id="statusChip" class="statusChip disp"><span class="statusDot"></span>Disponível</span>
       </div>
-
-      <!-- CTA WhatsApp principal do topo -->
-      <a class="btn primary" id="btnWhatsapp" target="_blank" rel="noopener">
-        Chamar no WhatsApp
-      </a>
-    </section>
-
-    <!-- =====================================================
-         GRID DE CONTEÚDO
-         -----------------------------------------------------
-         - Carousel
-         - Vídeo (se existir)
-         - Ficha técnica
-         - CTA final
-         ===================================================== -->
-    <section class="detailGrid">
-      <!-- =====================================================
-           1) CAROUSEL DE FOTOS
-           -----------------------------------------------------
-           Elementos controlados pelo JS:
-           - #galeria: recebe <img> dentro (slides)
-           - #prevFoto e #nextFoto: navegação
-           - #fotoInfo: texto "1/5" etc.
-           ===================================================== -->
-      <div>
-        <div class="carousel">
-          <button class="carouselBtn prev" id="prevFoto" type="button" aria-label="Foto anterior">‹</button>
-
-          <!-- Track com as imagens do carousel -->
-          <div class="carouselTrack" id="galeria"></div>
-
-          <button class="carouselBtn next" id="nextFoto" type="button" aria-label="Próxima foto">›</button>
-        </div>
-
-        <div class="carouselInfo" id="fotoInfo"></div>
+      <h1 id="titulo">Carregando…</h1>
+      <p id="subtitulo"></p>
+      <div id="precoDestaque">
+        <div class="precoLabel">Preço</div>
+        <div class="precoValor" id="precoValor"></div>
       </div>
+    </div>
 
-      <!-- =====================================================
-           2) VÍDEO (YouTube)
-           -----------------------------------------------------
-           - #videoBox pode ser escondido pelo JS se não houver vídeo
-           - #video recebe iframe (ou embed) criado no JS
-           ===================================================== -->
-      <div class="box" id="videoBox">
-        <div class="boxTitle">
-          <strong>Vídeo</strong>
-          <span class="muted">YouTube</span>
-        </div>
-
-        <!-- JS injeta o iframe aqui -->
-        <div id="video"></div>
+    <!-- FICHA TÉCNICA -->
+    <div class="motoSection" id="fichaSection">
+      <div class="motoSectionHead">Ficha técnica</div>
+      <div class="motoSectionBody">
+        <div id="ficha"></div>
       </div>
+    </div>
 
-      <!-- =====================================================
-           3) FICHA TÉCNICA
-           -----------------------------------------------------
-           - #ficha recebe as linhas montadas pelo JS
-           ===================================================== -->
-      <div class="box">
-        <div class="boxTitle">
-          <strong>Ficha técnica</strong>
-        </div>
-
-        <div id="ficha" class="ficha"></div>
+    <!-- VÍDEO -->
+    <div class="motoSection" id="videoBox" style="display:none">
+      <div class="motoSectionHead">Vídeo</div>
+      <div id="video"></div>
+      <div class="videoActions">
+        <a id="videoLink" target="_blank" rel="noopener" href="#">
+          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Abrir no YouTube
+        </a>
       </div>
+    </div>
 
-      <!-- =====================================================
-           4) CTA FINAL (chamar no WhatsApp)
-           -----------------------------------------------------
-           - #waContato normalmente recebe link no JS
-           - Você tinha style inline aqui: removi e sugiro CSS
-           Sugestão CSS:
-           .ctaTitle { font-weight: 1000; }
-           .ctaSub { margin-top: 4px; }
-           ===================================================== -->
-      <div class="box ctaBox">
+    <!-- BLOQUEADA (preenchida pelo JS quando vendida/reservada) -->
+    <div id="bloqueadaBox" style="display:none" class="bloqueadaBox"></div>
+
+    <!-- CTA FINAL -->
+    <div class="motoSection" id="ctaFinal" style="margin-bottom:0">
+      <div style="padding:20px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div>
-          <div class="ctaTitle">Gostou dessa moto?</div>
-          <div class="muted ctaSub">Negocie direto no WhatsApp.</div>
+          <div style="font-size:16px;font-weight:1000">Gostou dessa moto?</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:4px">Negocie direto no WhatsApp.</div>
         </div>
-
-        <a class="btn primary" id="waContato" target="_blank" rel="noopener">
+        <a id="waContato" href="#" target="_blank" rel="noopener"
+           style="display:inline-flex;align-items:center;gap:7px;padding:12px 18px;border-radius:12px;background:#25D366;color:#fff;font-weight:900;font-size:14px;text-decoration:none;white-space:nowrap">
           Chamar
         </a>
       </div>
-    </section>
+    </div>
+
+    <!-- PADDING FOOTER -->
+    <div style="height:20px"></div>
+
   </main>
 
-  <!-- =====================================================
-       WHATSAPP FLUTUANTE
-       -----------------------------------------------------
-       - #waFloat é preenchido via JS
-       - No seu CSS atual você está escondendo com:
-         .floatWA { display: none !important; }
-       ===================================================== -->
-  <a class="floatWA" id="waFloat" target="_blank" rel="noopener">
-    <span class="dot"></span> Negociar no WhatsApp
-  </a>
+  <!-- CTA FIXO NO RODAPÉ -->
+  <div id="waFixo">
+    <a id="btnWhatsapp" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.046 22l4.932-1.364A9.945 9.945 0 0011.999 22c5.523 0 10-4.477 10-10S17.522 2 11.999 2z"/></svg>
+      Chamar no WhatsApp
+    </a>
+    <button id="btnShareMoto" type="button" title="Compartilhar">
+      <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+  </div>
 
-  <!-- =====================================================
-       FOOTER (igual ao index)
-       -----------------------------------------------------
-       Adicionei #year pra não dar erro no script
-       ===================================================== -->
+  <!-- Float antigo (mantido pra JS funcionar, escondido via CSS) -->
+  <a class="floatWA" id="waFloat" target="_blank" rel="noopener"></a>
+  <!-- Contato antigo mantido pra não quebrar JS -->
+  <a id="waContato" style="display:none" href="#"></a>
+
   <footer class="footer">
     <div class="wrap footerContent">
-      <div>
-        📍
-        <a
-          class="link"
-          href="https://www.google.com/maps/search/RUA%20MONTE%20SANTO%20186/@-10.5061,-39.0218,17z?hl=pt-BR"
-          target="_blank"
-          rel="noopener"
-        >
-          Euclides da Cunha
-        </a>
-      </div>
-
-      <div>
-        📞
-        <a class="link" href="https://wa.me/557599834731" target="_blank" rel="noopener">
-          +55 75 9983-4731
-        </a>
-      </div>
-
-      <div>
-        📸
-        <a class="link" href="https://www.instagram.com/danilo_motoss" target="_blank" rel="noopener">
-          @danilo_motoss
-        </a>
-      </div>
-
-      <div class="copyright">
-        © <span id="year"></span> — Todos os direitos reservados.
-      </div>
+      <div>📍 <a class="link" href="https://www.google.com/maps/search/RUA%20MONTE%20SANTO%20186/@-10.5061,-39.0218,17z?hl=pt-BR" target="_blank" rel="noopener">Euclides da Cunha</a></div>
+      <div>📞 <a class="link" href="https://wa.me/557599834731" target="_blank" rel="noopener">+55 75 9983-4731</a></div>
+      <div>📸 <a class="link" href="https://www.instagram.com/danilo_motoss" target="_blank" rel="noopener">@danilo_motoss</a></div>
+      <div class="copyright">© <span id="year"></span> — Todos os direitos reservados.</div>
     </div>
   </footer>
 
-  <!-- =====================================================
-       SCRIPTS
-       -----------------------------------------------------
-       1) moto.js (module) carrega dados e renderiza tudo
-       2) script do ano preenche #year
-       ===================================================== -->
-  <script type="module" src="assets/js/moto.js?v=20260301c"></script>
+  <script type="module" src="assets/js/moto.js?v=20260402b"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+
+    /* ── SHARE ── */
+    document.getElementById('btnShareMoto')?.addEventListener('click', async () => {
+      try {
+        await navigator.share({ title: document.title, url: location.href });
+      } catch {
+        await navigator.clipboard.writeText(location.href);
+        alert('Link copiado!');
+      }
+    });
   </script>
 </body>
 </html>
