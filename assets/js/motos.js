@@ -30,7 +30,7 @@ function num(v) {
 
 // 👇 COLE AQUI
 function formatBRL(value) {
-  const n = Number(value);
+  const n = Number(String(value ?? "").replace(/[^\d]/g, ""));
   if (!Number.isFinite(n) || n <= 0) return "";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
