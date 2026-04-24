@@ -1,7 +1,7 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260406a";
 import { loadMotos } from "./loader.js?v=20260406a";
 
-const WHATSAPP_NUMBER = "557599834731";
+const WHATSAPP_NUMBER = "5575999185684";
 const MAX_FOTOS = 4;
 
 function $(sel) { return document.querySelector(sel); }
@@ -189,7 +189,7 @@ async function main() {
     setStatusChip(status);
 
     /* WhatsApp */
-    const msg = moto.whatsapp_texto || `Olá! Tenho interesse na ${moto.titulo||"moto"}${moto.ano?" "+moto.ano:""}.`;
+    const msg = moto.whatsapp_texto || `Olá, tenho interesse nessa moto: ${moto.titulo||"moto"}${moto.ano?" ("+moto.ano+")":""}.`;
     const waLink = makeWhatsLink(msg);
     ["#btnWhatsapp","#waContato","#waFloat","#waHeader"].forEach(sel => {
       const a = $(sel);

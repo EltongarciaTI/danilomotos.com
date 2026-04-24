@@ -14,7 +14,7 @@ export const SUPABASE_ANON_KEY =
 
 // Cloudflare Worker (API de upload/list/delete no GitHub)
 
-export const WHATSAPP_NUMBER = "557599834731";
+export const WHATSAPP_NUMBER = "5575999185684";
 export const MAX_FOTOS = 4;
 export const WORKER_BASE = "https://blue-salad-b6ae.eltonng645.workers.dev".replace(/\/+$/, "");
 export const IMG_UPLOAD_ENDPOINT = `${WORKER_BASE}/upload`;

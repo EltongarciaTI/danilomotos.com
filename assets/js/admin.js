@@ -39,11 +39,10 @@ const els = {
   // dashboard
   dashGrid: $("dashGrid"),
   dashMsg: $("dashMsg"),
+  motosCards: $("motosCards"),
 
   // fotos (multi-upload)
   multiFotos: $("multiFotos"),
-
-
 
   // auth
   loginSection: $("loginSection"),
@@ -82,6 +81,13 @@ const els = {
   // grid de fotos
   fotosGrid: $("fotosGrid"),
   fotoMsg: $("fotoMsg"),
+
+  // cadastro rápido
+  txtRapido: $("txtRapido"),
+  btnPreencher: $("btnPreencher"),
+  btnLimparRapido: $("btnLimparRapido"),
+  btnConferir: $("btnConferir"),
+  rapidoMsg: $("rapidoMsg"),
 };
 
 // cache local de motos (pra não ficar consultando toda hora)
@@ -89,6 +95,7 @@ let motosCache = [];
 let allowedStatusSet = null;
 
 let _currentMoto = null;
+let idManuallyEdited = false;
 
 // Mostra mensagens (ok/err/normal)
 function msg(el, text, type = "") {
@@ -586,18 +593,30 @@ function renderDashboard() {
   if (!els.dashGrid) return;
 
   const total = motosCache.length;
-  const disp = motosCache.filter((m) => (m.status || "ativo") === "ativo").length;
-  const resv = motosCache.filter((m) => m.status === "reservada").length;
-  const vend = motosCache.filter((m) => m.status === "vendida").length;
-  const dest = motosCache.filter((m) => !!m.destaque).length;
+  const disp  = motosCache.filter((m) => (m.status || "ativo") === "ativo").length;
+  const resv  = motosCache.filter((m) => m.status === "reservada").length;
+  const vend  = motosCache.filter((m) => m.status === "vendida").length;
 
   els.dashGrid.innerHTML = `
-    <div class="thumb"><div class="thumbTitle">Total cadastradas</div><div style="font-size:22px;font-weight:1100">${total}</div></div>
-    <div class="thumb"><div class="thumbTitle">Ativas</div><div style="font-size:22px;font-weight:1100">${disp}</div></div>
-    <div class="thumb"><div class="thumbTitle">Reservadas</div><div style="font-size:22px;font-weight:1100">${resv}</div></div>
-    <div class="thumb"><div class="thumbTitle">Vendidas</div><div style="font-size:22px;font-weight:1100">${vend}</div></div>
-    <div class="thumb"><div class="thumbTitle">Destaques</div><div style="font-size:22px;font-weight:1100">${dest}</div></div>
+    <div class="dashCard accent full">
+      <div class="dashNum">${total}</div>
+      <div class="dashLabel">Total cadastradas</div>
+    </div>
+    <div class="dashCard">
+      <div class="dashNum" style="color:#25D366">${disp}</div>
+      <div class="dashLabel">Ativas</div>
+    </div>
+    <div class="dashCard">
+      <div class="dashNum" style="color:#ffaa00">${resv}</div>
+      <div class="dashLabel">Reservadas</div>
+    </div>
+    <div class="dashCard">
+      <div class="dashNum" style="color:#ff6b6b">${vend}</div>
+      <div class="dashLabel">Vendidas</div>
+    </div>
   `;
+
+  renderMotoCards();
 }
 
 // ======================================================
@@ -875,6 +894,7 @@ fillForm(payload);
 
 // Abre formulário em branco (nova moto)
 function novaMoto() {
+  idManuallyEdited = false;
   fillForm({
     id: "",
     status: "ativo",
@@ -912,6 +932,321 @@ async function apagarMoto() {
 }
 
 // ======================================================
+// ===== CARDS DE MOTOS (DASHBOARD)
+// ======================================================
+
+function renderMotoCards() {
+  if (!els.motosCards) return;
+
+  const term = String(els.buscaMoto?.value || "").trim().toLowerCase();
+  const st   = filtroStatus;
+
+  const list = motosCache.filter((m) => {
+    const mst = String(m.status || "ativo").toLowerCase();
+    if (st !== "todas" && mst !== st) return false;
+    if (!term) return true;
+    const hay = `${m.titulo || ""} ${m.cor || ""} ${m.ano || ""} ${m.preco || ""}`.toLowerCase();
+    return hay.includes(term);
+  });
+
+  if (!list.length) {
+    els.motosCards.innerHTML = `<div class="emptyState">Nenhuma moto encontrada.</div>`;
+    return;
+  }
+
+  const statusLabel = { ativo: "Ativa", reservada: "Reservada", vendida: "Vendida" };
+
+  els.motosCards.innerHTML = list.map((m) => {
+    const id     = m.id || "";
+    const titulo = m.titulo || m.id || "Sem título";
+    const status = String(m.status || "ativo").toLowerCase();
+    const badge  = statusLabel[status] || status;
+
+    const metaParts = [m.ano, m.km ? `${Number(String(m.km).replace(/\D/g,"")).toLocaleString("pt-BR")} km` : "", m.cor].filter(Boolean);
+    const meta   = metaParts.join(" · ");
+
+    const precoBruto = String(m.preco || "").replace(/[^\d]/g, "");
+    const precoFmt   = precoBruto ? "R$ " + Number(precoBruto).toLocaleString("pt-BR") : "";
+
+    const capaUrl = `${SUPABASE_URL}/storage/v1/object/public/motos/${id}/capa.jpg`;
+    const dest    = !!m.destaque;
+
+    const isCurrent = _currentMoto?.id === id;
+    const cardHighlight = isCurrent ? ' style="border-color:rgba(255,29,29,.5)"' : "";
+
+    return `
+      <div class="motoCard"${cardHighlight} data-id="${id}">
+        <img class="motoCard__img" src="${capaUrl}" alt="${titulo}"
+             onerror="this.style.background='rgba(255,255,255,.06)';this.style.minHeight='80px';this.removeAttribute('src')">
+        <div class="motoCard__body">
+          <div class="motoCard__title">${titulo}</div>
+          ${meta     ? "<div class=\"motoCard__meta\">" + meta + "</div>" : ""}
+          ${precoFmt ? "<div class=\"motoCard__preco\">" + precoFmt + "</div>" : ""}
+          <div class="motoCard__badges">
+            <span class="statusBadge ${status}">${badge}</span>
+            ${dest ? "<span class=\"destaqueFlag\">Destaque</span>" : ""}
+          </div>
+        </div>
+        <div class="motoCard__actions">
+          <button class="cardEdit" data-id="${id}">Editar</button>
+          <button class="cardAtiv" data-id="${id}" data-setstatus="ativo">Ativar</button>
+          <button class="cardResv" data-id="${id}" data-setstatus="reservada">Reservar</button>
+          <button class="cardVend" data-id="${id}" data-setstatus="vendida">Vender</button>
+          <button class="cardDel"  data-id="${id}">Apagar</button>
+        </div>
+      </div>`;
+  }).join("");
+
+  // Bind ações dos cards
+  els.motosCards.querySelectorAll(".cardEdit").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const m = motosCache.find((x) => x.id === btn.dataset.id);
+      if (m) { fillForm(m); window.goScreen?.("screenMoto"); }
+    });
+  });
+
+  els.motosCards.querySelectorAll("[data-setstatus]").forEach((btn) => {
+    btn.addEventListener("click", () => setMotoStatus(btn.dataset.id, btn.dataset.setstatus));
+  });
+
+  els.motosCards.querySelectorAll(".cardDel").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      if (!confirm(`Apagar a moto "${id}"?\nIsso vai apagar também as fotos no Storage.`)) return;
+      msg(els.dashMsg, "Apagando...");
+      try { await deleteAllMotoFiles(id); } catch {}
+      const { error } = await supabase.from("motos").delete().eq("id", id);
+      if (error) { msg(els.dashMsg, "Erro: " + error.message, "err"); return; }
+      msg(els.dashMsg, "Moto apagada ✅", "ok");
+      await loadMotosAndRender();
+    });
+  });
+}
+
+async function setMotoStatus(motoId, status) {
+  if (!motoId) return;
+  const labelMap = { ativo: "ATIVA", reservada: "RESERVADA", vendida: "VENDIDA" };
+  if (!confirm(`Marcar "${motoId}" como ${labelMap[status] || status}?`)) return;
+
+  if (status === "vendida") {
+    try { await deleteAllExceptCover(motoId); } catch {}
+    await touchUpdatedAt(motoId);
+    await syncPhotoPathsToDB(motoId);
+  }
+
+  const { error } = await supabase.from("motos").update({ status }).eq("id", motoId);
+  if (error) { alert("Erro: " + error.message); return; }
+
+  sessionStorage.removeItem("daniloMotosCache_ativo");
+  sessionStorage.removeItem("daniloMotosCache_reservada");
+  sessionStorage.removeItem("daniloMotosCache_vendida");
+
+  await loadMotosAndRender();
+}
+
+// ======================================================
+// ===== PARSER DO CADASTRO RÁPIDO
+// ======================================================
+
+function parseMotoText(raw) {
+  const result = {};
+  if (!raw || !raw.trim()) return result;
+
+  const lines = raw.split("\n").map(function(l) { return l.trim(); }).filter(Boolean);
+  if (!lines.length) return result;
+
+  const LABELS = {
+    "modelo": "titulo", "modelo da moto": "titulo", "titulo": "titulo", "moto": "titulo",
+    "ano": "ano",
+    "km": "km", "quilometragem": "km",
+    "cor": "cor",
+    "preco": "preco", "preco": "preco", "valor": "preco",
+    "emplacada": "emplacada",
+    "cilindrada": "cilindrada",
+    "combustivel": "combustivel", "combustivel": "combustivel",
+    "observacoes": "observacoes", "obs": "observacoes",
+  };
+
+  const SKIP = new Set(["ficha tecnica", "preco"]);
+
+  function nrm(s) { return normStr(s); }
+
+  function labelKey(s) {
+    const n = nrm(s);
+    if (LABELS[n]) return LABELS[n];
+    // tenta sem acento no mapa tbm
+    for (const k of Object.keys(LABELS)) {
+      if (nrm(k) === n) return LABELS[k];
+    }
+    return null;
+  }
+
+  // Detecta formato estruturado
+  const isStructured = lines.some(function(l) { return /^[^:·\n]+:\s*.+/.test(l); });
+
+  if (isStructured) {
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^([^:]+):\s*([\s\S]+)/);
+      if (!m) continue;
+      const field = labelKey(m[1]);
+      if (field) result[field] = m[2].trim();
+    }
+  } else {
+    let i = 0;
+    const first = lines[0];
+
+    if (first.indexOf("·") !== -1) {
+      const parts = first.split("·").map(function(p) { return p.trim(); });
+      if (parts[0]) result.titulo = parts[0];
+      if (parts[1]) result.ano    = parts[1];
+      if (parts[2]) result.km     = parts[2].replace(/\s*km/i, "").trim();
+      if (parts[3]) result.cor    = parts[3];
+      i = 1;
+    } else {
+      const fn = nrm(first);
+      if (!labelKey(first) && !SKIP.has(fn)) {
+        result.titulo = first;
+        i = 1;
+      }
+    }
+
+    while (i < lines.length) {
+      const line  = lines[i];
+      const lineN = nrm(line);
+      if (SKIP.has(lineN)) { i++; continue; }
+
+      const field = labelKey(line);
+      if (field && i + 1 < lines.length) {
+        const nextLine  = lines[i + 1];
+        const nextField = labelKey(nextLine);
+        const nextN     = nrm(nextLine);
+
+        if (!nextField && !SKIP.has(nextN)) {
+          if (field === "observacoes") {
+            let obs = nextLine;
+            let j = i + 2;
+            while (j < lines.length && !labelKey(lines[j]) && !SKIP.has(nrm(lines[j]))) {
+              obs += "\n" + lines[j];
+              j++;
+            }
+            result[field] = obs;
+            i = j;
+            continue;
+          }
+          result[field] = nextLine;
+          i += 2;
+          continue;
+        }
+      }
+      i++;
+    }
+  }
+
+  return result;
+}
+
+function applyParsed(data) {
+  if (!data) return;
+  let filled = 0;
+
+  if (data.titulo && els.titulo) { els.titulo.value = data.titulo; filled++; if (!els.id.value) { els.id.value = cleanId(data.titulo); idManuallyEdited = false; } }
+  if (data.ano  && els.ano)   { els.ano.value  = data.ano;  filled++; }
+  if (data.cor  && els.cor)   { els.cor.value  = data.cor;  filled++; }
+
+  if (data.km && els.km) {
+    const digits = String(data.km).replace(/[^\d]/g, "");
+    els.km.value = digits ? Number(digits).toLocaleString("pt-BR") : "";
+    if (digits) filled++;
+  }
+
+  if (data.preco && els.preco) {
+    const digits = String(data.preco).replace(/[^\d]/g, "");
+    els.preco.value = digits ? "R$ " + Number(digits).toLocaleString("pt-BR") : "";
+    if (digits) filled++;
+  }
+
+  if (data.emplacada !== undefined && els.emplacada) {
+    const v = normStr(String(data.emplacada));
+    els.emplacada.checked = ["sim","s","yes","true","1"].includes(v);
+    filled++;
+  }
+
+  if (data.cilindrada) {
+    const raw  = String(data.cilindrada).trim();
+    const norm = raw.replace(/\s/g, "").toLowerCase();
+    const known = ["100cc","110cc","125cc","150cc","160cc","300cc"];
+    const matched = known.find((k) => k === norm || k.replace("cc","") === norm.replace("cc",""));
+    const sel  = document.getElementById("cilindradaSel");
+    const outra = document.getElementById("cilindradaOutra");
+    if (els.cilindrada) els.cilindrada.value = matched || raw;
+    if (sel) {
+      if (matched) { sel.value = matched; if (outra) outra.style.display = "none"; }
+      else { sel.value = "outra"; if (outra) { outra.style.display = "block"; outra.value = raw; } }
+    }
+    filled++;
+  }
+
+  if (data.combustivel && els.combustivel) {
+    const norm = normStr(String(data.combustivel));
+    const opts = Array.from(els.combustivel.options).map(function(o) { return o.value; });
+    const match = opts.find(function(o) { return normStr(o) === norm; });
+    if (match) { els.combustivel.value = match; filled++; }
+  }
+
+  if (data.observacoes && els.observacoes) { els.observacoes.value = data.observacoes; filled++; }
+
+  if (data.status && els.status) {
+    const st = pickAllowedStatus(data.status);
+    if (st) { els.status.value = st; filled++; }
+  }
+
+  if (data.destaque !== undefined && els.destaque) {
+    const v = normStr(String(data.destaque));
+    els.destaque.checked = ["sim","s","yes","true","1"].includes(v);
+  }
+
+  return filled;
+}
+
+function quickFill() {
+  const raw = els.txtRapido?.value || "";
+  if (!raw.trim()) { msg(els.rapidoMsg, "Cole o texto da moto antes de preencher.", "err"); return; }
+
+  const data = parseMotoText(raw);
+  const filled = applyParsed(data);
+
+  if (!filled) {
+    msg(els.rapidoMsg, "Não foi possível identificar os dados. Verifique o texto.", "err");
+  } else {
+    msg(els.rapidoMsg, `${filled} campo(s) preenchido(s) ✅`, "ok");
+  }
+}
+
+function conferirVazios() {
+  const campos = [
+    { id: "titulo",      label: "Modelo da moto" },
+    { id: "ano",         label: "Ano" },
+    { id: "km",          label: "KM" },
+    { id: "cor",         label: "Cor" },
+    { id: "preco",       label: "Preço" },
+    { id: "cilindrada",  label: "Cilindrada" },
+    { id: "combustivel", label: "Combustível" },
+    { id: "observacoes", label: "Observações" },
+  ];
+
+  const vazios = campos.filter((c) => {
+    const el = document.getElementById(c.id);
+    return !el || !el.value.trim();
+  });
+
+  if (!vazios.length) {
+    msg(els.rapidoMsg, "Todos os campos principais estão preenchidos ✅", "ok");
+  } else {
+    msg(els.rapidoMsg, `Campos vazios: ${vazios.map((c) => c.label).join(", ")}`, "warn");
+  }
+}
+
+// ======================================================
 // ===== EVENTOS (bind de tudo)
 // ======================================================
 
@@ -925,8 +1260,20 @@ function bind() {
   }
 
 
-  // Filtros e busca do select
-  if (els.buscaMoto) els.buscaMoto.addEventListener("input", () => renderMotoSelect());
+  // Busca: atualiza select oculto + cards
+  if (els.buscaMoto) els.buscaMoto.addEventListener("input", function() { renderMotoSelect(); renderMotoCards(); });
+
+  // Auto-ID: gera ID a partir do título quando o campo id está vazio
+  if (els.titulo) {
+    els.titulo.addEventListener("input", function() {
+      if (!idManuallyEdited && !(_currentMoto && _currentMoto.id)) {
+        els.id.value = cleanId(els.titulo.value);
+      }
+    });
+  }
+  if (els.id) {
+    els.id.addEventListener("input", function() { idManuallyEdited = true; });
+  }
   // Login / logout
   if (els.btnLogin) els.btnLogin.addEventListener("click", login);
   if (els.btnLogout) els.btnLogout.addEventListener("click", logout);
@@ -1004,8 +1351,39 @@ function bind() {
 }
 
 // ======================================================
+// ===== BIND NOVOS ELEMENTOS
+// ======================================================
+
+function bindNew() {
+  // Cadastro rápido
+  if (els.btnPreencher)    els.btnPreencher.addEventListener("click", quickFill);
+  if (els.btnConferir)     els.btnConferir.addEventListener("click", conferirVazios);
+  if (els.btnLimparRapido) {
+    els.btnLimparRapido.addEventListener("click", function() {
+      if (els.txtRapido) els.txtRapido.value = "";
+      msg(els.rapidoMsg, "");
+    });
+  }
+
+  // Filter tabs do dashboard
+  const filterTabs = document.getElementById("filterTabs");
+  if (filterTabs) {
+    filterTabs.querySelectorAll(".filterTab").forEach(function(tab) {
+      tab.addEventListener("click", function() {
+        filterTabs.querySelectorAll(".filterTab").forEach(function(t) { t.classList.remove("active"); });
+        tab.classList.add("active");
+        filtroStatus = tab.dataset.status || "todas";
+        renderMotoSelect();
+        renderMotoCards();
+      });
+    });
+  }
+}
+
+// ======================================================
 // ===== STARTUP
 // ======================================================
 
 bind();
+bindNew();
 refreshSessionUI();

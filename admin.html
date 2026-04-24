@@ -1,42 +1,37 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Admin · Danilo Motos</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/style.css"/>
   <link rel="icon" href="./logo.png" type="image/png">
   <style>
-
-    /* ── BASE ── */
     body { padding-bottom: 80px; }
 
-    .aWrap {
-      max-width: 540px;
-      margin: 0 auto;
-      padding: 16px 14px 24px;
-    }
+    .aWrap { max-width: 600px; margin: 0 auto; padding: 16px 14px 24px; }
 
-    /* ── SEÇÃO COM TÍTULO ── */
+    /* ── SEÇÃO ── */
     .aSection {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 20px;
       overflow: hidden;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .aSectionHead {
-      padding: 14px 16px 12px;
+      padding: 13px 16px 11px;
       border-bottom: 1px solid var(--line);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
     }
-    .aSectionHead strong { font-size: 15px; letter-spacing: .2px; }
+    .aSectionHead strong { font-size: 14px; letter-spacing: .2px; }
     .aSectionHead span   { font-size: 12px; color: var(--muted); }
     .aSectionBody { padding: 14px 16px; display: grid; gap: 10px; }
 
-    /* ── CAMPO COM LABEL ── */
+    /* ── CAMPOS ── */
     .field { display: grid; gap: 5px; }
     .field label {
       font-size: 11px;
@@ -45,11 +40,9 @@
       text-transform: uppercase;
       color: var(--muted);
     }
-    .field label span { color: var(--red); margin-left: 2px; }
-
     .inp, .sel {
       width: 100%;
-      padding: 13px 14px;
+      padding: 12px 14px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.04);
@@ -61,261 +54,95 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    .inp:focus, .sel:focus {
-      border-color: rgba(255,29,29,.5);
-      background: rgba(255,29,29,.04);
-    }
+    .inp:focus, .sel:focus { border-color: rgba(255,29,29,.5); background: rgba(255,29,29,.04); }
     .inp::placeholder { color: rgba(255,255,255,.28); font-weight: 500; }
-
-    .sel { background: rgba(255,255,255,.04); color: var(--text); }
+    .sel { background: rgba(255,255,255,.04); }
     .sel option, .sel optgroup { background: #1a1c20; color: #fff; }
-
-    textarea.inp { resize: none; min-height: 76px; line-height: 1.5; }
-
+    textarea.inp { resize: none; min-height: 80px; line-height: 1.5; font-size: 14px; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    /* ── TOGGLE SWITCH (checkbox) ── */
+    /* ── TOGGLE ── */
     .toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 13px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      cursor: pointer;
-      user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.04); cursor: pointer; user-select: none;
     }
     .toggle span { font-size: 14px; font-weight: 700; }
     .toggle input { display: none; }
     .toggleSwitch {
-      width: 44px; height: 26px;
-      background: rgba(255,255,255,.12);
-      border-radius: 13px;
-      position: relative;
-      transition: background .2s;
-      flex-shrink: 0;
+      width: 44px; height: 26px; background: rgba(255,255,255,.12);
+      border-radius: 13px; position: relative; transition: background .2s; flex-shrink: 0;
     }
     .toggleSwitch::after {
-      content: '';
-      position: absolute;
-      top: 3px; left: 3px;
-      width: 20px; height: 20px;
-      border-radius: 50%;
-      background: #fff;
-      transition: transform .2s;
-      box-shadow: 0 1px 4px rgba(0,0,0,.4);
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.4);
     }
     .toggle input:checked ~ .toggleSwitch { background: var(--green); }
     .toggle input:checked ~ .toggleSwitch::after { transform: translateX(18px); }
 
     /* ── BOTÕES ── */
     .aBtnPrimary {
-      width: 100%;
-      padding: 15px;
-      border-radius: 14px;
-      border: none;
-      background: linear-gradient(160deg, #ff1d1d, #b00000);
-      color: #fff;
-      font-size: 15px;
-      font-weight: 900;
-      letter-spacing: .3px;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(255,29,29,.3);
-      transition: filter .15s, transform .1s;
+      width: 100%; padding: 14px; border-radius: 14px; border: none;
+      background: linear-gradient(160deg,#ff1d1d,#b00000); color: #fff;
+      font-size: 15px; font-weight: 900; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255,29,29,.3); transition: filter .15s, transform .1s;
     }
     .aBtnPrimary:active { filter: brightness(.9); transform: scale(.98); }
 
     .aBtnGhost {
-      flex: 1;
-      padding: 13px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: background .15s;
+      flex: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.06); color: var(--text);
+      font-size: 14px; font-weight: 800; cursor: pointer; transition: background .15s;
     }
     .aBtnGhost:active { background: rgba(255,255,255,.12); }
 
     .aBtnDanger {
-      flex: 1;
-      padding: 13px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,60,60,.3);
-      background: rgba(255,30,30,.1);
-      color: #ff6b6b;
-      font-size: 14px;
-      font-weight: 800;
-      cursor: pointer;
+      flex: 1; padding: 12px; border-radius: 14px;
+      border: 1px solid rgba(255,60,60,.3); background: rgba(255,30,30,.1);
+      color: #ff6b6b; font-size: 14px; font-weight: 800; cursor: pointer;
     }
     .aBtnDanger:active { background: rgba(255,30,30,.2); }
 
     .btnRow { display: flex; gap: 8px; }
 
     /* ── MENSAGENS ── */
-    .aMsg { font-size: 13px; color: var(--muted); text-align: center; padding: 4px 0; min-height: 20px; }
+    .aMsg { font-size: 13px; color: var(--muted); text-align: center; min-height: 20px; }
     .aMsg.ok  { color: #25D366; font-weight: 800; }
     .aMsg.err { color: #ff6b6b; font-weight: 800; }
+    .aMsg.warn { color: #ffaa00; font-weight: 700; }
 
-    /* ── DASHBOARD CARDS ── */
+    /* ── LOGIN ── */
+    #screenLogin { padding-top: 30px; }
+    .loginCard {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 24px; padding: 28px 20px 24px; display: grid; gap: 12px;
+    }
+    .loginLogo { text-align: center; margin-bottom: 4px; }
+    .loginLogo img { width: 54px; height: 54px; border-radius: 16px; margin: 0 auto 10px; display: block; }
+    .loginLogo strong { display: block; font-size: 18px; }
+    .loginLogo span { font-size: 13px; color: var(--muted); }
+
+    /* ── DASHBOARD CONTADORES ── */
     .dashGrid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+      margin-bottom: 12px;
     }
     .dashCard {
-      background: rgba(255,255,255,.04);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 16px 14px;
-      text-align: center;
+      background: rgba(255,255,255,.04); border: 1px solid var(--line);
+      border-radius: 16px; padding: 16px 14px; text-align: center;
     }
     .dashCard.accent {
-      background: linear-gradient(135deg, rgba(255,29,29,.12), rgba(180,0,0,.06));
+      background: linear-gradient(135deg,rgba(255,29,29,.12),rgba(180,0,0,.06));
       border-color: rgba(255,29,29,.2);
     }
     .dashNum { font-size: 32px; font-weight: 1100; line-height: 1; }
     .dashLabel { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 5px; letter-spacing: .4px; text-transform: uppercase; }
     .dashCard.full { grid-column: 1 / -1; }
 
-    /* ── SELECT DE MOTO ── */
-    #motoSelect { font-size: 14px; }
-
-    /* ── FOTOS GRID ── */
-    .fotosGrid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .fotoSlot {
-      background: rgba(255,255,255,.03);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 10px;
-      display: grid;
-      gap: 8px;
-    }
-    .fotoSlot.capa { grid-column: 1 / -1; }
-    .fotoLabel {
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .6px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .fotoSlot img {
-      width: 100%;
-      aspect-ratio: 4/3;
-      object-fit: cover;
-      border-radius: 10px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid var(--line);
-    }
-    .fotoSlot input[type=file] {
-      font-size: 12px;
-      color: var(--muted);
-      width: 100%;
-    }
-    .fotoBtnDel {
-      width: 100%;
-      padding: 8px;
-      border-radius: 9px;
-      border: 1px solid rgba(255,60,60,.25);
-      background: rgba(255,30,30,.08);
-      color: #ff6b6b;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    /* ── NAV BOTTOM ── */
-    #bottomNav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 200;
-      background: rgba(8,9,11,.96);
-      backdrop-filter: blur(16px);
-      border-top: 1px solid var(--line);
-      display: flex;
-      padding: 8px 0 max(8px, env(safe-area-inset-bottom));
-    }
-    .navBtn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      padding: 6px 4px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: .3px;
-      transition: color .15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .navBtn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-    .navBtn.active { color: var(--red); }
-    .navBtn .navDot {
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      background: var(--red);
-      opacity: 0;
-      transition: opacity .15s;
-    }
-    .navBtn.active .navDot { opacity: 1; }
-
-    /* ── TELAS ── */
-    .screen { display: none; }
-    .screen.active { display: block; }
-
-    /* ── LOGIN ── */
-    #screenLogin { padding-top: 30px; }
-    .loginCard {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 28px 20px 24px;
-      display: grid;
-      gap: 12px;
-    }
-    .loginLogo {
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .loginLogo img { width: 54px; height: 54px; border-radius: 16px; margin: 0 auto 10px; display: block; }
-    .loginLogo strong { display: block; font-size: 18px; }
-    .loginLogo span { font-size: 13px; color: var(--muted); }
-
-    /* ── MULTI UPLOAD ── */
-    .uploadArea {
-      border: 2px dashed var(--line);
-      border-radius: 14px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .15s;
-      position: relative;
-    }
-    .uploadArea:hover { border-color: rgba(255,29,29,.4); }
-    .uploadArea input {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
-    .uploadIcon { font-size: 28px; margin-bottom: 6px; }
-    .uploadText { font-size: 13px; color: var(--muted); font-weight: 700; }
-    .uploadSub  { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 3px; }
-
-    /* ── BUSCA MOTO ── */
+    /* ── BUSCA ── */
     .searchWrap { position: relative; }
     .searchWrap svg {
       position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
@@ -324,35 +151,154 @@
     }
     .searchWrap .inp { padding-left: 36px; }
 
-    /* ── BADGE STATUS ── */
-    .statusBadge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .4px;
+    /* ── FILTER TABS ── */
+    .filterTabs {
+      display: flex; gap: 6px; overflow-x: auto;
+      scrollbar-width: none; -ms-overflow-style: none;
     }
-    .statusBadge.disp { background: rgba(37,211,102,.15); color: #25D366; }
-    .statusBadge.resv { background: rgba(255,165,0,.15); color: #ffaa00; }
-    .statusBadge.vend { background: rgba(255,60,60,.15); color: #ff6b6b; }
+    .filterTabs::-webkit-scrollbar { display: none; }
+    .filterTab {
+      flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+      border: 1px solid var(--line); background: rgba(255,255,255,.05);
+      color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer;
+      transition: all .15s;
+    }
+    .filterTab.active {
+      background: var(--red); border-color: var(--red); color: #fff;
+    }
 
-    /* ── SAFE AREA FIX ── */
-    #bottomNav { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+    /* ── CARDS DE MOTOS (DASHBOARD) ── */
+    #motosCards { display: grid; gap: 10px; margin-top: 12px; }
+
+    .motoCard {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 18px; overflow: hidden;
+      display: grid; grid-template-columns: 110px 1fr;
+    }
+    .motoCard__img {
+      width: 110px; height: 110px; object-fit: cover;
+      background: rgba(255,255,255,.04);
+    }
+    .motoCard__body {
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; justify-content: center;
+    }
+    .motoCard__title { font-size: 14px; font-weight: 900; line-height: 1.2; }
+    .motoCard__meta  { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .motoCard__preco { font-size: 14px; font-weight: 900; color: var(--red); margin-top: 2px; }
+    .motoCard__badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+
+    .statusBadge {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 10px; font-weight: 900; letter-spacing: .4px;
+    }
+    .statusBadge.ativo    { background: rgba(37,211,102,.15); color: #25D366; }
+    .statusBadge.reservada { background: rgba(255,165,0,.15); color: #ffaa00; }
+    .statusBadge.vendida   { background: rgba(255,60,60,.15); color: #ff6b6b; }
+    .destaqueFlag { font-size: 10px; color: #ffcc00; font-weight: 900; }
+
+    .motoCard__actions {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--line);
+      display: flex; gap: 1px; background: var(--line);
+    }
+    .motoCard__actions button {
+      flex: 1; padding: 9px 4px; border: none;
+      background: var(--panel); color: var(--muted);
+      font-size: 11px; font-weight: 800; cursor: pointer;
+      transition: background .15s, color .15s;
+      letter-spacing: .2px;
+    }
+    .motoCard__actions button:hover { background: rgba(255,255,255,.07); color: var(--text); }
+    .motoCard__actions .cardEdit  { color: #60aaff; }
+    .motoCard__actions .cardVend  { color: #ff6b6b; }
+    .motoCard__actions .cardResv  { color: #ffaa00; }
+    .motoCard__actions .cardAtiv  { color: #25D366; }
+    .motoCard__actions .cardDel   { color: rgba(255,100,100,.7); }
+    .motoCard__actions button:first-child { border-radius: 0 0 0 18px; }
+    .motoCard__actions button:last-child  { border-radius: 0 0 18px 0; }
+
+    .emptyState {
+      text-align: center; padding: 40px 20px;
+      color: var(--muted); font-size: 14px; font-weight: 700;
+    }
+
+    /* ── CADASTRO RÁPIDO ── */
+    #txtRapido { min-height: 120px; font-size: 13px; font-weight: 600; font-family: inherit; }
+
+    .rapidoTip {
+      font-size: 11px; color: var(--muted); line-height: 1.6;
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .rapidoTip strong { color: var(--text); font-size: 11px; }
+
+    /* ── UPLOAD ── */
+    .uploadArea {
+      border: 2px dashed var(--line); border-radius: 14px;
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: border-color .15s; position: relative;
+    }
+    .uploadArea:hover { border-color: rgba(255,29,29,.4); }
+    .uploadArea input {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .uploadIcon { font-size: 28px; margin-bottom: 6px; }
+    .uploadText { font-size: 13px; color: var(--muted); font-weight: 700; }
+    .uploadSub  { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 3px; }
+
+    /* ── FOTOS GRID ── */
+    .fotosGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .fotoSlot {
+      background: rgba(255,255,255,.03); border: 1px solid var(--line);
+      border-radius: 14px; padding: 10px; display: grid; gap: 8px;
+    }
+    .fotoSlot.capa { grid-column: 1 / -1; }
+    .fotoLabel { font-size: 10px; font-weight: 900; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); }
+    .fotoSlot img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+    .fotoSlot input[type=file] { font-size: 12px; color: var(--muted); width: 100%; }
+    .fotoBtnDel {
+      width: 100%; padding: 8px; border-radius: 9px;
+      border: 1px solid rgba(255,60,60,.25); background: rgba(255,30,30,.08);
+      color: #ff6b6b; font-size: 12px; font-weight: 800; cursor: pointer;
+    }
+
+    /* ── NAV BOTTOM ── */
+    #bottomNav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: rgba(8,9,11,.96); backdrop-filter: blur(16px);
+      border-top: 1px solid var(--line); display: flex;
+      padding: 8px 0 max(10px,env(safe-area-inset-bottom));
+    }
+    .navBtn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 6px 4px; border: none; background: none;
+      cursor: pointer; color: var(--muted); font-size: 10px; font-weight: 800;
+      letter-spacing: .3px; transition: color .15s; -webkit-tap-highlight-color: transparent;
+    }
+    .navBtn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .navBtn.active { color: var(--red); }
+    .navBtn .navDot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); opacity: 0; transition: opacity .15s; }
+    .navBtn.active .navDot { opacity: 1; }
+
+    /* ── TELAS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── ID FIELD (discreto) ── */
+    .idField .inp { font-size: 12px; color: var(--muted); }
 
     /* ── SEPARADOR ── */
-    .aDivider {
-      height: 1px;
-      background: var(--line);
-      margin: 2px 0;
+    .aDivider { height: 1px; background: var(--line); margin: 2px 0; }
+
+    /* ── PC ── */
+    @media (min-width: 680px) {
+      .aWrap { padding: 20px 24px 32px; }
+      #motosCards { grid-template-columns: 1fr 1fr; }
+      .dashGrid { grid-template-columns: repeat(4, 1fr); }
+      .dashCard.full { grid-column: auto; }
     }
-
-    /* ── SAVE HINT ── */
-    #saveMsg { font-size: 13px; color: var(--muted); }
-
   </style>
 </head>
-
 <body>
 
   <header>
@@ -382,11 +328,11 @@
         <div class="aDivider"></div>
         <div class="field">
           <label>E-mail</label>
-          <input class="inp" id="email" type="email" placeholder="admin@email.com" inputmode="email" autocomplete="email" />
+          <input class="inp" id="email" type="email" placeholder="admin@email.com" inputmode="email" autocomplete="email"/>
         </div>
         <div class="field">
           <label>Senha</label>
-          <input class="inp" id="senha" type="password" placeholder="••••••••" autocomplete="current-password" />
+          <input class="inp" id="senha" type="password" placeholder="••••••••" autocomplete="current-password"/>
         </div>
         <button class="aBtnPrimary" id="btnLogin" type="submit">Entrar</button>
         <div id="loginMsg" class="aMsg"></div>
@@ -400,13 +346,33 @@
     <!-- ── PAINEL ── -->
     <div id="screenDash" class="screen active">
       <div class="aWrap">
+
+        <!-- Contadores -->
         <div class="dashGrid" id="dashGrid"></div>
+
+        <!-- Nova moto -->
+        <button class="aBtnPrimary" id="btnNovaQuick" type="button">+ Cadastrar nova moto</button>
+
+        <!-- Busca -->
+        <div style="margin-top:12px;display:grid;gap:8px">
+          <div class="searchWrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+            <input class="inp" id="buscaMoto" placeholder="Buscar moto por modelo, cor, ano…"/>
+          </div>
+          <div class="filterTabs" id="filterTabs">
+            <button class="filterTab active" data-status="todas">Todas</button>
+            <button class="filterTab" data-status="ativo">Ativas</button>
+            <button class="filterTab" data-status="reservada">Reservadas</button>
+            <button class="filterTab" data-status="vendida">Vendidas</button>
+          </div>
+        </div>
+
+        <!-- Lista de motos em cards -->
+        <div id="motosCards"></div>
         <div id="dashMsg" class="aMsg" style="margin-top:8px"></div>
 
-        <!-- Ação rápida -->
-        <div style="margin-top:14px">
-          <button class="aBtnPrimary" id="btnNovaQuick" type="button">+ Cadastrar nova moto</button>
-        </div>
+        <!-- select hidden — mantém compatibilidade com admin.js -->
+        <select id="motoSelect" style="display:none"></select>
       </div>
     </div>
 
@@ -414,163 +380,138 @@
     <div id="screenMoto" class="screen">
       <div class="aWrap">
 
-        <!-- Selecionar -->
+        <!-- Cadastro rápido -->
         <div class="aSection">
           <div class="aSectionHead">
-            <strong>Selecionar moto</strong>
+            <strong>Cadastro rápido</strong>
+            <span>Cole o texto da moto</span>
+          </div>
+          <div class="aSectionBody">
+            <div class="rapidoTip">
+              <strong>Exemplo de texto:</strong><br>
+              FAN 160<br>
+              21/22 · 42.000 km · Vermelha<br>
+              Preço: R$ 16.800<br>
+              Emplacada: Sim<br>
+              Cilindrada: 160cc<br>
+              Combustível: Flex<br>
+              Observações: Emplacada 2026
+            </div>
+            <textarea class="inp" id="txtRapido" rows="5" placeholder="Cole aqui as informações da moto…"></textarea>
+            <div class="btnRow">
+              <button class="aBtnPrimary" id="btnPreencher" type="button" style="flex:2">Preencher dados</button>
+              <button class="aBtnGhost"   id="btnLimparRapido" type="button">Limpar</button>
+            </div>
+            <button class="aBtnGhost" id="btnConferir" type="button" style="width:100%">Conferir campos vazios</button>
+            <div id="rapidoMsg" class="aMsg"></div>
+          </div>
+        </div>
+
+        <!-- Formulário da moto -->
+        <div class="aSection">
+          <div class="aSectionHead">
+            <strong>Dados da moto</strong>
             <span id="saveMsg"></span>
           </div>
           <div class="aSectionBody">
-            <div class="searchWrap">
-              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-              <input class="inp" id="buscaMoto" placeholder="Buscar por ID ou título…" />
-            </div>
-            <select class="sel" id="motoSelect"></select>
-          </div>
-        </div>
 
-        <!-- Dados principais -->
-        <div class="aSection">
-          <div class="aSectionHead"><strong>Dados principais</strong></div>
-          <div class="aSectionBody">
-            <div class="row2">
-              <div class="field">
-                <label>ID <span>*</span></label>
-                <input class="inp" id="id" placeholder="pop100-2024" />
-              </div>
-              <div class="field">
-                <label>Status</label>
-                <select class="sel" id="status">
-                  <option value="ativo">Ativo</option>
-                  <option value="reservada">Reservada</option>
-                  <option value="vendida">Vendida</option>
-                </select>
-              </div>
-            </div>
+            <!-- Modelo -->
             <div class="field">
-              <label>Título</label>
-              <input class="inp" id="titulo" placeholder="Ex: Honda Pop 100 2024" />
+              <label>Modelo da moto</label>
+              <input class="inp" id="titulo" placeholder="Ex: FAN 160, Bros 160, Titan 150"/>
             </div>
-            <div class="row2">
-              <div class="field">
-                <label>Preço</label>
-                <input class="inp" id="preco" placeholder="R$ 0" inputmode="numeric" />
-              </div>
-              <div class="field">
-                <label>Ordem</label>
-                <input class="inp" id="ordem" type="number" placeholder="1" min="1" />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Ficha técnica -->
-        <div class="aSection">
-          <div class="aSectionHead"><strong>Ficha técnica</strong></div>
-          <div class="aSectionBody">
+            <!-- Status -->
+            <div class="field">
+              <label>Status</label>
+              <select class="sel" id="status">
+                <option value="ativo">Ativa</option>
+                <option value="reservada">Reservada</option>
+                <option value="vendida">Vendida</option>
+              </select>
+            </div>
+
+            <!-- Preço -->
+            <div class="field">
+              <label>Preço</label>
+              <input class="inp" id="preco" placeholder="R$ 0" inputmode="numeric"/>
+            </div>
+
+            <!-- Ano + KM -->
             <div class="row2">
               <div class="field">
                 <label>Ano</label>
-                <input class="inp" id="ano" placeholder="2024" inputmode="numeric" />
+                <input class="inp" id="ano" placeholder="21/22"/>
               </div>
               <div class="field">
                 <label>KM</label>
-                <input class="inp" id="km" placeholder="0" inputmode="numeric" />
+                <input class="inp" id="km" placeholder="0" inputmode="numeric"/>
               </div>
             </div>
-            <div class="row2">
-              <div class="field">
-                <label>Cor</label>
-                <select class="sel" id="cor">
-                  <option value="">— Selecionar —</option>
-                  <option value="Preta">Preta</option>
-                  <option value="Branca">Branca</option>
-                  <option value="Vermelha">Vermelha</option>
-                  <option value="Azul">Azul</option>
-                  <option value="Prata">Prata</option>
-                  <option value="Cinza">Cinza</option>
-                  <option value="Verde">Verde</option>
-                  <option value="Amarela">Amarela</option>
-                  <option value="Laranja">Laranja</option>
-                  <option value="Marrom">Marrom</option>
-                  <option value="Vinho">Vinho</option>
-                  <option value="Bege">Bege</option>
-                  <option value="Roxo">Roxo</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Cilindrada</label>
-                <select class="sel" id="cilindradaSel" onchange="
-                  var o=document.getElementById('cilindradaOutra');
-                  var i=document.getElementById('cilindrada');
-                  if(this.value==='outra'){o.style.display='block';i.value=''}
-                  else{o.style.display='none';i.value=this.value}
-                ">
-                  <option value="">— Selecionar —</option>
-                  <option value="100cc">100cc</option>
-                  <option value="110cc">110cc</option>
-                  <option value="125cc">125cc</option>
-                  <option value="150cc">150cc</option>
-                  <option value="160cc">160cc</option>
-                  <option value="300cc">300cc</option>
-                  <option value="outra">Outra…</option>
-                </select>
-                <input class="inp" id="cilindradaOutra" placeholder="Digite a cilindrada" style="display:none;margin-top:6px" oninput="document.getElementById('cilindrada').value=this.value" />
-                <input type="hidden" id="cilindrada" />
-              </div>
-            </div>
-            <div class="row2">
-              <div class="field">
-                <label>Combustível</label>
-                <select class="sel" id="combustivel">
-                  <option value="">— Selecionar —</option>
-                  <option value="Gasolina">Gasolina</option>
-                  <option value="Flex">Flex</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>Partida</label>
-                <select class="sel" id="partida">
-                  <option value="">— Selecionar —</option>
-                  <option value="Pedal">Pedal</option>
-                  <option value="Elétrica">Elétrica</option>
-                  <option value="Pedal + Elétrica">Pedal + Elétrica</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Extras -->
-        <div class="aSection">
-          <div class="aSectionHead"><strong>Extras</strong></div>
-          <div class="aSectionBody">
+            <!-- Cor -->
             <div class="field">
-              <label>Link YouTube</label>
-              <input class="inp" id="youtube" placeholder="https://youtube.com/…" inputmode="url" />
+              <label>Cor</label>
+              <input class="inp" id="cor" placeholder="Ex: Vermelha, Preta, Branca"/>
             </div>
+
+            <!-- Cilindrada -->
             <div class="field">
-              <label>Texto WhatsApp</label>
-              <input class="inp" id="whatsapp_texto" placeholder="Olá, tenho interesse na moto…" />
+              <label>Cilindrada</label>
+              <select class="sel" id="cilindradaSel" onchange="
+                var o=document.getElementById('cilindradaOutra');
+                var i=document.getElementById('cilindrada');
+                if(this.value==='outra'){o.style.display='block';i.value=''}
+                else{o.style.display='none';i.value=this.value}
+              ">
+                <option value="">— Selecionar —</option>
+                <option value="100cc">100cc</option>
+                <option value="110cc">110cc</option>
+                <option value="125cc">125cc</option>
+                <option value="150cc">150cc</option>
+                <option value="160cc">160cc</option>
+                <option value="300cc">300cc</option>
+                <option value="outra">Outra…</option>
+              </select>
+              <input class="inp" id="cilindradaOutra" placeholder="Digite a cilindrada" style="display:none;margin-top:6px"
+                oninput="document.getElementById('cilindrada').value=this.value"/>
+              <input type="hidden" id="cilindrada"/>
             </div>
+
+            <!-- Combustível -->
             <div class="field">
-              <label>Observações públicas</label>
-              <textarea class="inp" id="observacoes" rows="3" placeholder="Detalhes visíveis no site…"></textarea>
+              <label>Combustível</label>
+              <select class="sel" id="combustivel">
+                <option value="">— Selecionar —</option>
+                <option value="Gasolina">Gasolina</option>
+                <option value="Flex">Flex</option>
+              </select>
             </div>
-            <div class="field">
-              <label>Obs. internas</label>
-              <textarea class="inp" id="obs_internas" rows="2" placeholder="Notas só para o admin…"></textarea>
-            </div>
+
+            <!-- Toggles -->
             <label class="toggle">
               <span>Emplacada</span>
-              <input id="emplacada" type="checkbox" />
+              <input id="emplacada" type="checkbox"/>
               <div class="toggleSwitch"></div>
             </label>
             <label class="toggle">
               <span>⭐ Destaque no catálogo</span>
-              <input id="destaque" type="checkbox" />
+              <input id="destaque" type="checkbox"/>
               <div class="toggleSwitch"></div>
             </label>
+
+            <!-- Observações -->
+            <div class="field">
+              <label>Observações</label>
+              <textarea class="inp" id="observacoes" rows="3" placeholder="Detalhes visíveis no site…"></textarea>
+            </div>
+
+            <!-- ID (gerado auto, editável) -->
+            <div class="field idField">
+              <label>ID interno <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;font-size:10px">(gerado automaticamente)</span></label>
+              <input class="inp" id="id" placeholder="fan-160-2122"/>
+            </div>
+
           </div>
         </div>
 
@@ -579,8 +520,8 @@
           <div class="aSectionBody">
             <button class="aBtnPrimary" id="btnSalvar" type="button">💾 Salvar moto</button>
             <div class="btnRow">
-              <button class="aBtnGhost" id="btnNova" type="button">+ Nova moto</button>
-              <button class="aBtnDanger" id="btnApagar" type="button">Apagar</button>
+              <button class="aBtnGhost"   id="btnNova"   type="button">+ Nova moto</button>
+              <button class="aBtnDanger"  id="btnApagar" type="button">Apagar</button>
             </div>
           </div>
         </div>
@@ -599,7 +540,7 @@
           </div>
           <div class="aSectionBody">
             <div class="uploadArea">
-              <input id="multiFotos" type="file" accept="image/*" multiple />
+              <input id="multiFotos" type="file" accept="image/*" multiple/>
               <div class="uploadIcon">📷</div>
               <div class="uploadText">Toque para escolher fotos</div>
               <div class="uploadSub">1ª = Capa · depois Foto 1, 2, 3, 4</div>
@@ -637,30 +578,34 @@
       </button>
     </nav>
 
-  </div><!-- /appBox -->
+  </div>
 
-  <script type="module" src="assets/js/admin.js?v=20260402b"></script>
+  <!-- campos hidden para compatibilidade com admin.js -->
+  <input type="hidden" id="ordem" value="999"/>
+  <input type="hidden" id="partida"/>
+  <input type="hidden" id="youtube"/>
+  <input type="hidden" id="whatsapp_texto"/>
+  <input type="hidden" id="obs_internas"/>
+
+  <script type="module" src="assets/js/admin.js?v=20260424a"></script>
   <script>
     /* ── NAVEGAÇÃO ── */
     const navBtns = document.querySelectorAll('.navBtn');
     function goScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       navBtns.forEach(b => b.classList.remove('active'));
-      const screen = document.getElementById(id);
-      if (screen) screen.classList.add('active');
-      const btn = document.querySelector(`.navBtn[data-screen="${id}"]`);
-      if (btn) btn.classList.add('active');
+      const s = document.getElementById(id);
+      if (s) s.classList.add('active');
+      const b = document.querySelector(`.navBtn[data-screen="${id}"]`);
+      if (b) b.classList.add('active');
+      window._currentScreen = id;
     }
     navBtns.forEach(btn => btn.addEventListener('click', () => goScreen(btn.dataset.screen)));
+    window.goScreen = goScreen;
 
     /* ── ATALHO: "Nova moto" vai pra tela Moto ── */
     document.getElementById('btnNovaQuick')?.addEventListener('click', () => {
       document.getElementById('btnNova')?.click();
-      goScreen('screenMoto');
-    });
-
-    /* ── Ao selecionar moto no select → vai pra tela Moto ── */
-    document.getElementById('motoSelect')?.addEventListener('change', () => {
       goScreen('screenMoto');
     });
   </script>
