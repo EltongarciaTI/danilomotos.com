@@ -241,7 +241,16 @@ async function main() {
       if($("#fichaSection")) $("#fichaSection").style.display="none";
 
       const label = status==="reservada" ? "Reservada" : "Vendida";
-      const emoji = status==="reservada" ? "🟠" : "🔴";
+      const iconColor = status==="reservada" ? "#ffb300" : "#ff2d2d";
+      const iconSvg = status==="reservada"
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="40" height="40" aria-hidden="true">
+             <circle cx="12" cy="12" r="10"/>
+             <polyline points="12 6 12 12 16 14"/>
+           </svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="40" height="40" aria-hidden="true">
+             <circle cx="12" cy="12" r="10"/>
+             <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+           </svg>`;
       const sub   = status==="reservada"
         ? "Essa moto está reservada. Entre em contato para saber mais ou ver outras opções."
         : "Essa moto já foi vendida. Fale conosco para encontrar uma similar!";
@@ -250,7 +259,7 @@ async function main() {
       if (bloq) {
         bloq.style.display = "";
         bloq.innerHTML = `
-          <div class="bloqueadaIcon">${emoji}</div>
+          <div class="bloqueadaIcon">${iconSvg}</div>
           <div class="bloqueadaTitle">${label}</div>
           <div class="bloqueadaSub">${sub}</div>
           <a class="btn primary" href="${waLink}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">

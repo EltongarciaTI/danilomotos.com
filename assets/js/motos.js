@@ -87,8 +87,14 @@ function renderSkeleton(grid, count = 6) {
 function renderEmpty(grid, label = "Nenhuma moto nesta aba no momento") {
   grid.innerHTML = `
     <div class="emptyState">
-      <div class="emptyState__icon">🏍️</div>
-      <div>${label}</div>
+      <svg class="emptyState__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="5.5" cy="17.5" r="3.5"/>
+        <circle cx="18.5" cy="17.5" r="3.5"/>
+        <path d="M15 6h4l2 5"/>
+        <path d="M5 11l3-5h2l3 5"/>
+        <path d="M8 11l-2 6h12L15 11"/>
+      </svg>
+      <p>${label}</p>
     </div>`;
 }
 
@@ -198,21 +204,46 @@ async function main() {
     vendida:    "Motos vendidas",
   };
   const heroTitle = $("#heroTitle");
+  const statAtivas = $("#statAtivas");
+  const statVendidas = $("#statVendidas");
+  const catalogMeta = $("#catalogMeta");
+
+  // Carrega os contadores das outras abas em background pra mostrar nos stats
+  // (não bloqueia o render principal)
+  (async () => {
+    try {
+      const [ativas, reservadas, vendidas] = await Promise.all([
+        loadMotos({ status: "disponivel" }),
+        loadMotos({ status: "reservada" }),
+        loadMotos({ status: "vendida" }),
+      ]);
+      cache.disponivel = sortMotos(ativas);
+      cache.reservada  = sortMotos(reservadas);
+      cache.vendida    = sortMotos(vendidas);
+      if (statAtivas)   statAtivas.textContent   = String(ativas.length);
+      if (statVendidas) statVendidas.textContent = String(vendidas.length);
+      if (totalCount)   totalCount.textContent   = String(ativas.length + reservadas.length + vendidas.length);
+    } catch {}
+  })();
 
   async function showTab(status) {
     setActiveTab(status);
     if (heroTitle) heroTitle.textContent = TITLES[status] || TITLES.disponivel;
+    if (catalogMeta) {
+      catalogMeta.textContent =
+        status === "disponivel" ? "À VENDA AGORA" :
+        status === "reservada"  ? "RESERVADAS" :
+                                  "JÁ VENDIDAS";
+    }
 
     // Se já temos cache, renderiza direto (sem flash de skeleton)
     if (cache[status]) {
       renderCards(grid, cache[status]);
-      if (totalCount) totalCount.textContent = String(cache[status].length);
       return;
     }
     renderSkeleton(grid, 4);
     const list = await getList(status);
     renderCards(grid, list);
-    if (totalCount) totalCount.textContent = String(list.length);
   }
 
   await showTab("disponivel");

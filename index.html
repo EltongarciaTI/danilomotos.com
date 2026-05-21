@@ -1,208 +1,136 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <!-- =====================================================
-       DANILO MOTOS — CATÁLOGO (index.html)
-       -----------------------------------------------------
-       O que essa página faz:
-       - Mostra o catálogo de motos em cards
-       - Tem abas: Disponíveis / Reservadas / Vendidas
-       - Botões de WhatsApp (topo, hero e flutuante)
-       - O conteúdo do grid é preenchido pelo JS: assets/js/motos.js
-       ===================================================== -->
-
-  <!-- Meta básico / SEO -->
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0f0f12" />
 
-  <title>Danilo Motos | Catálogo</title>
-  <meta
-    name="description"
-    content="Danilo Motos: catálogo de motos com fotos, vídeos e ficha técnica. Negocie direto no WhatsApp."
-  />
+  <title>Danilo Motos · Catálogo</title>
+  <meta name="description" content="Danilo Motos — Concessionária em Euclides da Cunha. Catálogo de motos com fotos, ficha técnica e negociação direta no WhatsApp." />
 
-  <!-- CSS principal do site -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20260521a" />
+  <!-- Fonts: Anton (display racing) + Manrope (body) + JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="image" href="assets/img/hero-mobile.jpg" media="(max-width: 767px)" />
+  <link rel="preload" as="image" href="assets/img/hero.jpg" media="(min-width: 768px)" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" />
 
-  <!-- Ícone do site -->
+  <link rel="stylesheet" href="assets/css/style.css?v=20260521c" />
   <link rel="icon" href="./logo.png" type="image/png" />
 </head>
 
 <body>
-  <!-- =====================================================
-       HEADER FIXO (topo do site)
-       -----------------------------------------------------
-       - Logo + nome
-       - Botão WhatsApp do topo (#waHeader)
-       - O CSS deixa esse header fixo, então o body precisa de padding-top
-       ===================================================== -->
   <header>
-    <div class="wrap headerRow">
-      <!-- Marca / Logo -->
+    <div class="headerRow">
       <a class="brand" href="index.html" aria-label="Danilo Motos">
         <div class="logo">
-          <img
-            src="logo.png"
-            alt="Danilo Motos"
-            onerror="this.style.display='none'"
-          />
+          <img src="logo.png" alt="Danilo Motos" onerror="this.style.display='none'" />
         </div>
-
         <div class="brandText">
-          <div class="brandTop">
-            <strong>Danilo Motos</strong>
-          </div>
-          <span>Catálogo • Fotos • Vídeos • Ficha técnica</span>
+          <div class="brandTop"><strong>DANILO MOTOS</strong></div>
+          <span>Euclides da Cunha · BA</span>
         </div>
       </a>
 
-      <!-- Botão do WhatsApp no topo
-           (normalmente o JS preenche o link com o número e texto) -->
-      <a class="btn" id="waHeader" target="_blank" rel="noopener">
-        WhatsApp
-      </a>
+      <a class="btn" id="waHeader" target="_blank" rel="noopener">WhatsApp</a>
     </div>
   </header>
 
   <!-- =====================================================
-       CONTEÚDO PRINCIPAL
+       HERO RACING
        ===================================================== -->
-  <main class="wrap">
-    <!-- =====================================================
-         HERO (título + descrição + contadores + CTA)
-         -----------------------------------------------------
-         - #heroTitle muda dependendo da aba selecionada
-         - #totalCount mostra quantas motos existem (por aba ou total)
-         - #waContato é o botão principal do hero para WhatsApp
-         ===================================================== -->
-    <section class="hero">
-      <div>
-        <h1 class="heroTitle" id="heroTitle">Motos disponíveis</h1>
+  <section class="hero" aria-label="Apresentação">
+    <div class="hero__media" aria-hidden="true"></div>
+    <div class="hero__inner">
+      <div class="hero__line"></div>
 
-        <p class="heroSub">
-          Toque para ver fotos, ficha técnica e negociar pelo WhatsApp.
-        </p>
-      </div>
+      <div class="hero__tag">DESDE 2020 · EUCLIDES DA CUNHA / BA</div>
 
-      <div class="heroRight">
-        <!-- Pill de contagem -->
-        <div class="pillCount" aria-label="Total de motos listadas">
-          <span>Total</span>
-          <b id="totalCount">0</b>
-        </div>
+      <h1 class="hero__title">
+        Motos<br/>com <em>história.</em>
+      </h1>
 
-        <!-- CTA principal -->
+      <p class="hero__sub" id="heroSub">
+        Catálogo direto da loja. Toque em uma moto pra ver fotos, ficha técnica e negociar pelo WhatsApp.
+      </p>
+
+      <div class="hero__actions">
         <a class="btn primary" id="waContato" target="_blank" rel="noopener">
-          Chamar no WhatsApp
+          Negociar no WhatsApp
         </a>
       </div>
-    </section>
 
-    <!-- =====================================================
-         TOOLBAR (abas do catálogo)
-         -----------------------------------------------------
-         - botões com IDs:
-           #tabAtivas, #tabReservadas, #tabVendidas
-         - a classe .isActive define qual aba está selecionada
-         - o JS troca a aba e renderiza o grid
-         ===================================================== -->
-    <section class="toolbar" aria-label="Filtros do catálogo">
-      <div class="toolbarLeft">
-        <span class="dotLive" aria-hidden="true"></span>
-        <span class="mutedText">Danilo Motos</span>
+      <div class="hero__stats">
+        <div>
+          <div class="stat__num" id="totalCount">0</div>
+          <div class="stat__label">No catálogo</div>
+        </div>
+        <div>
+          <div class="stat__num" id="statAtivas">0</div>
+          <div class="stat__label">Disponíveis</div>
+        </div>
+        <div>
+          <div class="stat__num" id="statVendidas">0</div>
+          <div class="stat__label">Vendidas</div>
+        </div>
       </div>
+    </div>
+  </section>
 
-      <div class="toolbarRight">
-        <button class="chip isActive" id="tabAtivas" type="button">
-          Disponíveis
-        </button>
+  <main class="wrap">
+    <!-- SECTION HEADER -->
+    <div class="section-header">
+      <h2 id="heroTitle">Motos disponíveis</h2>
+      <div class="section-header__meta" id="catalogMeta">CATÁLOGO 2026</div>
+    </div>
 
-        <button class="chip" id="tabReservadas" type="button">
-          Reservadas
-        </button>
+    <!-- TOOLBAR / TABS -->
+    <div class="toolbar" role="tablist">
+      <button class="chip isActive" id="tabAtivas" type="button" role="tab">Disponíveis</button>
+      <button class="chip" id="tabReservadas" type="button" role="tab">Reservadas</button>
+      <button class="chip" id="tabVendidas" type="button" role="tab">Vendidas</button>
+    </div>
 
-        <button class="chip" id="tabVendidas" type="button">
-          Vendidas
-        </button>
-      </div>
-    </section>
-
-    <!-- =====================================================
-         GRID DO CATÁLOGO (cards)
-         -----------------------------------------------------
-         - #motosGrid é preenchido via JS (assets/js/motos.js)
-         - cada moto vira um card (provavelmente .card-moto)
-         ===================================================== -->
+    <!-- GRID -->
     <section aria-label="Lista de motos">
-      <div id="motosGrid" class="marketGrid"></div>
+      <div id="motosGrid" class="marketGrid" style="margin-top: 18px"></div>
     </section>
   </main>
 
-  <!-- =====================================================
-       BOTÃO WHATSAPP FLUTUANTE
-       -----------------------------------------------------
-       - #waFloat normalmente é configurado via JS
-       - Você está forçando display:none no CSS atualmente (floatWA hidden)
-         então ele não aparece.
-       ===================================================== -->
   <a class="floatWA" id="waFloat" target="_blank" rel="noopener">
     <span class="dot"></span> Negociar no WhatsApp
   </a>
 
-  <!-- =====================================================
-       FOOTER
-       -----------------------------------------------------
-       - localização / telefone / instagram
-       - aqui também coloquei #year para não dar erro no JS
-       ===================================================== -->
   <footer class="footer">
     <div class="wrap footerContent">
-      <div>
-        📍
-        <a
-          class="link"
-          href="https://www.google.com/maps/search/RUA%20MONTE%20SANTO%20186/@-10.5061,-39.0218,17z?hl=pt-BR"
-          target="_blank"
-          rel="noopener"
-        >
-          Euclides da Cunha
-        </a>
+      <div class="footerItem">
+        <svg class="footerIcon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        <a class="link" href="https://www.google.com/maps/search/RUA%20MONTE%20SANTO%20186/@-10.5061,-39.0218,17z?hl=pt-BR" target="_blank" rel="noopener">EUCLIDES DA CUNHA / BA</a>
       </div>
-
-      <div>
-        📞
-        <a class="link" href="https://wa.me/5575999185684" target="_blank" rel="noopener">
-          +55 75 99918-5684
-        </a>
+      <div class="footerItem">
+        <svg class="footerIcon footerIcon--whatsapp" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.046 22l4.932-1.364A9.945 9.945 0 0011.999 22c5.523 0 10-4.477 10-10S17.522 2 11.999 2z"/>
+        </svg>
+        <a class="link" href="https://wa.me/5575999185684" target="_blank" rel="noopener">+55 75 99918-5684</a>
       </div>
-
-      <div>
-        📸
-        <a
-          class="link"
-          href="https://www.instagram.com/danilo_motoss"
-          target="_blank"
-          rel="noopener"
-        >
-          @danilo_motoss
-        </a>
+      <div class="footerItem">
+        <svg class="footerIcon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+          <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+        </svg>
+        <a class="link" href="https://www.instagram.com/danilo_motoss" target="_blank" rel="noopener">@danilo_motoss</a>
       </div>
-
-      <div class="copyright">
-        © <span id="year"></span> — Todos os direitos reservados.
-      </div>
+      <div class="copyright">© <span id="year"></span> · DANILO MOTOS</div>
     </div>
   </footer>
 
-  <!-- =====================================================
-       SCRIPTS
-       -----------------------------------------------------
-       1) motos.js (module) = carrega do Supabase e renderiza grid + abas + links WA
-       2) script do ano = apenas preenche o span #year
-       ===================================================== -->
-  <script type="module" src="assets/js/motos.js?v=20260521b"></script>
+  <script type="module" src="assets/js/motos.js?v=20260521c"></script>
   <script>
-    // Atualiza o ano automático no footer
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 </body>

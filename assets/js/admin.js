@@ -131,9 +131,9 @@ function renderMotoSelect() {
   // Se estiver em "todas" e sem busca, agrupa por status para ficar mais fácil achar.
   if (filtroStatus === "todas" && !term) {
    const labelMap = {
-  ativo: "✅ Ativas",
-  reservada: "🟠 Reservadas",
-  vendida: "🔴 Vendidas",
+  ativo: "ATIVAS",
+  reservada: "RESERVADAS",
+  vendida: "VENDIDAS",
 };
 
     const groups = {
