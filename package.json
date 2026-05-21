@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "http-server . -p 8080 -c-1 -o",
     "optimize:storage": "node scripts/optimize-supabase-storage.js"
   },
   "type": "module",
@@ -20,7 +19,6 @@
   },
   "homepage": "https://github.com/EltongarciaTI/danilomotos.com#readme",
   "devDependencies": {
-    "http-server": "^14.1.1",
     "sharp": "^0.34.5"
   }
 }
