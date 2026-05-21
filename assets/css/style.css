@@ -307,7 +307,7 @@ header {
 #tabVendidas.chip.isActive   { color: var(--muted); }
 
 /* =====================================================
-   7) HERO RACING (full-bleed com imagem)
+   7) HERO RACING (full-bleed com imagem + parallax)
    ===================================================== */
 .hero {
   position: relative;
@@ -315,6 +315,8 @@ header {
   padding: 0;
   overflow: hidden;
   isolation: isolate;
+  /* Performance hint para o browser */
+  will-change: transform;
 }
 @media (min-width: 768px) {
   .hero { margin: 0 -32px; }
@@ -322,12 +324,14 @@ header {
 
 .hero__media {
   position: absolute;
-  inset: 0;
+  inset: -10% 0 -10% 0;  /* overflow extra pro parallax não mostrar borda */
   z-index: -1;
   background-image: url("../img/hero-mobile.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);  /* força GPU */
 }
 @media (min-width: 768px) {
   .hero__media { background-image: url("../img/hero.jpg"); }
@@ -341,6 +345,10 @@ header {
   background:
     linear-gradient(180deg, rgba(15,15,18,0.55) 0%, rgba(15,15,18,0.35) 30%, rgba(15,15,18,0.85) 75%, var(--bg) 100%),
     radial-gradient(ellipse at 80% 50%, transparent 30%, rgba(15,15,18,0.6) 100%);
+}
+
+.hero__inner {
+  will-change: transform, opacity;
 }
 
 .hero__inner {
@@ -472,6 +480,64 @@ header {
 }
 
 /* =====================================================
+   7.5) BRAND MARQUEE (parallax horizontal — entre hero e cards)
+   ===================================================== */
+.brand-marquee {
+  position: relative;
+  margin: 32px -18px 0;
+  padding: 36px 0 32px;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+}
+@media (min-width: 768px) {
+  .brand-marquee { margin: 48px -32px 0; padding: 56px 0 48px; }
+}
+
+.brand-marquee__text {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(72px, 18vw, 220px);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--cream);
+  text-stroke: 1.5px var(--cream);
+  opacity: 0.18;
+  will-change: transform;
+  transform: translate3d(-50%, 0, 0);
+  user-select: none;
+  pointer-events: none;
+}
+.brand-marquee__text em {
+  font-style: normal;
+  -webkit-text-stroke: 1.5px var(--red);
+  text-stroke: 1.5px var(--red);
+}
+
+.brand-marquee__caption {
+  position: absolute;
+  bottom: 14px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.7;
+}
+@media (min-width: 768px) {
+  .brand-marquee__caption { bottom: 20px; left: 32px; right: 32px; }
+}
+
+/* =====================================================
    8) TOOLBAR
    ===================================================== */
 .toolbar {
@@ -532,27 +598,37 @@ header {
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
   display: block;
   color: inherit;
-  opacity: 0;
-  animation: cardIn 0.6s ease-out forwards;
-}
-/* Stagger entrance */
-.card-moto:nth-child(1) { animation-delay: 0.05s; }
-.card-moto:nth-child(2) { animation-delay: 0.12s; }
-.card-moto:nth-child(3) { animation-delay: 0.19s; }
-.card-moto:nth-child(4) { animation-delay: 0.26s; }
-.card-moto:nth-child(5) { animation-delay: 0.33s; }
-.card-moto:nth-child(6) { animation-delay: 0.40s; }
-.card-moto:nth-child(n+7) { animation-delay: 0.46s; }
 
-.card-moto:hover {
+  /* Estado inicial: invisível, leve translate */
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  transition:
+    opacity .6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform .7s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color .25s ease,
+    box-shadow .25s ease;
+}
+
+/* Quando entra no viewport — revealed via IntersectionObserver */
+.card-moto.is-revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+/* Stagger natural via nth-child (delay APÓS reveal) */
+.card-moto.is-revealed:nth-child(2) { transition-delay: 0.08s; }
+.card-moto.is-revealed:nth-child(3) { transition-delay: 0.16s; }
+.card-moto.is-revealed:nth-child(4) { transition-delay: 0.04s; }
+.card-moto.is-revealed:nth-child(5) { transition-delay: 0.10s; }
+.card-moto.is-revealed:nth-child(6) { transition-delay: 0.16s; }
+
+.card-moto.is-revealed:hover {
   border-color: var(--red);
   box-shadow: var(--shadow-lg), 0 0 0 1px var(--red);
-  transform: translateY(-3px);
+  transform: translate3d(0, -4px, 0);
 }
-.card-moto:active { transform: translateY(-1px) scale(0.99); }
+.card-moto.is-revealed:active { transform: translate3d(0, -1px, 0) scale(0.99); }
 
 /* Accent line vermelha que aparece no hover */
 .card-moto::before {
