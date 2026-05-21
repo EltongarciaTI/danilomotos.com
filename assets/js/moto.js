@@ -1,5 +1,20 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260521a";
-import { loadMotos } from "./loader.js?v=20260521a";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260521b";
+import { loadMotos } from "./loader.js?v=20260521b";
+
+// Atualiza tags Open Graph quando a moto carrega.
+// Faz o link da moto bonitão no WhatsApp/Insta (preview com foto e descrição).
+function setOG(title, description, imageUrl, url) {
+  const set = (selector, attr, value) => {
+    const el = document.querySelector(selector);
+    if (el) el.setAttribute(attr, value);
+  };
+  document.title = title;
+  set('meta[name="description"]', "content", description);
+  set('meta[property="og:title"]', "content", title);
+  set('meta[property="og:description"]', "content", description);
+  if (imageUrl) set('meta[property="og:image"]', "content", imageUrl);
+  set('meta[property="og:url"]', "content", url);
+}
 
 const WHATSAPP_NUMBER = "5575999185684";
 const MAX_FOTOS = 4;
@@ -201,8 +216,15 @@ async function main() {
     const status = String(moto.status||"disponivel").toLowerCase();
     const isBloqueada = status==="vendida" || status==="reservada";
 
-    /* Título / subtítulo */
-    document.title = `${moto.titulo||moto.id} | Danilo Motos`;
+    /* Título / subtítulo + Open Graph */
+    const ogTitle = `${moto.titulo||moto.id} · Danilo Motos`;
+    const ogDesc = [
+      moto.preco ? formatBRL(moto.preco) : null,
+      moto.ano,
+      moto.km ? `${Number(moto.km).toLocaleString("pt-BR")} km` : null,
+      moto.cor,
+    ].filter(Boolean).join(" · ") || "Veja fotos, ficha técnica e negocie direto no WhatsApp.";
+    setOG(ogTitle, ogDesc, moto.capa || "", location.href);
     setText("#titulo", moto.titulo||moto.id);
     setText("#subtitulo", [
       moto.ano,

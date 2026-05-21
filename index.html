@@ -5,17 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#0f0f12" />
 
-  <title>Danilo Motos · Catálogo</title>
-  <meta name="description" content="Danilo Motos — Concessionária em Euclides da Cunha. Catálogo de motos seminovas com negociação direta no WhatsApp." />
+  <title>Danilo Motos · Catálogo de motos seminovas em Euclides da Cunha</title>
+  <meta name="description" content="Danilo Motos — Concessionária em Euclides da Cunha (BA). Catálogo de motos seminovas com fotos, ficha técnica e negociação direta no WhatsApp." />
+  <link rel="canonical" href="https://danilomotos.com/" />
 
+  <!-- Performance: pré-conexão pros 2 hosts mais críticos -->
+  <link rel="preconnect" href="https://zhivqujoneqzviasioug.supabase.co" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="image" href="assets/img/hero-mobile.jpg" media="(max-width: 767px)" />
   <link rel="preload" as="image" href="assets/img/hero.jpg" media="(min-width: 768px)" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" />
 
-  <link rel="stylesheet" href="assets/css/style.css?v=20260521e" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260521g" />
   <link rel="icon" href="./logo.png" type="image/png" />
+  <link rel="apple-touch-icon" href="./logo.png" />
+
+  <!-- Open Graph (WhatsApp, Facebook, LinkedIn) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Danilo Motos" />
+  <meta property="og:title" content="Danilo Motos · Catálogo" />
+  <meta property="og:description" content="Catálogo de motos seminovas em Euclides da Cunha (BA). Negocie direto no WhatsApp." />
+  <meta property="og:url" content="https://danilomotos.com/" />
+  <meta property="og:image" content="https://danilomotos.com/assets/img/hero.jpg" />
+  <meta property="og:locale" content="pt_BR" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Danilo Motos · Catálogo" />
+  <meta name="twitter:description" content="Catálogo de motos seminovas em Euclides da Cunha (BA)." />
+  <meta name="twitter:image" content="https://danilomotos.com/assets/img/hero.jpg" />
 </head>
 
 <body>
@@ -27,7 +46,6 @@
         </div>
         <div class="brandText">
           <div class="brandTop"><strong>DANILO MOTOS</strong></div>
-          <span>Euclides da Cunha · BA</span>
         </div>
       </a>
 
@@ -45,12 +63,20 @@
        HERO MINIMALISTA — só nome + foto + scroll cue
        ===================================================== -->
   <section class="hero" aria-label="Apresentação">
-    <div class="hero__media" aria-hidden="true"></div>
+    <div class="hero__media" aria-hidden="true">
+      <div class="hero__media__bg"></div>
+    </div>
 
     <div class="hero__inner">
       <div class="hero__brand">
-        <h1 class="hero__title">DANILO MOTOS</h1>
-        <p class="hero__tagline">Euclides da Cunha · Bahia</p>
+        <h1 class="hero__title" aria-label="Danilo Motos">
+          <span class="word">
+            <span class="letter" style="--i:0">D</span><span class="letter" style="--i:1">A</span><span class="letter" style="--i:2">N</span><span class="letter" style="--i:3">I</span><span class="letter" style="--i:4">L</span><span class="letter" style="--i:5">O</span>
+          </span>
+          <span class="word">
+            <span class="letter" style="--i:6">M</span><span class="letter" style="--i:7">O</span><span class="letter" style="--i:8">T</span><span class="letter" style="--i:9">O</span><span class="letter" style="--i:10">S</span>
+          </span>
+        </h1>
       </div>
     </div>
 
@@ -126,8 +152,8 @@
     </div>
   </footer>
 
-  <script type="module" src="assets/js/motos.js?v=20260521e"></script>
-  <script type="module" src="assets/js/scroll.js?v=20260521e"></script>
+  <script type="module" src="assets/js/motos.js?v=20260521b"></script>
+  <script type="module" src="assets/js/scroll.js?v=20260521b"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>

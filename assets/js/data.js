@@ -8,6 +8,34 @@ export const STORAGE_PUBLIC_BASE =
   `${SUPABASE_URL}/storage/v1/object/public/motos`;
 
 /**
+ * Conta motos do Supabase sem baixar o conteúdo (só header Content-Range).
+ * Usado nos contadores da UI sem custo de banda.
+ * @param {Object} options
+ * @param {string} options.status
+ */
+export async function fetchMotosCount({ status = "disponivel" } = {}) {
+  const url = new URL(`${SUPABASE_URL}/rest/v1/motos`);
+  url.searchParams.set("select", "id");
+  if (status === "disponivel") {
+    url.searchParams.set("or", "(status.eq.disponivel,status.eq.ativo)");
+  } else if (status !== "all") {
+    url.searchParams.set("status", `eq.${status}`);
+  }
+  const res = await fetch(url.toString(), {
+    method: "HEAD",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      Prefer: "count=exact",
+      Range: "0-0",
+    },
+  });
+  const cr = res.headers.get("content-range") || "*/0";
+  const count = Number(cr.split("/")[1]) || 0;
+  return count;
+}
+
+/**
  * Busca motos do Supabase
  * @param {Object} options
  * @param {string} options.status - "ativo" | "vendida" | "all" | "disponivel" | "reservada"

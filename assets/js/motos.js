@@ -1,6 +1,7 @@
 // assets/js/motos.js
 // Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Vendidas
-import { loadMotos } from "./loader.js?v=20260520a";
+import { loadMotos } from "./loader.js?v=20260521b";
+import { fetchMotosCount } from "./data.js?v=20260521b";
 
 const WHATSAPP_NUMBER = "5575999185684"; // 55 + DDD + número
 
@@ -208,23 +209,28 @@ async function main() {
   const statVendidas = $("#statVendidas");
   const catalogMeta = $("#catalogMeta");
 
-  // Carrega os contadores das outras abas em background pra mostrar nos stats
-  // (não bloqueia o render principal)
+  // Contadores: 3 requests HEAD leves (não baixam dados, só headers).
+  // ~1 KB total em vez de ~80 KB do método antigo.
   (async () => {
     try {
-      const [ativas, reservadas, vendidas] = await Promise.all([
-        loadMotos({ status: "disponivel" }),
-        loadMotos({ status: "reservada" }),
-        loadMotos({ status: "vendida" }),
+      const [cAtivas, cReservadas, cVendidas] = await Promise.all([
+        fetchMotosCount({ status: "disponivel" }),
+        fetchMotosCount({ status: "reservada" }),
+        fetchMotosCount({ status: "vendida" }),
       ]);
-      cache.disponivel = sortMotos(ativas);
-      cache.reservada  = sortMotos(reservadas);
-      cache.vendida    = sortMotos(vendidas);
-      if (statAtivas)   statAtivas.textContent   = String(ativas.length);
-      if (statVendidas) statVendidas.textContent = String(vendidas.length);
-      if (totalCount)   totalCount.textContent   = String(ativas.length + reservadas.length + vendidas.length);
+      if (statAtivas)   statAtivas.textContent   = String(cAtivas);
+      if (statVendidas) statVendidas.textContent = String(cVendidas);
+      if (totalCount)   totalCount.textContent   = String(cAtivas + cReservadas + cVendidas);
     } catch {}
   })();
+
+  // Pre-cache das outras abas só quando o navegador estiver ocioso.
+  // Não bloqueia nada e melhora a percepção de velocidade se o usuário trocar de aba.
+  const onIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 2000));
+  onIdle(() => {
+    loadMotos({ status: "reservada" }).then((d) => { cache.reservada = sortMotos(d); }).catch(() => {});
+    loadMotos({ status: "vendida" }).then((d)  => { cache.vendida   = sortMotos(d); }).catch(() => {});
+  }, { timeout: 4000 });
 
   async function showTab(status) {
     setActiveTab(status);
