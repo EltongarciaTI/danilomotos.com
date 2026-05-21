@@ -963,6 +963,86 @@ header {
 .videoWrap { aspect-ratio: 16 / 9; border-radius: var(--radius-lg); overflow: hidden; }
 .videoWrap iframe { width: 100%; height: 100%; border: 0; }
 
+/* Cursor de zoom no carrossel da moto pra indicar que clica pra ampliar */
+.carouselTrack img { cursor: zoom-in; }
+
+/* =====================================================
+   12.5) LIGHTBOX (zoom fullscreen das fotos da moto)
+   ===================================================== */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  cursor: zoom-out;
+  animation: lightboxIn 0.2s ease-out;
+}
+@keyframes lightboxIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.lightbox__img {
+  max-width: 96vw;
+  max-height: 92vh;
+  object-fit: contain;
+  display: block;
+  cursor: default;
+  user-select: none;
+}
+.lightbox__btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.lightbox__btn:hover { background: rgba(255,255,255,0.18); }
+.lightbox__prev { left: 16px; }
+.lightbox__next { right: 16px; }
+.lightbox__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.lightbox__close:hover { background: rgba(255,255,255,0.18); }
+.lightbox__counter {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
 /* =====================================================
    13) WHATSAPP FAB (Floating Action Button)
    ===================================================== */

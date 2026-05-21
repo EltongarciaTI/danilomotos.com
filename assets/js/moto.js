@@ -140,7 +140,76 @@ function renderCarousel(fotos) {
     else if (diff < -50) prevBtn?.click();
   });
 
+  // Clicar na imagem do carrossel abre lightbox (zoom fullscreen)
+  track.addEventListener("click", (e) => {
+    const img = e.target.closest("img");
+    if (!img || !img.src) return;
+    openLightbox(fotos, idx);
+  });
+
   requestAnimationFrame(update);
+}
+
+/* ── LIGHTBOX (fullscreen zoom das fotos) ── */
+function openLightbox(fotos, startIdx = 0) {
+  if (!fotos || !fotos.length) return;
+  let i = startIdx;
+
+  const overlay = document.createElement("div");
+  overlay.className = "lightbox";
+  overlay.innerHTML = `
+    <button class="lightbox__close" aria-label="Fechar">✕</button>
+    <button class="lightbox__btn lightbox__prev" aria-label="Anterior">‹</button>
+    <img class="lightbox__img" src="${fotos[i]}" alt="Foto da moto">
+    <button class="lightbox__btn lightbox__next" aria-label="Próxima">›</button>
+    <div class="lightbox__counter"></div>
+  `;
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
+
+  const imgEl = overlay.querySelector(".lightbox__img");
+  const counterEl = overlay.querySelector(".lightbox__counter");
+  const prev = overlay.querySelector(".lightbox__prev");
+  const next = overlay.querySelector(".lightbox__next");
+  const close = overlay.querySelector(".lightbox__close");
+
+  function render() {
+    imgEl.src = fotos[i];
+    counterEl.textContent = `${i + 1} / ${fotos.length}`;
+    const show = fotos.length > 1;
+    prev.style.display = show ? "" : "none";
+    next.style.display = show ? "" : "none";
+  }
+  function fechar() {
+    overlay.remove();
+    document.body.style.overflow = "";
+    document.removeEventListener("keydown", onKey);
+  }
+  function onKey(ev) {
+    if (ev.key === "Escape") fechar();
+    else if (ev.key === "ArrowLeft") { i = (i - 1 + fotos.length) % fotos.length; render(); }
+    else if (ev.key === "ArrowRight") { i = (i + 1) % fotos.length; render(); }
+  }
+
+  prev.onclick = (ev) => { ev.stopPropagation(); i = (i - 1 + fotos.length) % fotos.length; render(); };
+  next.onclick = (ev) => { ev.stopPropagation(); i = (i + 1) % fotos.length; render(); };
+  close.onclick = fechar;
+  // Click no fundo (fora da img/btns) tambem fecha
+  overlay.addEventListener("click", (ev) => {
+    if (ev.target === overlay) fechar();
+  });
+  document.addEventListener("keydown", onKey);
+
+  // Swipe no mobile
+  let sx = 0;
+  overlay.addEventListener("touchstart", (ev) => { sx = ev.touches[0].clientX; }, { passive: true });
+  overlay.addEventListener("touchend", (ev) => {
+    const dx = sx - ev.changedTouches[0].clientX;
+    if (dx > 50)  { i = (i + 1) % fotos.length; render(); }
+    if (dx < -50) { i = (i - 1 + fotos.length) % fotos.length; render(); }
+  });
+
+  render();
 }
 
 /* ── ÍCONES DA FICHA ── */

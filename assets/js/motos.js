@@ -166,6 +166,19 @@ function renderCards(grid, motos) {
       img.classList.add("is-loaded");
     }
   });
+
+  // Salva scroll + tab atual quando user clica num card.
+  // Quando voltar do detalhe (back button ou link), restauramos.
+  grid.querySelectorAll("a.card-moto").forEach((card) => {
+    card.addEventListener("click", () => {
+      try {
+        sessionStorage.setItem(
+          "catalogoState",
+          JSON.stringify({ y: window.scrollY, tab: window.__currentTab || "disponivel", ts: Date.now() })
+        );
+      } catch {}
+    });
+  });
 }
 
 async function main() {
@@ -238,6 +251,7 @@ async function main() {
 
   async function showTab(status) {
     setActiveTab(status);
+    window.__currentTab = status;
     if (heroTitle) heroTitle.textContent = TITLES[status] || TITLES.disponivel;
     if (catalogMeta) {
       catalogMeta.textContent =
@@ -256,7 +270,31 @@ async function main() {
     renderCards(grid, list);
   }
 
-  await showTab("disponivel");
+  // Restaura estado anterior se o usuario voltou da pagina de detalhe
+  // (back button ou link "Catalogo"). Considera valido por 30min.
+  let initialTab = "disponivel";
+  let restoreScrollY = null;
+  try {
+    const raw = sessionStorage.getItem("catalogoState");
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && Date.now() - (s.ts || 0) < 30 * 60 * 1000) {
+        initialTab = s.tab || "disponivel";
+        restoreScrollY = Number(s.y) || 0;
+      }
+      // Limpa pra so restaurar uma vez (proxima visita comeca do topo)
+      sessionStorage.removeItem("catalogoState");
+    }
+  } catch {}
+
+  await showTab(initialTab);
+
+  // Restaura scroll DEPOIS dos cards renderizarem (proximo frame)
+  if (restoreScrollY != null) {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: restoreScrollY, behavior: "instant" });
+    });
+  }
 
   if (tabAtivas)     tabAtivas.addEventListener("click",     () => showTab("disponivel"));
   if (tabReservadas) tabReservadas.addEventListener("click", () => showTab("reservada"));
