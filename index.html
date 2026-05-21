@@ -35,6 +35,26 @@
   <meta name="twitter:title" content="Danilo Motos · Catálogo" />
   <meta name="twitter:description" content="Catálogo de motos seminovas em Euclides da Cunha (BA)." />
   <meta name="twitter:image" content="https://danilomotos.com/assets/img/hero.jpg" />
+
+  <!-- Scroll restoration: evita o flicker "topo → posicao certa" ao voltar do detalhe.
+       Roda SINCRONO antes do body renderizar: desliga auto-restore do browser e
+       reserva a altura aproximada onde o usuario estava (via minHeight) pra o
+       scrollTo nao colidir com layout shift quando os cards renderizarem. -->
+  <script>
+    (function() {
+      try {
+        if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+        var raw = sessionStorage.getItem("catalogoState");
+        if (!raw) return;
+        var s = JSON.parse(raw);
+        if (!s || Date.now() - (s.ts || 0) > 30 * 60 * 1000) return;
+        // Sinaliza pro motos.js usar este state (e nao reler do storage)
+        window.__restoreState = s;
+        // Reserva altura no body pra evitar layout shift / browser auto-scroll pro topo
+        if (s.bodyH) document.documentElement.style.minHeight = s.bodyH + "px";
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body>
@@ -152,7 +172,7 @@
     </div>
   </footer>
 
-  <script type="module" src="assets/js/motos.js?v=20260521k"></script>
+  <script type="module" src="assets/js/motos.js?v=20260521l"></script>
   <script type="module" src="assets/js/scroll.js?v=20260521b"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();

@@ -167,14 +167,19 @@ function renderCards(grid, motos) {
     }
   });
 
-  // Salva scroll + tab atual quando user clica num card.
-  // Quando voltar do detalhe (back button ou link), restauramos.
+  // Salva scroll + altura + tab quando user clica num card.
+  // Quando voltar do detalhe (back button ou link), restauramos sem flicker.
   grid.querySelectorAll("a.card-moto").forEach((card) => {
     card.addEventListener("click", () => {
       try {
         sessionStorage.setItem(
           "catalogoState",
-          JSON.stringify({ y: window.scrollY, tab: window.__currentTab || "disponivel", ts: Date.now() })
+          JSON.stringify({
+            y: window.scrollY,
+            bodyH: document.documentElement.scrollHeight,
+            tab: window.__currentTab || "disponivel",
+            ts: Date.now(),
+          })
         );
       } catch {}
     });
@@ -270,30 +275,33 @@ async function main() {
     renderCards(grid, list);
   }
 
-  // Restaura estado anterior se o usuario voltou da pagina de detalhe
-  // (back button ou link "Catalogo"). Considera valido por 30min.
-  let initialTab = "disponivel";
-  let restoreScrollY = null;
-  try {
-    const raw = sessionStorage.getItem("catalogoState");
-    if (raw) {
-      const s = JSON.parse(raw);
-      if (s && Date.now() - (s.ts || 0) < 30 * 60 * 1000) {
-        initialTab = s.tab || "disponivel";
-        restoreScrollY = Number(s.y) || 0;
-      }
-      // Limpa pra so restaurar uma vez (proxima visita comeca do topo)
-      sessionStorage.removeItem("catalogoState");
-    }
-  } catch {}
+  // Restoration: state ja foi lido pelo script inline no <head> em window.__restoreState
+  // (que tambem reservou minHeight no <html> pra evitar o flicker do topo).
+  const restoreState = window.__restoreState || null;
+  const initialTab = restoreState?.tab || "disponivel";
+  const restoreScrollY = restoreState ? Number(restoreState.y) || 0 : null;
+
+  // Aplica scroll IMEDIATAMENTE — antes mesmo de renderizar cards. Como o
+  // minHeight ja foi reservado no <html>, o navegador aceita o scrollTo
+  // (mesmo que os cards ainda nao tenham chegado).
+  if (restoreScrollY != null) {
+    window.scrollTo({ top: restoreScrollY, behavior: "instant" });
+  }
+
+  // Limpa o state pra so restaurar uma vez (proxima visita comeca do topo)
+  try { sessionStorage.removeItem("catalogoState"); } catch {}
 
   await showTab(initialTab);
 
-  // Restaura scroll DEPOIS dos cards renderizarem (proximo frame)
+  // Depois dos cards renderizarem, reaplica scroll (caso a altura final
+  // tenha mudado pra mais ou menos do que o reservado) e libera o minHeight.
   if (restoreScrollY != null) {
     requestAnimationFrame(() => {
       window.scrollTo({ top: restoreScrollY, behavior: "instant" });
+      document.documentElement.style.minHeight = "";
     });
+  } else {
+    document.documentElement.style.minHeight = "";
   }
 
   if (tabAtivas)     tabAtivas.addEventListener("click",     () => showTab("disponivel"));
