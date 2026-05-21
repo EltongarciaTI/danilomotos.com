@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "optimize:local": "node scripts/optimize-local-images.js",
     "optimize:storage": "node scripts/optimize-supabase-storage.js"
   },
   "type": "module",

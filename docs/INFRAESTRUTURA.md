@@ -134,9 +134,17 @@ Se trocar capa via admin, o navegador do visitante ainda mostra a antiga por at�
 
 `<img loading="lazy">` no catálogo. Carrossel: 1ª foto `eager + fetchpriority="high"`, demais `lazy`.
 
-### 3.8 Otimização das imagens locais de fallback
+### 3.8 Limpeza das fotos locais (legado removido)
 
-Pasta `assets/img/motos/` (fallback do GitHub Pages caso o Supabase caia): **31.31 MB → 3.20 MB (-90%)** via script [`scripts/optimize-local-images.js`](../scripts/optimize-local-images.js).
+A pasta `assets/img/motos/` tinha 35 fotos antigas (~32 MB no repo) que **não eram mais usadas em produção** — sobra de uma arquitetura anterior. Cruzando com o banco do Supabase:
+
+- 2 pastas (`999`, `factor-preta`) eram de motos que nem existem mais
+- 10 pastas restantes eram de motos com capa já no Supabase Storage
+- O fallback `onerror` que apontava pra elas só funcionava pra essas 10 IDs específicas (das 52 motos do catálogo)
+
+**Decisão:** apagar tudo e substituir por **placeholder SVG inline** no JS. O placeholder fica embutido no código (zero bytes adicionais de download), aparece pra qualquer moto se a foto do Supabase falhar, e o repo Git fica magro.
+
+Resultado: **repo ~32 MB menor** + fallback funcionando pra 100% das motos em vez de só 19%.
 
 ---
 

@@ -22,6 +22,22 @@ function escapeHtml(s = "") {
     .replaceAll("'", "&#039;");
 }
 
+// Placeholder SVG inline mostrado se a imagem do Supabase falhar.
+// Não consome banda — fica embutido no JS.
+const IMG_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+      <rect width="400" height="300" fill="#1a1c20"/>
+      <g fill="none" stroke="#3a3d44" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M120 200l40-40 40 30 40-50 40 30"/>
+        <circle cx="130" cy="210" r="14"/>
+        <circle cx="270" cy="210" r="14"/>
+      </g>
+      <text x="200" y="260" text-anchor="middle" fill="#5a5d64" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Foto indisponivel</text>
+    </svg>`.replace(/\s+/g, " ")
+  );
+
 
 function num(v) {
   const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
@@ -85,9 +101,7 @@ function renderCards(grid, motos) {
         .filter(Boolean)
         .join(" • ");
 
-      const imgCapa = m.capa || "";
-      // Fallback local (GitHub Pages): assets/img/motos/<id>/1.jpg
-      const imgFallback = `${m.fotosBase || `assets/img/motos/${m.id}/`}1.jpg`;
+      const imgCapa = m.capa || IMG_PLACEHOLDER;
 
       const isBloqueada = status === "vendida" || status === "reservada";
       const Tag = isBloqueada ? "div" : "a";
@@ -97,9 +111,9 @@ function renderCards(grid, motos) {
         <${Tag} class="card-moto ${isBloqueada ? "isDisabled" : ""}" ${href}>
           <img class="card-moto__img"
                loading="lazy"
-               src="${imgCapa || imgFallback}"
+               src="${imgCapa}"
                alt="${titulo}"
-               onerror="this.onerror=null; this.src='${imgFallback}';">
+               onerror="this.onerror=null; this.src='${IMG_PLACEHOLDER}';">
           <div class="card-moto__body">
             <div class="card-moto__titulo">${titulo}</div>
             <div class="card-moto__meta">${meta}</div>

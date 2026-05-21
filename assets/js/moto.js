@@ -1,8 +1,23 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260520a";
-import { loadMotos } from "./loader.js?v=20260520a";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260521a";
+import { loadMotos } from "./loader.js?v=20260521a";
 
 const WHATSAPP_NUMBER = "5575999185684";
 const MAX_FOTOS = 4;
+
+// Placeholder SVG inline mostrado se a imagem do Supabase falhar.
+const IMG_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+      <rect width="400" height="300" fill="#1a1c20"/>
+      <g fill="none" stroke="#3a3d44" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M120 200l40-40 40 30 40-50 40 30"/>
+        <circle cx="130" cy="210" r="14"/>
+        <circle cx="270" cy="210" r="14"/>
+      </g>
+      <text x="200" y="260" text-anchor="middle" fill="#5a5d64" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Foto indisponivel</text>
+    </svg>`.replace(/\s+/g, " ")
+  );
 
 function $(sel) { return document.querySelector(sel); }
 function setText(sel, txt) { const e=$(sel); if(e) e.textContent=txt??''; }
@@ -34,7 +49,8 @@ function buildFotos(moto) {
     if (["vendida","reservada"].includes((moto.status||"").toLowerCase())) return [moto.fotos[0]].filter(Boolean);
     return moto.fotos.filter(Boolean);
   }
-  const base = moto.fotosBase || `assets/img/motos/${moto.id}/`;
+  const base = moto.fotosBase || "";
+  if (!base) return [moto.capa].filter(Boolean);
   const fotos = [(moto.capa&&String(moto.capa).trim()) ? moto.capa : `${base}capa.jpg`];
   for (let i=1;i<=MAX_FOTOS;i++) fotos.push(`${base}${i}.jpg`);
   return fotos.filter(f => typeof f==="string"&&f.trim()!=="");
@@ -196,14 +212,13 @@ async function main() {
       if (a) a.href = waLink;
     });
 
-    const base = moto.fotosBase || `assets/img/motos/${moto.id}/`;
-    const capaUrl = moto.capa || `${base}capa.jpg`;
+    const capaUrl = moto.capa || IMG_PLACEHOLDER;
 
     /* ── BLOQUEADA ── */
     if (isBloqueada) {
       const track = $("#galeria");
       if (track) {
-        track.innerHTML = `<img src="${capaUrl}" loading="eager" fetchpriority="high" decoding="async" alt="${moto.titulo||moto.id}" onerror="this.onerror=null;this.src='${base}capa.jpg';">`;
+        track.innerHTML = `<img src="${capaUrl}" loading="eager" fetchpriority="high" decoding="async" alt="${moto.titulo||moto.id}" onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';">`;
         track.style.transform = "translateX(0%)";
       }
       const prev = $("#prevFoto"); const next = $("#nextFoto");
