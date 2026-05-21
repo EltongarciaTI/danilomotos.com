@@ -295,42 +295,61 @@ header {
 .hero {
   position: relative;
   width: 100%;
-  height: 92vh;
-  min-height: 540px;
-  max-height: 820px;
+  height: 88vh;
+  min-height: 500px;
+  max-height: 780px;
   overflow: hidden;
   isolation: isolate;
 }
 
+/* Wrapper que faz parallax (JS controla translateY) */
 .hero__media {
   position: absolute;
-  inset: -8% -2% -8% -2%;
+  inset: 0;
   z-index: -1;
-  background-image: url("../img/hero-mobile.jpg");
-  background-size: cover;
-  background-position: center 40%;
-  background-repeat: no-repeat;
   will-change: transform;
   transform: translate3d(0, 0, 0);
+  overflow: hidden;
+}
+
+/* Background image que faz Ken Burns infinito (CSS only) */
+.hero__media__bg {
+  position: absolute;
+  inset: -6% -3%;
+  background-image: url("../img/hero-mobile.jpg");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  will-change: transform;
+  animation: kenBurns 18s ease-in-out infinite;
 }
 @media (min-width: 768px) {
-  .hero__media {
+  .hero__media__bg {
     background-image: url("../img/hero.jpg");
-    background-position: center 30%;
+    background-position: center center;
   }
 }
 
-/* Vinheta de baixo pra cima (texto centro fica nítido) */
+@keyframes kenBurns {
+  0%   { transform: scale(1.00) translate3d(0, 0, 0); }
+  50%  { transform: scale(1.08) translate3d(-1%, -1.5%, 0); }
+  100% { transform: scale(1.00) translate3d(0, 0, 0); }
+}
+
+/* Vinheta — escurece bordas e bottom pro texto ficar legível */
 .hero__media::before {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   background:
+    radial-gradient(ellipse at center 40%, transparent 25%, rgba(10,10,12,0.55) 75%, rgba(10,10,12,0.85) 100%),
     linear-gradient(180deg,
-      rgba(15,15,18,0.20) 0%,
-      rgba(15,15,18,0.10) 35%,
-      rgba(15,15,18,0.55) 70%,
-      rgba(15,15,18,0.95) 100%);
+      rgba(10,10,12,0.20) 0%,
+      rgba(10,10,12,0.05) 35%,
+      rgba(10,10,12,0.20) 65%,
+      rgba(10,10,12,0.90) 100%);
+  pointer-events: none;
 }
 
 .hero__inner {
@@ -338,30 +357,54 @@ header {
   width: 100%;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  padding: 0 24px;
+  padding: 0 18px 56px;
   text-align: center;
 }
+@media (min-width: 768px) {
+  .hero__inner { padding-bottom: 80px; padding-left: 32px; padding-right: 32px; }
+}
 
-.hero__brand { max-width: 880px; }
+.hero__brand { max-width: 1100px; width: 100%; }
 
 .hero__title {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(64px, 16vw, 180px);
-  line-height: 0.95;
+  font-size: clamp(68px, 18vw, 196px);
+  line-height: 0.88;
   letter-spacing: -0.025em;
   text-transform: uppercase;
   color: var(--cream);
-  text-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
-  /* Animação de entrada — uma vez só */
-  opacity: 0;
-  transform: translateY(20px);
-  animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  text-shadow:
+    0 4px 32px rgba(0, 0, 0, 0.7),
+    0 2px 8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.02em;
 }
-@keyframes heroIn {
-  to { opacity: 1; transform: translateY(0); }
+
+.hero__title .word {
+  display: inline-flex;
+  overflow: hidden;
+}
+
+/* Cada letra entra de baixo, com blur e fade, stagger */
+.hero__title .letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translate3d(0, 0.6em, 0);
+  filter: blur(8px);
+  animation: letterIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(0.06s * var(--i) + 0.2s);
+}
+@keyframes letterIn {
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
 }
 
 .hero__tagline {
@@ -373,11 +416,17 @@ header {
   color: var(--muted);
   margin-top: 18px;
   opacity: 0;
-  transform: translateY(14px);
-  animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  transform: translateY(8px);
+  animation: taglineIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.1s forwards;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+@keyframes taglineIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroIn {
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Indicador de scroll (Catálogo ↓) — discreto à esquerda */
