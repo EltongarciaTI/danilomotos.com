@@ -371,8 +371,8 @@ header {
 .hero__title {
   font-family: var(--font-display);
   font-weight: 400;
-  /* Mobile: 2x maior que antes, sem estourar a tela (DANILO tem 6 letras) */
-  font-size: clamp(120px, 38vw, 200px);
+  /* Mobile: tamanho balanceado (-30% do que estava muito grande) */
+  font-size: clamp(84px, 27vw, 140px);
   line-height: 0.86;
   letter-spacing: -0.03em;
   text-transform: uppercase;
