@@ -20,6 +20,7 @@ initCardReveal();
 // ------------------------------------------------------------
 function initHeroScroll() {
   const hero      = document.querySelector(".hero");
+  // Move o wrapper, não o __bg (que tem Ken Burns rodando)
   const heroMedia = document.querySelector(".hero__media");
   const heroBrand = document.querySelector(".hero__brand");
   const heroScroll = document.querySelector(".hero__scroll");

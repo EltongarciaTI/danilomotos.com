@@ -371,18 +371,18 @@ header {
 .hero__title {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(68px, 18vw, 196px);
-  line-height: 0.88;
-  letter-spacing: -0.025em;
+  font-size: clamp(110px, 28vw, 320px);
+  line-height: 0.86;
+  letter-spacing: -0.03em;
   text-transform: uppercase;
   color: var(--cream);
   text-shadow:
-    0 4px 32px rgba(0, 0, 0, 0.7),
-    0 2px 8px rgba(0, 0, 0, 0.5);
+    0 4px 40px rgba(0, 0, 0, 0.75),
+    0 2px 10px rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.02em;
+  gap: 0.01em;
 }
 
 .hero__title .word {

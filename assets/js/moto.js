@@ -80,8 +80,11 @@ function renderCarousel(fotos) {
   let idx = 0;
   const fallback = fotos[0] || "";
 
+  // Numa pagina de detalhe o user QUER ver todas as fotos da moto.
+  // Carrega TODAS desde o inicio (eager): a primeira com prioridade alta,
+  // as demais em paralelo (sem lazy). Sao no maximo 5 fotos por moto.
   track.innerHTML = fotos.map((src, i) =>
-    `<img class="is-loading" src="${src||fallback}" ${i===0?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" alt="Foto da moto" onload="this.classList.remove('is-loading');this.classList.add('is-loaded');" onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';this.classList.remove('is-loading');this.classList.add('is-loaded');">`
+    `<img class="is-loading" src="${src||fallback}" loading="eager" ${i===0?'fetchpriority="high"':'fetchpriority="low"'} decoding="async" alt="Foto da moto" onload="this.classList.remove('is-loading');this.classList.add('is-loaded');" onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';this.classList.remove('is-loading');this.classList.add('is-loaded');">`
   ).join("");
 
   // Imagens já em cache não disparam onload
