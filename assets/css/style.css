@@ -28,27 +28,45 @@
    - Você mexe aqui e o site todo acompanha
    ===================================================== */
 :root {
-  /* Fundo / painéis */
-  --bg: #050607;       /* fundo geral */
-  --panel: #0d0f12;    /* cards/caixas */
-  --panel-2: #12151a;  /* linhas internas (ficha) */
-  --line: rgba(255, 255, 255, 0.08); /* bordas suaves */
+  /* Fundo / painéis — paleta refinada, mais quente */
+  --bg: #0a0b0e;            /* fundo geral */
+  --bg-soft: #0e1014;       /* gradient subtle */
+  --panel: #14161b;         /* cards/caixas */
+  --panel-2: #1a1d23;       /* linhas internas (ficha) */
+  --panel-hover: #1d2027;   /* hover */
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.12);
 
-  /* Texto */
-  --text: #f5f7fa;     /* texto principal */
-  --muted: #b7c0cc;    /* texto secundário */
+  /* Texto — escala consistente */
+  --text: #f7f8fa;
+  --muted: #9ca3af;
+  --muted-2: #6b7280;
 
   /* Cores de ação */
-  --red: #ff1d1d;      /* vermelho principal */
-  --red-dark: #d40f0f; /* vermelho escuro (degrade) */
-  --green: #25D366;    /* WhatsApp/Preço */
+  --red: #ef2b2b;           /* vermelho menos gritante */
+  --red-dark: #c41616;
+  --red-glow: rgba(239, 43, 43, 0.35);
+  --green: #22c55e;         /* verde mais moderno */
+  --green-dark: #16a34a;
+  --green-glow: rgba(34, 197, 94, 0.25);
+  --orange: #f59e0b;        /* reservada */
 
-  /* Arredondamento */
-  --radius: 16px;
-  --radius-lg: 22px;
+  /* Tipografia */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  /* Sombra padrão (cards/boxes) */
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  /* Arredondamento — escala mobile-first */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  /* Sombras — mais sutis (mobile-first) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* Spacing */
+  --header-h: 60px;
 }
 
 html {
@@ -56,18 +74,29 @@ html {
 }
 
 body {
-  /* Fonte padrão */
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-
-  /* Tema */
-  background: var(--bg);
+  font-family: var(--font);
+  background:
+    radial-gradient(ellipse at top, var(--bg-soft) 0%, var(--bg) 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 
-  /* Leitura */
-  line-height: 1.4;
+  /* Espaço para o header fixo */
+  padding-top: var(--header-h);
 
-  /* Espaço para o header fixo (IMPORTANTE) */
-  padding-top: 72px;
+  /* Safe area iOS */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Toque mobile sem highlight azul/cinza */
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* =====================================================
@@ -101,64 +130,78 @@ img {
    - Fundo com blur para parecer “app”
    ===================================================== */
 header {
-  position: fixed; /* fixa no topo */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   z-index: 1000;
+  height: var(--header-h);
 
-  background: rgba(5, 6, 7, 0.85);
-  backdrop-filter: blur(12px);
+  background: rgba(10, 11, 14, 0.78);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 
   border-bottom: 1px solid var(--line);
 }
 
-/* Linha interna do header */
 .headerRow {
+  height: var(--header-h);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-/* Marca/logo */
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
-/* Quadradinho da logo */
 .logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: #000;
-  border: 1px solid rgba(255, 29, 29, 0.3);
-
+  border: 1px solid rgba(239, 43, 43, 0.4);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
 }
+.logo img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Texto do header */
+.brandText {
+  min-width: 0;
+}
 .brandText strong {
   display: block;
-  font-size: 14px;
-  letter-spacing: 0.5px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
 }
-
 .brandText span {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  display: block;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-/* Linha superior do texto (pode ter badges futuramente) */
 .brandTop {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+}
+
+/* No mobile, esconde subtítulo do header pra não estourar */
+@media (max-width: 480px) {
+  .brandText span { display: none; }
 }
 
 /* =====================================================
@@ -172,51 +215,72 @@ header {
   justify-content: center;
   gap: 8px;
 
-  padding: 12px 14px;
-  border-radius: 14px;
-
+  padding: 9px 14px;
+  border-radius: 12px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
 
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
   cursor: pointer;
+  transition: background .15s ease, transform .12s ease, border-color .15s ease;
+  white-space: nowrap;
 }
+.btn:hover { background: rgba(255,255,255,0.10); }
+.btn:active { transform: scale(0.97); }
+
+/* WhatsApp do header — botão verde compacto */
+#waHeader {
+  background: var(--green);
+  border-color: transparent;
+  color: #062b14;
+  padding: 8px 14px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px var(--green-glow);
+}
+#waHeader:hover { background: var(--green-dark); color: #fff; }
 
 /* Botão principal (vermelho) */
 .btn.primary {
-  background: linear-gradient(180deg, var(--red), var(--red-dark));
-  border-color: rgba(255, 29, 29, 0.35);
+  background: linear-gradient(160deg, var(--red), var(--red-dark));
+  border-color: transparent;
+  color: #fff;
+  padding: 11px 18px;
+  font-weight: 800;
+  box-shadow: 0 4px 16px var(--red-glow);
 }
+.btn.primary:hover { filter: brightness(1.08); }
 
-.btn.primary:hover {
-  filter: brightness(1.05);
-}
-
-/* ---------- Chips (abas) ---------- */
+/* ---------- Chips (abas) — segmented control style ---------- */
 .chip {
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
-
-  padding: 10px 12px;
-  border-radius: 999px;
-
-  font-weight: 1000;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
   cursor: pointer;
-
-  /* estado inicial (antes de clicar) */
-  color: #ffffff;
+  color: var(--muted);
+  transition: background .15s ease, color .15s ease;
+  white-space: nowrap;
 }
+.chip:hover { color: var(--text); }
+.chip:active { transform: scale(0.97); }
 
-/* Aba ativa (fundo vermelho suave) */
+/* Aba ativa (estilo iOS segmented control) */
 .chip.isActive {
-  background: rgba(255, 29, 29, 0.14);
-  border-color: rgba(255, 29, 29, 0.35);
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Cores específicas quando cada aba está ativa */
-#tabAtivas.chip.isActive { color: #25D366; }    /* disponível */
-#tabReservadas.chip.isActive { color: #FFD166; }/* reservada */
-#tabVendidas.chip.isActive { color: #ffffff; }  /* vendida */
+#tabAtivas.chip.isActive     { color: var(--green); }
+#tabReservadas.chip.isActive { color: var(--orange); }
+#tabVendidas.chip.isActive   { color: var(--text); }
 
 /* ---------- Badges (status dentro do card) ---------- */
 .badge {
@@ -280,30 +344,32 @@ header {
    6) CATÁLOGO (INDEX)
    ===================================================== */
 
-/* Topo marketplace */
+/* Topo marketplace — mobile-first */
 .hero {
-  padding: 14px 0 6px;
-
+  padding: 18px 0 4px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 14px;
-
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .heroTitle {
-  font-size: 22px;
-  font-weight: 1000;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .heroSub {
   margin-top: 6px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  max-width: 340px;
 }
 
-/* Área direita (contadores e CTA) */
 .heroRight {
   display: flex;
   align-items: center;
@@ -311,143 +377,194 @@ header {
   flex-wrap: wrap;
 }
 
-/* Pill “Total” */
 .pillCount {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 6px 12px;
   border-radius: 999px;
-
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.05);
-
-  font-weight: 900;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  font-weight: 700;
 }
+.pillCount span { color: var(--muted); }
+.pillCount b { color: var(--text); font-weight: 800; }
 
-.pillCount span {
-  color: var(--muted);
-}
-
-/* Toolbar com abas */
+/* Toolbar — segmented control no mobile */
 .toolbar {
-  margin-top: 10px;
-
-  border: 1px solid var(--line);
+  margin-top: 14px;
+  padding: 6px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: var(--radius-lg);
-
-  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-
-  flex-wrap: wrap;
+  gap: 8px;
 }
 
-/* Lado esquerdo do toolbar (bolinha + texto) */
 .toolbarLeft {
-  display: flex;
+  display: none; /* esconde no mobile, dá mais espaço pras tabs */
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  padding-left: 8px;
+}
+@media (min-width: 700px) {
+  .toolbarLeft { display: flex; }
 }
 
-/* Bolinha “online” */
 .dotLive {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 99px;
-
   background: var(--green);
-  box-shadow: 0 0 0 6px rgba(37, 211, 102, 0.14);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18); }
+  50%      { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.08); }
 }
 
-/* Texto pequeno do toolbar */
 .mutedText {
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-/* Lado direito: abas */
 .toolbarRight {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  flex: 1;
+  justify-content: space-between;
+}
+@media (min-width: 700px) {
+  .toolbarRight { flex: initial; gap: 4px; }
+}
+
+/* No mobile, tabs ocupam largura toda */
+.toolbarRight .chip {
+  flex: 1;
+  text-align: center;
+  padding: 9px 8px;
+}
+@media (min-width: 700px) {
+  .toolbarRight .chip { flex: initial; padding: 8px 14px; }
 }
 
 /* Grid do catálogo */
 .marketGrid {
-  margin-top: 14px;
-
+  margin-top: 16px;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
-/* Responsivo do grid */
 @media (min-width: 700px) {
-  .marketGrid { grid-template-columns: repeat(2, 1fr); }
+  .marketGrid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
 }
 @media (min-width: 980px) {
-  .marketGrid { grid-template-columns: repeat(3, 1fr); }
+  .marketGrid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
 }
 
-/* Card da moto */
+/* Card da moto — visual moderno */
 .card-moto {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   overflow: hidden;
-
   box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  display: block;
+  color: inherit;
 }
+.card-moto:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-lg);
+}
+.card-moto:active { transform: scale(0.985); }
 
 /* Imagem do card */
 .card-moto__img {
   width: 100%;
-  aspect-ratio: 4 / 3;        /* mais alto = menos zoom */
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  object-position: center 60%; /* desce um pouco (evita cortar guidão) */
+  object-position: center 55%;
   background: #000;
+  display: block;
 }
 
-/* Corpo do card */
+/* Corpo do card — typography hierárquica */
 .card-moto__body {
-  padding: 14px;
+  padding: 14px 16px 16px;
 }
 
 .card-moto__titulo {
-  font-size: 15px;
-  font-weight: 1000;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-moto__meta {
-  margin-top: 6px;
-  font-size: 13px;
+  margin-top: 4px;
+  font-size: 12px;
   color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
-/* Preço (verde WhatsApp) */
+/* Preço — grande, destaque */
 .card-moto__preco {
   display: block;
-  margin-top: 10px;
-
-  font-size: 20px;
-  font-weight: 1100;
+  margin-top: 12px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--green);
+  line-height: 1;
 }
+.card-moto__preco.isReservado { color: var(--orange); font-size: 17px; }
+.card-moto__preco.isVendido   { color: var(--muted); font-size: 17px; }
 
-/* Card “vendido” (sem clique) */
-.card-moto.isDisabled {
-  cursor: default;
-  opacity: 0.92;
+/* Status badge — overlay no canto superior direito da foto */
+.card-moto.isDisabled .card-moto__img {
+  filter: grayscale(40%) brightness(0.7);
 }
-.card-moto.isDisabled:hover {
-  transform: none;
+.card-moto.isDisabled::after {
+  content: attr(data-status);
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
+.card-moto[data-status="vendida"]::after {
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.card-moto[data-status="reservada"]::after {
+  background: rgba(245, 158, 11, 0.85);
+  color: #1f1300;
+}
+.card-moto.isDisabled { cursor: default; }
+.card-moto.isDisabled:hover { transform: none; border-color: var(--line); box-shadow: var(--shadow); }
+.card-moto.isDisabled:active { transform: none; }
 
 /* =====================================================
    7) DETALHE (MOTO)
@@ -661,3 +778,132 @@ header {
 
 /* ✅ Se você quer manter ele desativado por enquanto */
 .floatWA { display: none !important; }
+
+/* =====================================================
+   10) SKELETON LOADING (cards/imagens em carregamento)
+   - Animação shimmer profissional
+   - Aparece enquanto o Supabase responde
+   ===================================================== */
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.10) 50%,
+      rgba(255,255,255,0.04) 100%
+    );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+/* Card skeleton (mesma forma do card de moto) */
+.card-skeleton {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.card-skeleton__img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.10) 50%,
+      rgba(255,255,255,0.04) 100%
+    );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.card-skeleton__body {
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+.card-skeleton__line {
+  height: 14px;
+  border-radius: 6px;
+}
+.card-skeleton__line.short { width: 60%; height: 12px; }
+.card-skeleton__line.tag   { width: 40%; height: 18px; margin-top: 6px; }
+
+/* Fade-in suave quando a imagem real carrega
+   (evita "pulo" visual e dá ar de aplicativo nativo) */
+.card-moto__img {
+  background-color: rgba(255,255,255,0.04);
+  transition: opacity .35s ease-out, filter .35s ease-out;
+}
+.card-moto__img:not([src]),
+.card-moto__img[src=""] {
+  opacity: 0;
+}
+.card-moto__img.is-loading {
+  opacity: 0;
+}
+.card-moto__img.is-loaded {
+  opacity: 1;
+}
+
+/* Estado vazio profissional (quando não tem moto na aba) */
+.emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.emptyState__icon {
+  font-size: 40px;
+  opacity: .35;
+  margin-bottom: 8px;
+}
+
+/* =====================================================
+   11) SKELETON DA PÁGINA DE DETALHE
+   ===================================================== */
+.skeleton-hero {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.10) 50%,
+      rgba(255,255,255,0.04) 100%
+    );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+}
+.skeleton-text {
+  height: 22px;
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.04) 0%,
+      rgba(255,255,255,0.10) 50%,
+      rgba(255,255,255,0.04) 100%
+    );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.skeleton-text.lg  { height: 30px; width: 70%; }
+.skeleton-text.md  { height: 16px; width: 50%; }
+.skeleton-text.sm  { height: 14px; width: 35%; }
+
+/* Carrossel: fade-in suave da 1ª foto */
+.carouselTrack img {
+  background-color: rgba(255,255,255,0.04);
+  transition: opacity .35s ease-out;
+}
+.carouselTrack img.is-loading { opacity: 0; }
+.carouselTrack img.is-loaded  { opacity: 1; }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Danilo Motos</title>
   <meta name="description" content="Detalhes da moto: fotos, ficha técnica e negociação no WhatsApp." />
-  <link rel="stylesheet" href="assets/css/style.css?v=3" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260521a" />
   <link rel="icon" href="./logo.png" type="image/png" />
   <style>
 
@@ -51,12 +51,20 @@
       overflow: hidden;
       border-radius: 0;
       border: none;
-      background: #000;
+      background:
+        radial-gradient(ellipse at center, #1a1c20 0%, #0a0b0e 100%);
       margin: 0 -14px;
+      aspect-ratio: 4 / 3;
+    }
+    .carouselTrack {
+      height: 100%;
     }
     .carouselTrack img {
-      max-height: 72vw;
-      min-height: 220px;
+      min-width: 100%;
+      max-height: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
     }
     .carouselBtn {
       width: 38px;
@@ -117,28 +125,45 @@
     .statusDot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
     #titulo {
-      font-size: 22px;
-      font-weight: 1000;
-      line-height: 1.2;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
       margin-bottom: 6px;
     }
     #subtitulo {
       font-size: 14px;
       color: var(--muted);
-      font-weight: 700;
+      font-weight: 500;
+      letter-spacing: -0.005em;
     }
 
-    /* Preço em destaque */
+    /* Preço em destaque — visual mais sofisticado */
     #precoDestaque {
       display: none;
-      margin-top: 14px;
-      padding: 14px 16px;
-      background: rgba(37,211,102,.08);
-      border: 1px solid rgba(37,211,102,.2);
-      border-radius: 16px;
+      margin-top: 16px;
+      padding: 18px 20px;
+      background:
+        linear-gradient(135deg, rgba(34,197,94,.10) 0%, rgba(34,197,94,.04) 100%);
+      border: 1px solid rgba(34,197,94,.22);
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(34,197,94,.08);
     }
-    #precoDestaque .precoLabel { font-size: 11px; color: var(--muted); font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
-    #precoDestaque .precoValor { font-size: 30px; font-weight: 1100; color: #25D366; line-height: 1.1; margin-top: 2px; }
+    #precoDestaque .precoLabel {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    #precoDestaque .precoValor {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--green);
+      line-height: 1.05;
+      margin-top: 4px;
+    }
 
     /* ── SEÇÃO FICHA ── */
     .motoSection {
@@ -317,9 +342,11 @@
     <!-- CAROUSEL -->
     <div>
       <div class="carousel">
-        <button class="carouselBtn prev" id="prevFoto" type="button" aria-label="Foto anterior">‹</button>
-        <div class="carouselTrack" id="galeria"></div>
-        <button class="carouselBtn next" id="nextFoto" type="button" aria-label="Próxima foto">›</button>
+        <button class="carouselBtn prev" id="prevFoto" type="button" aria-label="Foto anterior" style="display:none">‹</button>
+        <div class="carouselTrack" id="galeria">
+          <div class="skeleton-hero"></div>
+        </div>
+        <button class="carouselBtn next" id="nextFoto" type="button" aria-label="Próxima foto" style="display:none">›</button>
       </div>
       <div id="fotoDots"></div>
     </div>
@@ -327,10 +354,14 @@
     <!-- HERO INFO -->
     <div class="motoHero">
       <div class="statusRow">
-        <span id="statusChip" class="statusChip disp"><span class="statusDot"></span>Disponível</span>
+        <span id="statusChip" class="statusChip disp" style="visibility:hidden"><span class="statusDot"></span>Disponível</span>
       </div>
-      <h1 id="titulo">Carregando…</h1>
-      <p id="subtitulo"></p>
+      <h1 id="titulo" aria-live="polite">
+        <span class="skeleton-text lg" id="tituloSkeleton"></span>
+      </h1>
+      <p id="subtitulo">
+        <span class="skeleton-text sm" id="subSkeleton"></span>
+      </p>
       <div id="precoDestaque">
         <div class="precoLabel">Preço</div>
         <div class="precoValor" id="precoValor"></div>
@@ -405,7 +436,7 @@
     </div>
   </footer>
 
-  <script type="module" src="assets/js/moto.js?v=20260520a"></script>
+  <script type="module" src="assets/js/moto.js?v=20260521b"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
 

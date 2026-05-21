@@ -66,8 +66,16 @@ function renderCarousel(fotos) {
   const fallback = fotos[0] || "";
 
   track.innerHTML = fotos.map((src, i) =>
-    `<img src="${src||fallback}" ${i===0?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" alt="Foto da moto" onerror="this.onerror=null;this.src='${fallback}';">`
+    `<img class="is-loading" src="${src||fallback}" ${i===0?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" alt="Foto da moto" onload="this.classList.remove('is-loading');this.classList.add('is-loaded');" onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';this.classList.remove('is-loading');this.classList.add('is-loaded');">`
   ).join("");
+
+  // Imagens já em cache não disparam onload
+  track.querySelectorAll("img").forEach((img) => {
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.remove("is-loading");
+      img.classList.add("is-loaded");
+    }
+  });
 
   const prevBtn = $("#prevFoto");
   const nextBtn = $("#nextFoto");
@@ -202,6 +210,10 @@ async function main() {
       moto.cor,
     ].filter(Boolean).join(" · "));
 
+    // Reaparece o chip de status (estava invisible enquanto carregava)
+    const chip = $("#statusChip");
+    if (chip) chip.style.visibility = "visible";
+
     setStatusChip(status);
 
     /* WhatsApp */
@@ -275,8 +287,9 @@ async function main() {
     }
 
     /* Ficha */
+    const precoFichaFmt = formatBRL(moto.preco);
     const rows = [
-      moto.preco   ? ["Preço",      formatBRL(moto.preco), " preco"] : null,
+      precoFichaFmt ? ["Preço",      precoFichaFmt, " preco"] : null,
       moto.ano     ? ["Ano",        moto.ano]           : null,
       moto.km      ? ["KM",         Number(moto.km).toLocaleString("pt-BR")+" km"] : null,
       moto.cor     ? ["Cor",        moto.cor]           : null,

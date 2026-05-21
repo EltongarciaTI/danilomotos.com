@@ -71,9 +71,30 @@ function sortMotos(list) {
   });
 }
 
+function renderSkeleton(grid, count = 6) {
+  const card = `
+    <div class="card-skeleton">
+      <div class="card-skeleton__img"></div>
+      <div class="card-skeleton__body">
+        <div class="skeleton card-skeleton__line"></div>
+        <div class="skeleton card-skeleton__line short"></div>
+        <div class="skeleton card-skeleton__line tag"></div>
+      </div>
+    </div>`;
+  grid.innerHTML = Array.from({ length: count }, () => card).join("");
+}
+
+function renderEmpty(grid, label = "Nenhuma moto nesta aba no momento") {
+  grid.innerHTML = `
+    <div class="emptyState">
+      <div class="emptyState__icon">🏍️</div>
+      <div>${label}</div>
+    </div>`;
+}
+
 function renderCards(grid, motos) {
   if (!motos.length) {
-    grid.innerHTML = `<p class="muted" style="color:var(--muted)">Nenhuma moto aqui no momento.</p>`;
+    renderEmpty(grid);
     return;
   }
 
@@ -108,12 +129,14 @@ function renderCards(grid, motos) {
       const href = isBloqueada ? "" : `href="moto.html?id=${id}"`;
 
       return `
-        <${Tag} class="card-moto ${isBloqueada ? "isDisabled" : ""}" ${href}>
-          <img class="card-moto__img"
+        <${Tag} class="card-moto ${isBloqueada ? "isDisabled" : ""}" data-status="${status}" ${href}>
+          <img class="card-moto__img is-loading"
                loading="lazy"
+               decoding="async"
                src="${imgCapa}"
                alt="${titulo}"
-               onerror="this.onerror=null; this.src='${IMG_PLACEHOLDER}';">
+               onload="this.classList.remove('is-loading');this.classList.add('is-loaded');"
+               onerror="this.onerror=null; this.src='${IMG_PLACEHOLDER}'; this.classList.remove('is-loading'); this.classList.add('is-loaded');">
           <div class="card-moto__body">
             <div class="card-moto__titulo">${titulo}</div>
             <div class="card-moto__meta">${meta}</div>
@@ -123,6 +146,15 @@ function renderCards(grid, motos) {
       `;
     })
     .join("");
+
+  // Imagens que já estavam no cache do navegador (load instantâneo)
+  // não disparam onload. Forçamos a remoção do is-loading.
+  grid.querySelectorAll(".card-moto__img").forEach((img) => {
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.remove("is-loading");
+      img.classList.add("is-loaded");
+    }
+  });
 }
 
 async function main() {
@@ -141,12 +173,8 @@ async function main() {
   const tabVendidas = $("#tabVendidas");
   const totalCount = $("#totalCount");
 
-  // Skeleton simples
-  grid.innerHTML = `
-    <div style="opacity:.7;color:var(--muted);font-weight:900;padding:10px">
-      Carregando motos...
-    </div>
-  `;
+  // Skeleton screens (shimmer profissional)
+  renderSkeleton(grid, 6);
 
   // Lazy load: só carrega a tab clicada (default: disponíveis)
   const cache = {};
@@ -164,9 +192,24 @@ async function main() {
     if (tabVendidas) tabVendidas.classList.toggle("isActive", active === "vendida");
   }
 
+  const TITLES = {
+    disponivel: "Motos disponíveis",
+    reservada:  "Motos reservadas",
+    vendida:    "Motos vendidas",
+  };
+  const heroTitle = $("#heroTitle");
+
   async function showTab(status) {
     setActiveTab(status);
-    grid.innerHTML = `<div style="opacity:.7;color:var(--muted);font-weight:900;padding:10px">Carregando...</div>`;
+    if (heroTitle) heroTitle.textContent = TITLES[status] || TITLES.disponivel;
+
+    // Se já temos cache, renderiza direto (sem flash de skeleton)
+    if (cache[status]) {
+      renderCards(grid, cache[status]);
+      if (totalCount) totalCount.textContent = String(cache[status].length);
+      return;
+    }
+    renderSkeleton(grid, 4);
     const list = await getList(status);
     renderCards(grid, list);
     if (totalCount) totalCount.textContent = String(list.length);
