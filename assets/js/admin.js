@@ -312,10 +312,14 @@ function publicUrl(path) {
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
-// Cache-bust no preview do admin:
-// força o navegador a puxar a imagem atualizada ao trocar capa/foto
-function publicUrlV(path) {
-  return `${publicUrl(path)}?v=${Date.now()}`;
+// Cache-bust no preview do admin baseado na versao REAL do arquivo
+// (updated_at do Supabase Storage). Date.now() em cada chamada forcaria
+// reload da imagem inutilmente toda vez que o admin renderiza.
+// Com updated_at, o browser cacheia ate a foto realmente mudar no Storage.
+function publicUrlV(path, version) {
+  if (!version) return publicUrl(path);
+  const v = typeof version === "number" ? version : new Date(version).getTime();
+  return Number.isFinite(v) && v > 0 ? `${publicUrl(path)}?v=${v}` : publicUrl(path);
 }
 
 // Define os slots fixos de fotos que o admin mostra:
@@ -555,11 +559,13 @@ async function renderFotosGrid(id) {
 
   const slots = fotosSlots(id);
 
-  // Descobre quais arquivos existem de verdade na pasta (pra mostrar preview)
+  // Descobre quais arquivos existem (pra mostrar preview) + metadata (pra cache-bust)
   let existing = new Set();
+  let fileMeta = new Map(); // filename -> updated_at
   try {
     const data = await listMotoFiles(id);
     existing = new Set(data.map((x) => x.name));
+    data.forEach((x) => fileMeta.set(x.name, x.updated_at || x.created_at));
   } catch {
     // se falhar list (policy, etc), ainda renderiza os slots (sem preview)
   }
@@ -568,14 +574,16 @@ async function renderFotosGrid(id) {
   els.fotosGrid.innerHTML = slots
     .map((s) => {
       const exists = existing.has(s.filename);
-      const src = exists ? publicUrlV(s.path) : ""; // cache-bust
+      // Cache-bust pela versao REAL do arquivo (nao Date.now()): browser cacheia
+      // ate a foto realmente mudar no Storage. Foto trocada -> updated_at muda -> reload.
+      const src = exists ? publicUrlV(s.path, fileMeta.get(s.filename)) : "";
       const label = s.key === "capa" ? "Capa" : `Foto ${s.key}`;
 
       return `
         <div class="thumb">
           <div class="thumbTitle">${label}</div>
 
-          <img src="${src}" alt="${label}" onerror="this.style.display='none'">
+          <img src="${src}" alt="${label}" decoding="async" onerror="this.style.display='none'">
 
           <input type="file" data-path="${s.path}" accept="image/*" />
 
@@ -1035,7 +1043,7 @@ function renderMotoCards() {
 
     return `
       <div class="motoCard"${cardHighlight} data-id="${id}">
-        <img class="motoCard__img" src="${capaUrl}" alt="${titulo}"
+        <img class="motoCard__img" src="${capaUrl}" alt="${titulo}" decoding="async"
              onerror="this.style.background='rgba(255,255,255,.06)';this.style.minHeight='80px';this.removeAttribute('src')">
         <div class="motoCard__body">
           <div class="motoCard__title">${titulo}</div>
@@ -1320,8 +1328,18 @@ function bind() {
   }
 
 
-  // Busca: atualiza select oculto + cards
-  if (els.buscaMoto) els.buscaMoto.addEventListener("input", function() { renderMotoSelect(); renderMotoCards(); });
+  // Busca: atualiza select oculto + cards (debounced 300ms pra nao recriar grid
+  // a cada keystroke, evita thrashing de DOM e re-decode de imagens)
+  if (els.buscaMoto) {
+    let _buscaDebounce;
+    els.buscaMoto.addEventListener("input", function() {
+      clearTimeout(_buscaDebounce);
+      _buscaDebounce = setTimeout(() => {
+        renderMotoSelect();
+        renderMotoCards();
+      }, 300);
+    });
+  }
 
   // Auto-ID: gera ID a partir do título quando o campo id está vazio
   if (els.titulo) {

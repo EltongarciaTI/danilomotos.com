@@ -57,17 +57,21 @@ function formatBRL(value) {
 }
 function sortMotos(list) {
   return [...list].sort((a, b) => {
+    // 1) Destaque (admin marca uma moto pra subir no topo)
+    const da = a?.destaque ? 1 : 0;
+    const db = b?.destaque ? 1 : 0;
+    if (da !== db) return db - da;
+
+    // 2) Ordem definida no admin
     const oa = Number.isFinite(Number(a?.ordem)) ? Number(a.ordem) : 999;
     const ob = Number.isFinite(Number(b?.ordem)) ? Number(b.ordem) : 999;
-
-    // 1) Ordem definida no admin
     if (oa !== ob) return oa - ob;
 
-    // 2) Desempate: ano mais novo primeiro
+    // 3) Desempate: ano mais novo primeiro
     const byAno = num(b.ano) - num(a.ano);
     if (byAno !== 0) return byAno;
 
-    // 3) Desempate final: menor km
+    // 4) Desempate final: menor km
     return num(a.km) - num(b.km);
   });
 }
