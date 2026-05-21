@@ -371,10 +371,10 @@ header {
 .hero__title {
   font-family: var(--font-display);
   font-weight: 400;
-  /* Mobile: grande, 1 palavra por linha */
-  font-size: clamp(180px, 56vw, 320px);
-  line-height: 0.84;
-  letter-spacing: -0.035em;
+  /* Mobile: 2x maior que antes, sem estourar a tela (DANILO tem 6 letras) */
+  font-size: clamp(120px, 38vw, 200px);
+  line-height: 0.86;
+  letter-spacing: -0.03em;
   text-transform: uppercase;
   color: var(--cream);
   text-shadow:
@@ -485,117 +485,6 @@ header {
     max-width: 1280px;
     margin: 0 auto;
   }
-}
-
-/* Linha vermelha racing accent (vertical, esquerda) */
-.hero__line {
-  position: absolute;
-  top: 40px;
-  left: 18px;
-  bottom: 32px;
-  width: 3px;
-  background: linear-gradient(180deg, var(--red), transparent 90%);
-  box-shadow: 0 0 16px var(--red-glow);
-}
-@media (min-width: 768px) {
-  .hero__line { left: 32px; top: 80px; bottom: 64px; }
-}
-
-/* Big number tag (#01, #02...) */
-.hero__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--amber);
-  margin-bottom: 20px;
-  margin-left: 18px;
-  opacity: 0;
-  animation: fadeUp 0.7s ease-out 0.1s forwards;
-}
-.hero__tag::before {
-  content: "";
-  width: 28px;
-  height: 1px;
-  background: var(--amber);
-}
-
-.hero__title {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(54px, 14vw, 120px);
-  line-height: 0.92;
-  letter-spacing: -0.015em;
-  text-transform: uppercase;
-  color: var(--cream);
-  margin-left: 18px;
-  margin-bottom: 8px;
-  opacity: 0;
-  animation: fadeUp 0.8s ease-out 0.2s forwards;
-}
-.hero__title em {
-  font-style: normal;
-  color: var(--red);
-  -webkit-text-stroke: 1px var(--red);
-  text-shadow: 0 0 32px var(--red-glow);
-}
-
-.hero__sub {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--muted);
-  max-width: 380px;
-  margin-left: 18px;
-  margin-bottom: 24px;
-  line-height: 1.55;
-  opacity: 0;
-  animation: fadeUp 0.8s ease-out 0.35s forwards;
-}
-@media (min-width: 768px) {
-  .hero__sub { font-size: 16px; max-width: 480px; }
-}
-
-.hero__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-left: 18px;
-  opacity: 0;
-  animation: fadeUp 0.8s ease-out 0.5s forwards;
-}
-
-/* Stats inline (TOTAL / DISPONÍVEIS) */
-.hero__stats {
-  display: flex;
-  gap: 24px;
-  margin-top: 28px;
-  margin-left: 18px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-  opacity: 0;
-  animation: fadeUp 0.8s ease-out 0.65s forwards;
-}
-.stat__num {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 32px;
-  color: var(--cream);
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-.stat__label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-top: 4px;
 }
 
 /* =====================================================
