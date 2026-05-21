@@ -359,11 +359,11 @@ header {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 0 18px 56px;
+  padding: 0 18px 71px;
   text-align: center;
 }
 @media (min-width: 768px) {
-  .hero__inner { padding-bottom: 80px; padding-left: 32px; padding-right: 32px; }
+  .hero__inner { padding-bottom: 95px; padding-left: 32px; padding-right: 32px; }
 }
 
 .hero__brand { max-width: 1100px; width: 100%; }
