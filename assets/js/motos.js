@@ -1,6 +1,6 @@
 // assets/js/motos.js
 // Catálogo estilo marketplace (inspirado em Webmotors) + abas Disponíveis/Vendidas
-import { loadMotos } from "./loader.js?v=20260406a";
+import { loadMotos } from "./loader.js?v=20260520a";
 
 const WHATSAPP_NUMBER = "5575999185684"; // 55 + DDD + número
 
@@ -134,20 +134,15 @@ async function main() {
     </div>
   `;
 
-  // Carrega as três listas
-  const [ativasRaw, reservadasRaw, vendidasRaw] = await Promise.all([
-    loadMotos({ status: "disponivel" }),
-    loadMotos({ status: "reservada" }),
-    loadMotos({ status: "vendida" }),
-  ]);
+  // Lazy load: só carrega a tab clicada (default: disponíveis)
+  const cache = {};
 
-  const ativas = sortMotos(ativasRaw);
-  const reservadas = sortMotos(reservadasRaw);
-  const vendidas = sortMotos(vendidasRaw);
-
-  // Default: disponíveis
-  renderCards(grid, ativas);
-  if (totalCount) totalCount.textContent = String(ativas.length);
+  async function getList(status) {
+    if (cache[status]) return cache[status];
+    const raw = await loadMotos({ status });
+    cache[status] = sortMotos(raw);
+    return cache[status];
+  }
 
   function setActiveTab(active) {
     if (tabAtivas) tabAtivas.classList.toggle("isActive", active === "disponivel");
@@ -155,30 +150,19 @@ async function main() {
     if (tabVendidas) tabVendidas.classList.toggle("isActive", active === "vendida");
   }
 
-  if (tabAtivas) {
-    tabAtivas.addEventListener("click", () => {
-      setActiveTab("disponivel");
-      renderCards(grid, ativas);
-      if (totalCount) totalCount.textContent = String(ativas.length);
-      setActiveTab("disponivel");
-    });
+  async function showTab(status) {
+    setActiveTab(status);
+    grid.innerHTML = `<div style="opacity:.7;color:var(--muted);font-weight:900;padding:10px">Carregando...</div>`;
+    const list = await getList(status);
+    renderCards(grid, list);
+    if (totalCount) totalCount.textContent = String(list.length);
   }
 
-  if (tabReservadas) {
-    tabReservadas.addEventListener("click", () => {
-      setActiveTab("reservada");
-      renderCards(grid, reservadas);
-      if (totalCount) totalCount.textContent = String(reservadas.length);
-    });
-  }
+  await showTab("disponivel");
 
-  if (tabVendidas) {
-    tabVendidas.addEventListener("click", () => {
-      setActiveTab("vendida");
-      renderCards(grid, vendidas);
-      if (totalCount) totalCount.textContent = String(vendidas.length);
-    });
-  }
+  if (tabAtivas)     tabAtivas.addEventListener("click",     () => showTab("disponivel"));
+  if (tabReservadas) tabReservadas.addEventListener("click", () => showTab("reservada"));
+  if (tabVendidas)   tabVendidas.addEventListener("click",   () => showTab("vendida"));
 }
 
 main().catch((err) => {

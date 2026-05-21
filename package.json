@@ -1,0 +1,25 @@
+{
+  "name": "danilomotos.com",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "optimize:local": "node scripts/optimize-local-images.js",
+    "optimize:storage": "node scripts/optimize-supabase-storage.js"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EltongarciaTI/danilomotos.com.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EltongarciaTI/danilomotos.com/issues"
+  },
+  "homepage": "https://github.com/EltongarciaTI/danilomotos.com#readme",
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}

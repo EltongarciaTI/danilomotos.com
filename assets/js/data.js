@@ -10,30 +10,30 @@ export const STORAGE_PUBLIC_BASE =
 /**
  * Busca motos do Supabase
  * @param {Object} options
- * @param {string} options.status - "ativo" | "vendida" | "all"
+ * @param {string} options.status - "ativo" | "vendida" | "all" | "disponivel" | "reservada"
+ * @param {string} [options.id] - se passar, faz query individual por ID
  */
-export async function fetchMotos({ status = "disponivel" } = {}) {
+export async function fetchMotos({ status = "disponivel", id = null } = {}) {
   const url = new URL(`${SUPABASE_URL}/rest/v1/motos`);
   url.searchParams.set("select", "*");
 
-  if (status !== "all") {
+  if (id) {
+    url.searchParams.set("id", `eq.${id}`);
+  } else if (status !== "all") {
     if (status === "disponivel") {
-      // Compatibilidade: algumas motos antigas podem estar com status="ativo"
-      // Supabase REST: or=(status.eq.disponivel,status.eq.ativo)
       url.searchParams.set("or", "(status.eq.disponivel,status.eq.ativo)");
     } else {
       url.searchParams.set("status", `eq.${status}`);
     }
   }
 
-  url.searchParams.set("order", "id.desc"); // ordena pelo ID (sempre existe)
+  url.searchParams.set("order", "id.desc");
 
   const res = await fetch(url.toString(), {
     headers: {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
-   cache: "no-store",
   });
 
   if (!res.ok) {
@@ -43,21 +43,15 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
 
   const data = await res.json();
 
-    // Mantém compatibilidade com o seu front atual
   return (data || []).map((m) => {
-    const v = encodeURIComponent(m.updated_at || "");
-
-    // Paths salvos no banco (novo padrão)
     const capaPath = (m.capa_path && String(m.capa_path).trim()) ? String(m.capa_path).replace(/^\/+/, "") : "";
     const fotosPaths = Array.isArray(m.fotos_paths) ? m.fotos_paths : [];
 
-    // Fallback: padrão antigo (id/capa.jpg e id/1.jpg..4.jpg)
     const legacyCapa = `${m.id}/capa.jpg`;
 
     const coverRel = capaPath || legacyCapa;
-    const coverUrl = `${STORAGE_PUBLIC_BASE}/${coverRel}${v ? `?v=${v}` : ""}`;
+    const coverUrl = `${STORAGE_PUBLIC_BASE}/${coverRel}`;
 
-    // Monta array de URLs para o detalhe (capa + extras do banco)
     let fotosUrl = [coverUrl];
 
     if ((m.status || "").toLowerCase() !== "vendida") {
@@ -65,21 +59,18 @@ export async function fetchMotos({ status = "disponivel" } = {}) {
         const extras = fotosPaths
           .filter((p) => typeof p === "string" && p.trim() !== "")
           .map((p) => String(p).replace(/^\/+/, ""))
-          .map((p) => `${STORAGE_PUBLIC_BASE}/${p}${v ? `?v=${v}` : ""}`);
+          .map((p) => `${STORAGE_PUBLIC_BASE}/${p}`);
         fotosUrl = [coverUrl, ...extras];
       } else {
-        const legacyExtras = [1,2,3,4].map((i) => `${STORAGE_PUBLIC_BASE}/${m.id}/${i}.jpg${v ? `?v=${v}` : ""}`);
+        const legacyExtras = [1,2,3,4].map((i) => `${STORAGE_PUBLIC_BASE}/${m.id}/${i}.jpg`);
         fotosUrl = [coverUrl, ...legacyExtras];
       }
     }
 
     return {
       ...m,
-      // compat: usado em moto.js (base para montar fotos)
       fotosBase: `${STORAGE_PUBLIC_BASE}/${m.id}/`,
-      // compat: usado no catálogo
       capa: coverUrl,
-      // novo: usado no detalhe (preferencial)
       fotos: fotosUrl,
     };
   });

@@ -1,5 +1,5 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260406a";
-import { loadMotos } from "./loader.js?v=20260406a";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260520a";
+import { loadMotos } from "./loader.js?v=20260520a";
 
 const WHATSAPP_NUMBER = "5575999185684";
 const MAX_FOTOS = 4;
@@ -165,7 +165,7 @@ async function main() {
       return;
     }
 
-    const motos = await loadMotos({ status:"all" });
+    const motos = await loadMotos({ id });
     const moto = motos.find(m => String(m.id)===id);
 
     if (!moto) {

@@ -17,7 +17,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ===== CONFIG SUPABASE
 // ======================================================
 // URL do seu projeto e ANON KEY (cliente). Ideal: rotacionar se repo for público.
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260301c";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260521a";
 // Nome do bucket do Storage onde ficam as fotos
 const BUCKET = "motos";
 
@@ -418,16 +418,75 @@ async function syncPhotoPathsToDB(motoId) {
 }
 
 
+// ======================================================
+// ===== COMPRESSÃO DE IMAGEM (cliente)
+// ======================================================
+// Reduz foto do celular (4-8 MB) para ~80-200 KB antes do upload.
+// - Capa: max 1000x750, JPEG quality 82
+// - Foto extra: max 1280x960, JPEG quality 80
+// Se a compressão falhar por qualquer motivo, sobe o arquivo original
+// (preferimos foto grande do que nenhuma foto).
+async function compressImage(file, { isCover = false } = {}) {
+  if (!file || !file.type || !file.type.startsWith("image/")) return file;
+
+  const MAX_W = isCover ? 1000 : 1280;
+  const MAX_H = isCover ? 750 : 960;
+  const QUALITY = isCover ? 0.82 : 0.80;
+
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const ratio = Math.min(MAX_W / bitmap.width, MAX_H / bitmap.height, 1);
+    const w = Math.round(bitmap.width * ratio);
+    const h = Math.round(bitmap.height * ratio);
+
+    let blob;
+    if (typeof OffscreenCanvas !== "undefined") {
+      const canvas = new OffscreenCanvas(w, h);
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      blob = await canvas.convertToBlob({ type: "image/jpeg", quality: QUALITY });
+    } else {
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", QUALITY)
+      );
+    }
+    bitmap.close?.();
+    if (!blob) return file;
+
+    // Se o resultado ficou maior que o original (raro mas pode acontecer
+    // se o arquivo original já era pequeno), retorna o original
+    if (blob.size >= file.size) return file;
+
+    return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+  } catch (e) {
+    console.warn("Compressão falhou, subindo original:", e);
+    return file;
+  }
+}
+
 // Faz upload de um arquivo para um caminho específico no Storage.
 // upsert:true = se já existir, substitui (perfeito pra trocar capa)
 // cacheControl alto = site carrega mais rápido
 async function uploadSingleToPath(path, file) {
-  msg(els.fotoMsg, "Enviando foto...");
+  const isCover = /\/capa\.jpg$/i.test(path);
+  msg(els.fotoMsg, "Comprimindo foto...");
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const compressed = await compressImage(file, { isCover });
+  const sizeKB = Math.round(compressed.size / 1024);
+  const origKB = Math.round(file.size / 1024);
+
+  msg(els.fotoMsg, `Enviando foto (${origKB}KB → ${sizeKB}KB)...`);
+
+  const { error } = await supabase.storage.from(BUCKET).upload(path, compressed, {
     upsert: true,
     cacheControl: "2592000", // 30 dias (CDN + navegador)
-    contentType: file.type || "image/jpeg",
+    contentType: "image/jpeg",
   });
 
   if (error) {
@@ -436,7 +495,7 @@ async function uploadSingleToPath(path, file) {
     return;
   }
 
-  msg(els.fotoMsg, "Foto enviada ✅", "ok");
+  msg(els.fotoMsg, `Foto enviada ✅ (${sizeKB}KB)`, "ok");
 }
 
 // Multi-upload: usuário seleciona até 5 fotos no input
@@ -463,9 +522,8 @@ async function handleMultiUpload(fileList) {
     `${id}/4.jpg`,
   ];
 
-  msg(els.fotoMsg, `Enviando ${picked.length} foto(s)...`);
-
   for (let i = 0; i < picked.length; i++) {
+    msg(els.fotoMsg, `Processando ${i + 1} de ${picked.length}...`);
     await uploadSingleToPath(targets[i], picked[i]);
   }
 
@@ -883,10 +941,11 @@ async function tryUpsert(p) {
 
  msg(els.saveMsg, "Moto salva ✅", "ok");
 
-// limpa o cache do site público
-sessionStorage.removeItem("daniloMotosCache_ativo");
-sessionStorage.removeItem("daniloMotosCache_reservada");
-sessionStorage.removeItem("daniloMotosCache_vendida");
+// limpa o cache do site público (local + session)
+["disponivel","reservada","vendida","all","ativo"].forEach((s) => {
+  try { localStorage.removeItem(`daniloMotosCache_${s}`); } catch {}
+  try { sessionStorage.removeItem(`daniloMotosCache_${s}`); } catch {}
+});
 
 await loadMotosAndRender();
 fillForm(payload);
@@ -1037,9 +1096,10 @@ async function setMotoStatus(motoId, status) {
   const { error } = await supabase.from("motos").update({ status }).eq("id", motoId);
   if (error) { alert("Erro: " + error.message); return; }
 
-  sessionStorage.removeItem("daniloMotosCache_ativo");
-  sessionStorage.removeItem("daniloMotosCache_reservada");
-  sessionStorage.removeItem("daniloMotosCache_vendida");
+  ["disponivel","reservada","vendida","all","ativo"].forEach((s) => {
+    try { localStorage.removeItem(`daniloMotosCache_${s}`); } catch {}
+    try { sessionStorage.removeItem(`daniloMotosCache_${s}`); } catch {}
+  });
 
   await loadMotosAndRender();
 }
