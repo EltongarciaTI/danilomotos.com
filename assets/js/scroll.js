@@ -1,60 +1,57 @@
 // ============================================================
-// SCROLL EFFECTS — estilo Apple/Tesla
+// SCROLL EFFECTS — minimalista, sutil, performante
 // ------------------------------------------------------------
-// 1) Parallax na imagem hero (mais lenta que o scroll)
-// 2) Fade-out + slide-up do texto hero conforme rola
-// 3) Brand mark gigante com translate horizontal (parallax)
+// 1) Parallax SUTIL na imagem hero
+// 2) Fade SIMPLES do conteúdo hero ao rolar
+// 3) Header com blur quando rola
 // 4) Cards reveal com IntersectionObserver
-// ------------------------------------------------------------
-// Performance: usa requestAnimationFrame + passive listeners.
-// Acessibilidade: respeita prefers-reduced-motion.
 // ============================================================
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 if (!reduceMotion) {
-  initHeroParallax();
-  initBrandMarquee();
+  initHeroScroll();
+  initHeaderShadow();
 }
 initCardReveal();
 
-// ============================================================
-// 1) HERO PARALLAX + FADE
-// ============================================================
-function initHeroParallax() {
+// ------------------------------------------------------------
+// 1+2) HERO PARALLAX + FADE — combinado em 1 rAF, mais leve
+// ------------------------------------------------------------
+function initHeroScroll() {
   const hero      = document.querySelector(".hero");
   const heroMedia = document.querySelector(".hero__media");
-  const heroInner = document.querySelector(".hero__inner");
-  if (!hero || !heroMedia || !heroInner) return;
+  const heroBrand = document.querySelector(".hero__brand");
+  const heroScroll = document.querySelector(".hero__scroll");
+  if (!hero || !heroMedia) return;
 
   let scrolled = 0;
   let ticking = false;
-
-  // Pega altura do hero uma vez (e refresca em resize)
   let heroHeight = hero.offsetHeight;
-  window.addEventListener("resize", () => {
-    heroHeight = hero.offsetHeight;
-  }, { passive: true });
+
+  // Atualiza altura quando viewport muda
+  const ro = new ResizeObserver(() => { heroHeight = hero.offsetHeight; });
+  ro.observe(hero);
 
   function update() {
-    // Só anima enquanto o hero está visível (otimização)
-    if (scrolled > heroHeight + 100) {
+    // Otimização: para de calcular após sair do hero
+    if (scrolled > heroHeight) {
       ticking = false;
       return;
     }
 
-    // Progresso de 0 (topo) a 1 (final do hero)
     const progress = Math.min(1, scrolled / heroHeight);
 
-    // Parallax da imagem: move pra baixo mais devagar (efeito "ela fica")
-    const mediaY = scrolled * 0.42;
-    heroMedia.style.transform = `translate3d(0, ${mediaY}px, 0) scale(${1 + progress * 0.06})`;
+    // Parallax sutil da imagem (0.3x — mais discreto que antes)
+    heroMedia.style.transform = `translate3d(0, ${scrolled * 0.3}px, 0)`;
 
-    // Conteúdo: sobe levemente + fadeout
-    const contentY = scrolled * -0.18;
-    const contentOpacity = Math.max(0, 1 - progress * 1.4);
-    heroInner.style.transform = `translate3d(0, ${contentY}px, 0)`;
-    heroInner.style.opacity = String(contentOpacity);
+    // Conteúdo: fade suave (sem mover, evita reflow)
+    if (heroBrand) {
+      heroBrand.style.opacity = String(Math.max(0, 1 - progress * 1.5));
+    }
+    if (heroScroll) {
+      heroScroll.style.opacity = String(Math.max(0, 1 - progress * 2));
+    }
 
     ticking = false;
   }
@@ -71,47 +68,28 @@ function initHeroParallax() {
   update();
 }
 
-// ============================================================
-// 2) BRAND MARQUEE — "DANILO MOTOS" gigante com parallax horizontal
-// ============================================================
-function initBrandMarquee() {
-  const marquee = document.querySelector(".brand-marquee");
-  const inner   = document.querySelector(".brand-marquee__text");
-  if (!marquee || !inner) return;
+// ------------------------------------------------------------
+// 3) Header: adiciona sombra/intensifica blur ao rolar
+// ------------------------------------------------------------
+function initHeaderShadow() {
+  const header = document.querySelector("header");
+  if (!header) return;
 
-  let ticking = false;
-
-  function update() {
-    const rect = marquee.getBoundingClientRect();
-    const vh = window.innerHeight;
-
-    // Progresso de -1 (marquee abaixo da viewport) a +1 (acima)
-    const progress = (vh - rect.top) / (vh + rect.height);
-    const clamped = Math.max(-0.2, Math.min(1.2, progress));
-
-    // Move horizontalmente — da direita pra esquerda
-    // -50% quando progress = 0 (entrando), +5% quando progress = 1 (saindo)
-    const x = -50 + clamped * 55;
-    inner.style.transform = `translate3d(${x}%, 0, 0)`;
-
-    ticking = false;
-  }
-
+  let scrolled = false;
   function onScroll() {
-    if (!ticking) {
-      requestAnimationFrame(update);
-      ticking = true;
+    const should = window.scrollY > 20;
+    if (should !== scrolled) {
+      scrolled = should;
+      header.classList.toggle("is-scrolled", scrolled);
     }
   }
-
   window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll, { passive: true });
-  update();
+  onScroll();
 }
 
-// ============================================================
-// 3) CARD REVEAL com IntersectionObserver
-// ============================================================
+// ------------------------------------------------------------
+// 4) CARD REVEAL — IntersectionObserver
+// ------------------------------------------------------------
 function initCardReveal() {
   if (!("IntersectionObserver" in window)) return;
 
@@ -124,27 +102,20 @@ function initCardReveal() {
         }
       });
     },
-    {
-      threshold: 0.1,
-      rootMargin: "0px 0px -60px 0px",
-    }
+    { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
   );
 
-  // Observa cards quando forem adicionados ao DOM (motos.js renderiza async)
   const grid = document.getElementById("motosGrid");
   if (!grid) return;
 
-  // MutationObserver pra pegar cards adicionados depois
   const mutObserver = new MutationObserver(() => {
     grid.querySelectorAll(".card-moto:not(.is-observed)").forEach((card) => {
       card.classList.add("is-observed");
       observer.observe(card);
     });
   });
-
   mutObserver.observe(grid, { childList: true });
 
-  // Observa o que já existe (caso JS chegue depois do render)
   grid.querySelectorAll(".card-moto").forEach((card) => {
     card.classList.add("is-observed");
     observer.observe(card);

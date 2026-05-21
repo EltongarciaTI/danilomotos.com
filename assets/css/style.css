@@ -90,16 +90,7 @@ body {
   /* Noise texture sutil pra dar grit */
   position: relative;
 }
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.025;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='1'/></svg>");
-}
+/* Noise overlay removido (performance) */
 
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
@@ -307,48 +298,122 @@ header {
 #tabVendidas.chip.isActive   { color: var(--muted); }
 
 /* =====================================================
-   7) HERO RACING (full-bleed com imagem + parallax)
+   7) HERO MINIMALISTA — só nome + foto cinematic
    ===================================================== */
 .hero {
   position: relative;
-  margin: 0 -18px;
-  padding: 0;
+  width: 100%;
+  height: 92vh;
+  min-height: 540px;
+  max-height: 820px;
   overflow: hidden;
   isolation: isolate;
-  /* Performance hint para o browser */
-  will-change: transform;
-}
-@media (min-width: 768px) {
-  .hero { margin: 0 -32px; }
 }
 
 .hero__media {
   position: absolute;
-  inset: -10% 0 -10% 0;  /* overflow extra pro parallax não mostrar borda */
+  inset: -8% -2% -8% -2%;
   z-index: -1;
   background-image: url("../img/hero-mobile.jpg");
   background-size: cover;
-  background-position: center;
+  background-position: center 40%;
   background-repeat: no-repeat;
   will-change: transform;
-  transform: translate3d(0, 0, 0);  /* força GPU */
+  transform: translate3d(0, 0, 0);
 }
 @media (min-width: 768px) {
-  .hero__media { background-image: url("../img/hero.jpg"); }
+  .hero__media {
+    background-image: url("../img/hero.jpg");
+    background-position: center 30%;
+  }
 }
 
-/* Vinheta + gradiente pra texto ficar legível */
+/* Vinheta de baixo pra cima (texto centro fica nítido) */
 .hero__media::before {
   content: "";
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(15,15,18,0.55) 0%, rgba(15,15,18,0.35) 30%, rgba(15,15,18,0.85) 75%, var(--bg) 100%),
-    radial-gradient(ellipse at 80% 50%, transparent 30%, rgba(15,15,18,0.6) 100%);
+    linear-gradient(180deg,
+      rgba(15,15,18,0.20) 0%,
+      rgba(15,15,18,0.10) 35%,
+      rgba(15,15,18,0.55) 70%,
+      rgba(15,15,18,0.95) 100%);
 }
 
 .hero__inner {
-  will-change: transform, opacity;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.hero__brand { max-width: 880px; }
+
+.hero__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(64px, 16vw, 180px);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
+  /* Animação de entrada — uma vez só */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+@keyframes heroIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero__tagline {
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 2.4vw, 12px);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 18px;
+  opacity: 0;
+  transform: translateY(14px);
+  animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Indicador de scroll (Catálogo ↓) — discreto à esquerda */
+.hero__scroll {
+  position: absolute;
+  bottom: 22px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0;
+  animation: heroIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+}
+@media (min-width: 768px) {
+  .hero__scroll { bottom: 32px; left: 32px; }
+}
+.hero__scroll svg {
+  animation: bounceDown 1.8s ease-in-out infinite;
+}
+@keyframes bounceDown {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(4px); }
 }
 
 .hero__inner {
@@ -480,64 +545,6 @@ header {
 }
 
 /* =====================================================
-   7.5) BRAND MARQUEE (parallax horizontal — entre hero e cards)
-   ===================================================== */
-.brand-marquee {
-  position: relative;
-  margin: 32px -18px 0;
-  padding: 36px 0 32px;
-  overflow: hidden;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background:
-    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
-}
-@media (min-width: 768px) {
-  .brand-marquee { margin: 48px -32px 0; padding: 56px 0 48px; }
-}
-
-.brand-marquee__text {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(72px, 18vw, 220px);
-  line-height: 0.85;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1.5px var(--cream);
-  text-stroke: 1.5px var(--cream);
-  opacity: 0.18;
-  will-change: transform;
-  transform: translate3d(-50%, 0, 0);
-  user-select: none;
-  pointer-events: none;
-}
-.brand-marquee__text em {
-  font-style: normal;
-  -webkit-text-stroke: 1.5px var(--red);
-  text-stroke: 1.5px var(--red);
-}
-
-.brand-marquee__caption {
-  position: absolute;
-  bottom: 14px;
-  left: 18px;
-  right: 18px;
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-  opacity: 0.7;
-}
-@media (min-width: 768px) {
-  .brand-marquee__caption { bottom: 20px; left: 32px; right: 32px; }
-}
-
-/* =====================================================
    8) TOOLBAR
    ===================================================== */
 .toolbar {
@@ -575,12 +582,38 @@ header {
   letter-spacing: 0;
 }
 .section-header__meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.stat-pill b {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--cream);
+  letter-spacing: 0;
+  line-height: 1;
+}
+.stat-pill--green   { border-color: rgba(40, 212, 123, 0.3); }
+.stat-pill--green b { color: var(--green); }
 
 .marketGrid {
   display: grid;
@@ -601,14 +634,18 @@ header {
   display: block;
   color: inherit;
 
+  /* Performance: pinta só quando visível */
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 380px;
+
   /* Estado inicial: invisível, leve translate */
   opacity: 0;
-  transform: translate3d(0, 24px, 0);
+  transform: translate3d(0, 20px, 0);
   transition:
-    opacity .6s cubic-bezier(0.16, 1, 0.3, 1),
-    transform .7s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color .25s ease,
-    box-shadow .25s ease;
+    opacity .5s cubic-bezier(0.16, 1, 0.3, 1),
+    transform .6s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color .2s ease,
+    box-shadow .2s ease;
 }
 
 /* Quando entra no viewport — revealed via IntersectionObserver */
@@ -652,9 +689,7 @@ header {
   object-position: center 55%;
   background: var(--ink);
   display: block;
-  transition: transform .5s ease;
 }
-.card-moto:hover .card-moto__img { transform: scale(1.04); }
 
 .card-moto__body {
   padding: 16px 18px 18px;
@@ -986,9 +1021,58 @@ header {
 .videoWrap iframe { width: 100%; height: 100%; border: 0; }
 
 /* =====================================================
-   13) FLOAT WHATSAPP (mantém escondido)
+   13) WHATSAPP FAB (Floating Action Button)
    ===================================================== */
 .floatWA { display: none !important; }
+
+.waFab {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  box-shadow:
+    0 4px 16px rgba(40, 212, 123, 0.35),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+  transition: transform .2s ease, box-shadow .2s ease;
+  /* Safe area iOS */
+  bottom: calc(18px + env(safe-area-inset-bottom));
+}
+.waFab:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 24px rgba(40, 212, 123, 0.45),
+    0 16px 40px rgba(0, 0, 0, 0.4);
+}
+.waFab:active { transform: scale(0.97); }
+.waFab svg { flex-shrink: 0; }
+.waFab__label { display: inline; }
+
+/* Em telas estreitas, mantém só o ícone */
+@media (max-width: 380px) {
+  .waFab { padding: 14px; }
+  .waFab__label { display: none; }
+}
+
+/* =====================================================
+   14) HEADER SCROLLED STATE
+   ===================================================== */
+header { transition: background .2s ease, box-shadow .2s ease; }
+header.is-scrolled {
+  background: rgba(10, 10, 12, 0.92);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+}
 
 /* =====================================================
    14) DOT LIVE

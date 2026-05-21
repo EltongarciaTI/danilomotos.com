@@ -6,16 +6,15 @@
   <meta name="theme-color" content="#0f0f12" />
 
   <title>Danilo Motos · Catálogo</title>
-  <meta name="description" content="Danilo Motos — Concessionária em Euclides da Cunha. Catálogo de motos com fotos, ficha técnica e negociação direta no WhatsApp." />
+  <meta name="description" content="Danilo Motos — Concessionária em Euclides da Cunha. Catálogo de motos seminovas com negociação direta no WhatsApp." />
 
-  <!-- Fonts: Anton (display racing) + Manrope (body) + JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="image" href="assets/img/hero-mobile.jpg" media="(max-width: 767px)" />
   <link rel="preload" as="image" href="assets/img/hero.jpg" media="(min-width: 768px)" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" />
 
-  <link rel="stylesheet" href="assets/css/style.css?v=20260521d" />
+  <link rel="stylesheet" href="assets/css/style.css?v=20260521e" />
   <link rel="icon" href="./logo.png" type="image/png" />
 </head>
 
@@ -32,83 +31,72 @@
         </div>
       </a>
 
-      <a class="btn" id="waHeader" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn" id="waHeader" target="_blank" rel="noopener" aria-label="Abrir WhatsApp">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="currentColor"/>
+          <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.046 22l4.932-1.364A9.945 9.945 0 0011.999 22c5.523 0 10-4.477 10-10S17.522 2 11.999 2z" fill="currentColor"/>
+        </svg>
+        WhatsApp
+      </a>
     </div>
   </header>
 
   <!-- =====================================================
-       HERO RACING
+       HERO MINIMALISTA — só nome + foto + scroll cue
        ===================================================== -->
   <section class="hero" aria-label="Apresentação">
     <div class="hero__media" aria-hidden="true"></div>
+
     <div class="hero__inner">
-      <div class="hero__line"></div>
-
-      <div class="hero__tag">DESDE 2020 · EUCLIDES DA CUNHA / BA</div>
-
-      <h1 class="hero__title">
-        Motos<br/>com <em>história.</em>
-      </h1>
-
-      <p class="hero__sub" id="heroSub">
-        Catálogo direto da loja. Toque em uma moto pra ver fotos, ficha técnica e negociar pelo WhatsApp.
-      </p>
-
-      <div class="hero__actions">
-        <a class="btn primary" id="waContato" target="_blank" rel="noopener">
-          Negociar no WhatsApp
-        </a>
+      <div class="hero__brand">
+        <h1 class="hero__title">DANILO MOTOS</h1>
+        <p class="hero__tagline">Euclides da Cunha · Bahia</p>
       </div>
+    </div>
 
-      <div class="hero__stats">
-        <div>
-          <div class="stat__num" id="totalCount">0</div>
-          <div class="stat__label">No catálogo</div>
-        </div>
-        <div>
-          <div class="stat__num" id="statAtivas">0</div>
-          <div class="stat__label">Disponíveis</div>
-        </div>
-        <div>
-          <div class="stat__num" id="statVendidas">0</div>
-          <div class="stat__label">Vendidas</div>
-        </div>
-      </div>
+    <div class="hero__scroll" aria-hidden="true">
+      <span>Catálogo</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <polyline points="19 12 12 19 5 12"/>
+      </svg>
     </div>
   </section>
 
-  <!-- BRAND MARQUEE (parallax horizontal) -->
-  <section class="brand-marquee" aria-hidden="true">
-    <div class="brand-marquee__text">DANILO MOTOS · <em>MOTOS COM HISTÓRIA</em> · DANILO MOTOS · MOTOS COM HISTÓRIA · </div>
-    <div class="brand-marquee__caption">
-      <span>EST. 2020</span>
-      <span>BA / 75</span>
-    </div>
-  </section>
-
-  <main class="wrap">
-    <!-- SECTION HEADER -->
+  <main class="wrap" id="catalogo">
     <div class="section-header">
       <h2 id="heroTitle">Motos disponíveis</h2>
-      <div class="section-header__meta" id="catalogMeta">CATÁLOGO 2026</div>
+      <div class="section-header__meta">
+        <span class="stat-pill"><b id="totalCount">0</b> total</span>
+        <span class="stat-pill stat-pill--green"><b id="statAtivas">0</b> à venda</span>
+      </div>
     </div>
 
-    <!-- TOOLBAR / TABS -->
     <div class="toolbar" role="tablist">
       <button class="chip isActive" id="tabAtivas" type="button" role="tab">Disponíveis</button>
       <button class="chip" id="tabReservadas" type="button" role="tab">Reservadas</button>
       <button class="chip" id="tabVendidas" type="button" role="tab">Vendidas</button>
     </div>
 
-    <!-- GRID -->
     <section aria-label="Lista de motos">
       <div id="motosGrid" class="marketGrid" style="margin-top: 18px"></div>
     </section>
+
+    <!-- Hidden helpers -->
+    <span id="statVendidas" hidden></span>
+    <span id="catalogMeta" hidden></span>
   </main>
 
-  <a class="floatWA" id="waFloat" target="_blank" rel="noopener">
-    <span class="dot"></span> Negociar no WhatsApp
+  <!-- WhatsApp FAB -->
+  <a class="waFab" id="waContato" target="_blank" rel="noopener" aria-label="Chamar no WhatsApp">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#fff"/>
+      <path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.046 22l4.932-1.364A9.945 9.945 0 0011.999 22c5.523 0 10-4.477 10-10S17.522 2 11.999 2z" fill="#fff"/>
+    </svg>
+    <span class="waFab__label">Chamar</span>
   </a>
+
+  <a class="floatWA" id="waFloat" target="_blank" rel="noopener" hidden></a>
 
   <footer class="footer">
     <div class="wrap footerContent">
@@ -138,8 +126,8 @@
     </div>
   </footer>
 
-  <script type="module" src="assets/js/motos.js?v=20260521d"></script>
-  <script type="module" src="assets/js/scroll.js?v=20260521d"></script>
+  <script type="module" src="assets/js/motos.js?v=20260521e"></script>
+  <script type="module" src="assets/js/scroll.js?v=20260521e"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
