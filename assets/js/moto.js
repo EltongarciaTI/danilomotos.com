@@ -150,7 +150,7 @@ function renderCarousel(fotos) {
   requestAnimationFrame(update);
 }
 
-/* ── LIGHTBOX (fullscreen zoom das fotos) ── */
+/* ── LIGHTBOX com ZOOM (wheel + double-click + pinch + pan) ── */
 function openLightbox(fotos, startIdx = 0) {
   if (!fotos || !fotos.length) return;
   let i = startIdx;
@@ -160,18 +160,59 @@ function openLightbox(fotos, startIdx = 0) {
   overlay.innerHTML = `
     <button class="lightbox__close" aria-label="Fechar">✕</button>
     <button class="lightbox__btn lightbox__prev" aria-label="Anterior">‹</button>
-    <img class="lightbox__img" src="${fotos[i]}" alt="Foto da moto">
+    <div class="lightbox__stage">
+      <img class="lightbox__img" src="${fotos[i]}" alt="Foto da moto" draggable="false">
+    </div>
     <button class="lightbox__btn lightbox__next" aria-label="Próxima">›</button>
     <div class="lightbox__counter"></div>
+    <div class="lightbox__hint">Scroll, duplo-clique ou pinch pra zoom</div>
   `;
   document.body.appendChild(overlay);
   document.body.style.overflow = "hidden";
 
   const imgEl = overlay.querySelector(".lightbox__img");
+  const stage = overlay.querySelector(".lightbox__stage");
   const counterEl = overlay.querySelector(".lightbox__counter");
+  const hintEl = overlay.querySelector(".lightbox__hint");
   const prev = overlay.querySelector(".lightbox__prev");
   const next = overlay.querySelector(".lightbox__next");
   const close = overlay.querySelector(".lightbox__close");
+
+  // Estado de transformacao
+  let scale = 1, tx = 0, ty = 0;
+  const MIN_SCALE = 1, MAX_SCALE = 4;
+  let hintShown = false;
+
+  function applyTransform() {
+    imgEl.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
+    imgEl.style.cursor = scale > 1 ? "grab" : "zoom-in";
+    stage.classList.toggle("is-zoomed", scale > 1);
+  }
+  function resetZoom() { scale = 1; tx = 0; ty = 0; applyTransform(); }
+  function clampPan() {
+    // Limita pan pra imagem nao sair muito longe
+    const rect = stage.getBoundingClientRect();
+    const maxX = (rect.width * (scale - 1)) / 2 + 80;
+    const maxY = (rect.height * (scale - 1)) / 2 + 80;
+    tx = Math.max(-maxX, Math.min(maxX, tx));
+    ty = Math.max(-maxY, Math.min(maxY, ty));
+  }
+  function zoomAt(factor, clientX, clientY) {
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * factor));
+    if (newScale === scale) return;
+    // Zoom mantendo o ponto do mouse fixo
+    const rect = imgEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = (clientX - cx) / scale;
+    const dy = (clientY - cy) / scale;
+    tx -= dx * (newScale - scale);
+    ty -= dy * (newScale - scale);
+    scale = newScale;
+    if (scale === 1) { tx = 0; ty = 0; }
+    clampPan();
+    applyTransform();
+  }
 
   function render() {
     imgEl.src = fotos[i];
@@ -179,6 +220,7 @@ function openLightbox(fotos, startIdx = 0) {
     const show = fotos.length > 1;
     prev.style.display = show ? "" : "none";
     next.style.display = show ? "" : "none";
+    resetZoom();
   }
   function fechar() {
     overlay.remove();
@@ -187,29 +229,129 @@ function openLightbox(fotos, startIdx = 0) {
   }
   function onKey(ev) {
     if (ev.key === "Escape") fechar();
-    else if (ev.key === "ArrowLeft") { i = (i - 1 + fotos.length) % fotos.length; render(); }
-    else if (ev.key === "ArrowRight") { i = (i + 1) % fotos.length; render(); }
+    else if (ev.key === "ArrowLeft" && scale === 1) { i = (i - 1 + fotos.length) % fotos.length; render(); }
+    else if (ev.key === "ArrowRight" && scale === 1) { i = (i + 1) % fotos.length; render(); }
+    else if (ev.key === "+" || ev.key === "=") zoomAt(1.3, window.innerWidth/2, window.innerHeight/2);
+    else if (ev.key === "-") zoomAt(1/1.3, window.innerWidth/2, window.innerHeight/2);
+    else if (ev.key === "0") resetZoom();
+  }
+  function hideHint() {
+    if (hintShown) return;
+    hintShown = true;
+    hintEl.classList.add("is-hidden");
   }
 
   prev.onclick = (ev) => { ev.stopPropagation(); i = (i - 1 + fotos.length) % fotos.length; render(); };
   next.onclick = (ev) => { ev.stopPropagation(); i = (i + 1) % fotos.length; render(); };
   close.onclick = fechar;
-  // Click no fundo (fora da img/btns) tambem fecha
+
+  // Click no fundo fecha (so quando nao tem zoom, pra nao fechar acidental durante zoom)
   overlay.addEventListener("click", (ev) => {
-    if (ev.target === overlay) fechar();
+    if (ev.target === overlay && scale === 1) fechar();
   });
+
+  // Wheel zoom (desktop)
+  stage.addEventListener("wheel", (ev) => {
+    ev.preventDefault();
+    hideHint();
+    const factor = ev.deltaY < 0 ? 1.18 : 1/1.18;
+    zoomAt(factor, ev.clientX, ev.clientY);
+  }, { passive: false });
+
+  // Double-click toggle zoom (desktop)
+  imgEl.addEventListener("dblclick", (ev) => {
+    ev.preventDefault();
+    hideHint();
+    if (scale > 1) resetZoom();
+    else zoomAt(2.5, ev.clientX, ev.clientY);
+  });
+
+  // Drag pra pan quando zoomed (mouse)
+  let dragging = false, lastX = 0, lastY = 0;
+  imgEl.addEventListener("mousedown", (ev) => {
+    if (scale <= 1) return;
+    dragging = true; lastX = ev.clientX; lastY = ev.clientY;
+    imgEl.style.cursor = "grabbing";
+    ev.preventDefault();
+  });
+  window.addEventListener("mousemove", (ev) => {
+    if (!dragging) return;
+    tx += ev.clientX - lastX; ty += ev.clientY - lastY;
+    lastX = ev.clientX; lastY = ev.clientY;
+    clampPan(); applyTransform();
+  });
+  window.addEventListener("mouseup", () => {
+    if (dragging) { dragging = false; imgEl.style.cursor = scale > 1 ? "grab" : "zoom-in"; }
+  });
+
+  // Touch: pinch zoom + pan + swipe pra navegar
+  let touches = [];
+  let lastDist = 0, lastMid = null, swipeStart = null;
+  let lastTap = 0;
+
+  stage.addEventListener("touchstart", (ev) => {
+    touches = Array.from(ev.touches);
+    hideHint();
+    if (touches.length === 2) {
+      const [a, b] = touches;
+      lastDist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+      lastMid = { x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 };
+    } else if (touches.length === 1) {
+      // Possivel swipe (se nao tem zoom) ou pan (se zoomed)
+      swipeStart = { x: touches[0].clientX, y: touches[0].clientY, t: Date.now() };
+      lastX = touches[0].clientX; lastY = touches[0].clientY;
+      // Double-tap (toggle zoom)
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        if (scale > 1) resetZoom();
+        else zoomAt(2.5, touches[0].clientX, touches[0].clientY);
+        lastTap = 0;
+      } else {
+        lastTap = now;
+      }
+    }
+  }, { passive: true });
+
+  stage.addEventListener("touchmove", (ev) => {
+    touches = Array.from(ev.touches);
+    if (touches.length === 2) {
+      ev.preventDefault();
+      const [a, b] = touches;
+      const dist = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+      const mid = { x: (a.clientX + b.clientX)/2, y: (a.clientY + b.clientY)/2 };
+      if (lastDist > 0) zoomAt(dist / lastDist, mid.x, mid.y);
+      lastDist = dist;
+      lastMid = mid;
+    } else if (touches.length === 1 && scale > 1) {
+      ev.preventDefault();
+      tx += touches[0].clientX - lastX;
+      ty += touches[0].clientY - lastY;
+      lastX = touches[0].clientX; lastY = touches[0].clientY;
+      clampPan(); applyTransform();
+    }
+  }, { passive: false });
+
+  stage.addEventListener("touchend", (ev) => {
+    if (ev.touches.length === 0) {
+      // Se foi swipe horizontal (sem zoom), navega
+      if (scale === 1 && swipeStart) {
+        const dx = swipeStart.x - (ev.changedTouches[0]?.clientX || swipeStart.x);
+        const dy = Math.abs(swipeStart.y - (ev.changedTouches[0]?.clientY || swipeStart.y));
+        if (Math.abs(dx) > 50 && dy < 80) {
+          if (dx > 0) { i = (i + 1) % fotos.length; render(); }
+          else { i = (i - 1 + fotos.length) % fotos.length; render(); }
+        }
+      }
+      lastDist = 0;
+      swipeStart = null;
+    }
+  });
+
   document.addEventListener("keydown", onKey);
 
-  // Swipe no mobile
-  let sx = 0;
-  overlay.addEventListener("touchstart", (ev) => { sx = ev.touches[0].clientX; }, { passive: true });
-  overlay.addEventListener("touchend", (ev) => {
-    const dx = sx - ev.changedTouches[0].clientX;
-    if (dx > 50)  { i = (i + 1) % fotos.length; render(); }
-    if (dx < -50) { i = (i - 1 + fotos.length) % fotos.length; render(); }
-  });
-
   render();
+  // Esconde a hint apos 3 segundos
+  setTimeout(hideHint, 3000);
 }
 
 /* ── ÍCONES DA FICHA ── */

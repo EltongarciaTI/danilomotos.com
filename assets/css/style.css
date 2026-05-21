@@ -985,14 +985,48 @@ header {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+.lightbox__stage {
+  max-width: 96vw;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
 .lightbox__img {
   max-width: 96vw;
   max-height: 92vh;
   object-fit: contain;
   display: block;
-  cursor: default;
+  cursor: zoom-in;
   user-select: none;
+  -webkit-user-drag: none;
+  transform-origin: center center;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
+/* Quando zoomed, transicao desliga pra arraste/pan ficarem instantaneos */
+.lightbox__stage.is-zoomed .lightbox__img { transition: none; }
+
+/* Dica visual "zoom disponivel" — some apos 3s ou primeira interacao */
+.lightbox__hint {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.lightbox__hint.is-hidden { opacity: 0; }
 .lightbox__btn {
   position: absolute;
   top: 50%;
