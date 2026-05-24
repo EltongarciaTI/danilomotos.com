@@ -1930,15 +1930,15 @@ function renderFixedExpenses() {
     summary.innerHTML = `
       <div class="fixedSumCard">
         <div class="fsl">Total mensal</div>
-        <div class="fsv">${fmtBRL(totalActive)}</div>
+        <div class="fsv">${BRL(totalActive)}</div>
       </div>
       <div class="fixedSumCard">
         <div class="fsl">🏪 Loja</div>
-        <div class="fsv" style="color:var(--red2)">${fmtBRL(totalBusiness)}</div>
+        <div class="fsv" style="color:var(--red2)">${BRL(totalBusiness)}</div>
       </div>
       <div class="fixedSumCard">
         <div class="fsl">👤 Pessoal</div>
-        <div class="fsv" style="color:var(--purple)">${fmtBRL(totalPersonal)}</div>
+        <div class="fsv" style="color:var(--purple)">${BRL(totalPersonal)}</div>
       </div>
       <div class="fixedSumCard">
         <div class="fsl">Ativos</div>
@@ -1969,7 +1969,7 @@ function renderFixedExpenses() {
         <div class="fixedName">${f.description}</div>
         <div class="fixedMeta">${f.category} · ${f.type === "business" ? "Loja" : "Pessoal"}${f.payment_method ? " · " + f.payment_method : ""}</div>
       </div>
-      <div class="fixedAmt" style="color:${amtColor}">${fmtBRL(Number(f.amount))}</div>
+      <div class="fixedAmt" style="color:${amtColor}">${BRL(Number(f.amount))}</div>
       <div class="fixedActions">
         <button class="fixedToggle ${f.active ? "on" : "off"}" data-toggle="${f.id}" type="button">${f.active ? "Ativo" : "Pausado"}</button>
         <button class="fixedEditBtn" data-edit="${f.id}" type="button">Editar</button>
