@@ -1760,9 +1760,9 @@
     <div class="field">
       <label>Moto vendida</label>
       <div class="segmented" style="margin-bottom:8px">
-        <button type="button" class="active" id="slFilterAtiva"   data-sl-filter="ativo">Ativas</button>
-        <button type="button"                id="slFilterVendida"  data-sl-filter="vendida">Vendidas</button>
-        <button type="button"                id="slFilterTodas"    data-sl-filter="todas">Todas</button>
+        <button type="button" class="active" id="slFilterAtiva"  data-sl-filter="ativo"   onclick="window.slFilterChange(this)">Ativas</button>
+        <button type="button"                id="slFilterVendida" data-sl-filter="vendida" onclick="window.slFilterChange(this)">Vendidas</button>
+        <button type="button"                id="slFilterTodas"   data-sl-filter="todas"   onclick="window.slFilterChange(this)">Todas</button>
       </div>
       <select class="sel" id="slMoto"></select>
     </div>

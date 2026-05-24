@@ -1309,6 +1309,11 @@ function renderSalesList() {
 window.openSaleModal = function(id) {
   const s = id ? salesCache.find(x => x.id === id) : null;
   $("modalSaleTitle").textContent = s ? "Editar Venda" : "Registrar Venda";
+  // Reseta filtro para Ativas ao abrir
+  document.querySelectorAll("[data-sl-filter]").forEach(b => b.classList.remove("active"));
+  const defaultFilter = id ? "todas" : "ativo";
+  document.querySelector(`[data-sl-filter="${defaultFilter}"]`)?.classList.add("active");
+  fillMotoSelects();
   $("slId").value      = s?.id || "";
   $("slMoto").value    = s?.motorcycle_id || "";
   $("slAmount").value  = s?.sale_price ? Number(s.sale_price).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : "";
@@ -1719,6 +1724,12 @@ function bindFilters() {
     });
   });
 }
+
+window.slFilterChange = function(btn) {
+  document.querySelectorAll("[data-sl-filter]").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  fillMotoSelects();
+};
 
 // ── FICHA COMPLETA ────────────────────────────────────
 let fichaCurrentMotoId = null;
