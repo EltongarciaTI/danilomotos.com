@@ -1511,47 +1511,94 @@ $("btnSaveGoal")?.addEventListener("click", async () => {
 });
 
 // ── REPORTS ───────────────────────────────────────────
-function downloadCSV(filename, rows) {
-  const csv = rows.map(r => r.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(",")).join("\n");
-  const a = document.createElement("a");
-  a.href = "data:text/csv;charset=utf-8,﻿" + encodeURIComponent(csv);
-  a.download = filename;
-  a.click();
+function printReport(title, subtitle, headers, rows) {
+  const totalRow = rows.length > 0
+    ? `<tr><td colspan="${headers.length}" style="text-align:right;font-weight:700;color:#666;font-size:11px;padding:8px 10px">${rows.length} registro(s)</td></tr>`
+    : "";
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
+  <title>${title}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#111;padding:28px 32px;background:#fff}
+    .rpt-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #e81c1c;padding-bottom:12px;margin-bottom:18px}
+    .rpt-title{font-size:20px;font-weight:900;color:#e81c1c}
+    .rpt-subtitle{font-size:12px;color:#666;margin-top:3px}
+    .rpt-meta{font-size:11px;color:#999;text-align:right}
+    table{width:100%;border-collapse:collapse;margin-top:4px}
+    thead tr{background:#e81c1c;color:#fff}
+    thead th{padding:9px 10px;text-align:left;font-size:12px;font-weight:700;white-space:nowrap}
+    tbody tr:nth-child(even){background:#f9f9f9}
+    tbody tr:hover{background:#fff3f3}
+    tbody td{padding:8px 10px;border-bottom:1px solid #eee;font-size:12px;vertical-align:middle}
+    tfoot tr td{background:#f1f1f1;font-size:11px;color:#555}
+    .rpt-footer{margin-top:20px;font-size:10px;color:#aaa;text-align:center;border-top:1px solid #eee;padding-top:8px}
+    @media print{body{padding:14px 18px}.rpt-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}thead tr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body>
+  <div class="rpt-header">
+    <div>
+      <div class="rpt-title">Danilo Motos</div>
+      <div class="rpt-subtitle">${title}${subtitle ? " — " + subtitle : ""}</div>
+    </div>
+    <div class="rpt-meta">Gerado em ${new Date().toLocaleDateString("pt-BR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div>
+  </div>
+  <table>
+    <thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c??""}</td>`).join("")}</tr>`).join("")}</tbody>
+    <tfoot>${totalRow}</tfoot>
+  </table>
+  <div class="rpt-footer">Danilo Motos · Sistema de Gestão · danilomotos.com</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+
+  const w = window.open("", "_blank", "width=900,height=700");
+  if (w) { w.document.write(html); w.document.close(); }
 }
 
 function bindReports() {
   $("rptGastosMes")?.addEventListener("click", () => {
     const m = overviewFilter.month, y = overviewFilter.year;
     const exp = filterByPeriod(expensesCache, "expense_date", m, y);
-    downloadCSV(`gastos_${MONTHS[m-1]}_${y}.csv`, [
-      ["Data","Tipo","Categoria","Descrição","Valor","Pagamento","Moto","Observação"],
-      ...exp.map(e => [fmtDate(e.expense_date), e.type==="business"?"Loja":"Pessoal", e.category||"", e.description||"", Number(e.amount).toFixed(2).replace(".",","), e.payment_method||"", e.motorcycle_id||"", e.notes||""])
-    ]);
+    const total = exp.reduce((s,e)=>s+Number(e.amount),0);
+    const rows = exp.map(e => {
+      const moto = motosCache.find(x=>x.id===e.motorcycle_id);
+      return [fmtDate(e.expense_date), e.type==="business"?"🏪 Loja":"👤 Pessoal", e.category||"—", e.description||"—", BRL(e.amount), e.payment_method||"—", moto?.titulo||"—", e.notes||""];
+    });
+    rows.push(["","","","<strong>TOTAL</strong>",`<strong style="color:#e81c1c">${BRL(total)}</strong>`,"","",""]);
+    printReport("Relatório de Gastos", `${MONTHS[m-1]} ${y}`,
+      ["Data","Tipo","Categoria","Descrição","Valor","Pagamento","Moto","Obs."], rows);
   });
 
   $("rptVendasMes")?.addEventListener("click", () => {
     const m = overviewFilter.month, y = overviewFilter.year;
     const sv = filterByPeriod(salesCache, "sale_date", m, y);
-    downloadCSV(`vendas_${MONTHS[m-1]}_${y}.csv`, [
-      ["Data","Moto","Valor","Pagamento","Observação"],
-      ...sv.map(s => { const mt = motosCache.find(x=>x.id===s.motorcycle_id); return [fmtDate(s.sale_date), mt?.titulo||s.motorcycle_id||"", Number(s.sale_price).toFixed(2).replace(".",","), s.payment_method||"", s.notes||""]; })
-    ]);
+    const total = sv.reduce((s,v)=>s+Number(v.sale_price),0);
+    const rows = sv.map(s => {
+      const mt = motosCache.find(x=>x.id===s.motorcycle_id);
+      return [fmtDate(s.sale_date), mt?.titulo||s.motorcycle_id||"—", BRL(s.sale_price), s.payment_method||"—", s.notes||""];
+    });
+    rows.push(["","<strong>TOTAL</strong>",`<strong style="color:#16a34a">${BRL(total)}</strong>`,"",""]);
+    printReport("Relatório de Vendas", `${MONTHS[m-1]} ${y}`,
+      ["Data","Moto","Valor","Pagamento","Observação"], rows);
   });
 
   $("rptLucroMes")?.addEventListener("click", () => {
     const m = overviewFilter.month, y = overviewFilter.year;
     const sv = filterByPeriod(salesCache, "sale_date", m, y);
-    downloadCSV(`lucro_motos_${MONTHS[m-1]}_${y}.csv`, [
-      ["Moto","Venda","Compra","Custos extras","Lucro líquido"],
-      ...sv.map(s => {
-        const mt = motosCache.find(x=>x.id===s.motorcycle_id);
-        const fin = motoFinCache.find(f=>f.motorcycle_id===s.motorcycle_id);
-        const costs = motoCostsCache.filter(c=>c.motorcycle_id===s.motorcycle_id).reduce((t,c)=>t+Number(c.amount),0);
-        const purch = fin?.purchase_price ? Number(fin.purchase_price) : 0;
-        const lucro = Number(s.sale_price) - purch - costs;
-        return [mt?.titulo||s.motorcycle_id||"", Number(s.sale_price).toFixed(2).replace(".",","), purch.toFixed(2).replace(".",","), costs.toFixed(2).replace(".",","), lucro.toFixed(2).replace(".",",")];
-      })
-    ]);
+    let totalLucro = 0;
+    const rows = sv.map(s => {
+      const mt  = motosCache.find(x=>x.id===s.motorcycle_id);
+      const fin = motoFinCache.find(f=>f.motorcycle_id===s.motorcycle_id);
+      const costs = motoCostsCache.filter(c=>c.motorcycle_id===s.motorcycle_id).reduce((t,c)=>t+Number(c.amount),0);
+      const purch = fin?.purchase_price ? Number(fin.purchase_price) : 0;
+      const lucro = Number(s.sale_price) - purch - costs;
+      totalLucro += lucro;
+      const color = lucro >= 0 ? "#16a34a" : "#e81c1c";
+      return [mt?.titulo||s.motorcycle_id||"—", BRL(s.sale_price), BRL(purch), BRL(costs), `<span style="color:${color};font-weight:700">${BRL(lucro)}</span>`];
+    });
+    rows.push(["","","","<strong>LUCRO TOTAL</strong>",`<strong style="color:${totalLucro>=0?"#16a34a":"#e81c1c"}">${BRL(totalLucro)}</strong>`]);
+    printReport("Lucro por Moto", `${MONTHS[m-1]} ${y}`,
+      ["Moto","Venda","Compra","Custos extras","Lucro líquido"], rows);
   });
 
   $("rptCategorias")?.addEventListener("click", () => {
@@ -1559,35 +1606,48 @@ function bindReports() {
     const exp = filterByPeriod(expensesCache, "expense_date", m, y);
     const map = {};
     exp.forEach(e => { const k = (e.category||"Outros")+" ("+(e.type==="business"?"Loja":"Pessoal")+")"; map[k]=(map[k]||0)+Number(e.amount); });
-    downloadCSV(`categorias_${MONTHS[m-1]}_${y}.csv`, [["Categoria","Total"], ...Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k, v.toFixed(2).replace(".",",")])]);
+    const total = Object.values(map).reduce((s,v)=>s+v,0);
+    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k, BRL(v), `${((v/total)*100).toFixed(1)}%`]);
+    rows.push(["<strong>TOTAL</strong>", `<strong>${BRL(total)}</strong>`, "<strong>100%</strong>"]);
+    printReport("Gastos por Categoria", `${MONTHS[m-1]} ${y}`,
+      ["Categoria","Total","% do total"], rows);
   });
 
   $("rptMotos")?.addEventListener("click", () => {
-    downloadCSV(`financeiro_motos.csv`, [
-      ["Moto","Status","Compra","Custos","Venda","Lucro"],
-      ...motosCache.map(m => {
-        const fin = motoFinCache.find(f=>f.motorcycle_id===m.id);
-        const costs = motoCostsCache.filter(c=>c.motorcycle_id===m.id).reduce((t,c)=>t+Number(c.amount),0);
-        const purch = fin?.purchase_price ? Number(fin.purchase_price) : 0;
-        const sale = fin?.sale_price ? Number(fin.sale_price) : 0;
-        const lucro = sale - purch - costs;
-        return [m.titulo||m.id, m.status, purch.toFixed(2).replace(".",","), costs.toFixed(2).replace(".",","), sale.toFixed(2).replace(".",","), (sale ? lucro.toFixed(2).replace(".",",") : "")];
-      })
-    ]);
+    let totalLucro = 0;
+    const rows = motosCache.map(moto => {
+      const fin   = motoFinCache.find(f=>f.motorcycle_id===moto.id);
+      const costs = motoCostsCache.filter(c=>c.motorcycle_id===moto.id).reduce((t,c)=>t+Number(c.amount),0);
+      const purch = fin?.purchase_price ? Number(fin.purchase_price) : 0;
+      const sale  = fin?.sale_price ? Number(fin.sale_price) : 0;
+      const lucro = sale - purch - costs;
+      if (sale) totalLucro += lucro;
+      const statusLabel = {ativo:"Disponível",reservada:"Reservada",vendida:"Vendida"}[moto.status]||moto.status;
+      const color = lucro >= 0 ? "#16a34a" : "#e81c1c";
+      return [moto.titulo||moto.id, statusLabel, BRL(purch), BRL(costs), sale ? BRL(sale) : "—", sale ? `<span style="color:${color};font-weight:700">${BRL(lucro)}</span>` : "—"];
+    });
+    rows.push(["","","","","<strong>LUCRO TOTAL VENDIDAS</strong>",`<strong style="color:${totalLucro>=0?"#16a34a":"#e81c1c"}">${BRL(totalLucro)}</strong>`]);
+    printReport("Financeiro por Moto", "Todas as motos",
+      ["Moto","Status","Compra","Custos","Venda","Lucro"], rows);
   });
 
   $("rptEstoque")?.addEventListener("click", () => {
     const disponiveis = motosCache.filter(m => m.status === "ativo" || m.status === "reservada");
-    downloadCSV(`estoque_atual.csv`, [
-      ["Moto","Status","Preço compra","Preço venda","Custos extras"],
-      ...disponiveis.map(m => {
-        const fin = motoFinCache.find(f=>f.motorcycle_id===m.id);
-        const costs = motoCostsCache.filter(c=>c.motorcycle_id===m.id).reduce((t,c)=>t+Number(c.amount),0);
-        const purch = fin?.purchase_price ? Number(fin.purchase_price) : Number(m.preco||0);
-        const sale = fin?.sale_price ? Number(fin.sale_price) : Number(m.preco||0);
-        return [m.titulo||m.id, m.status==="ativo"?"Disponível":"Reservada", purch.toFixed(2).replace(".",","), sale.toFixed(2).replace(".",","), costs.toFixed(2).replace(".",",")];
-      })
-    ]);
+    const totalValor = disponiveis.reduce((s,m) => {
+      const fin = motoFinCache.find(f=>f.motorcycle_id===m.id);
+      return s + (fin?.purchase_price ? Number(fin.purchase_price) : Number(m.preco||0));
+    }, 0);
+    const rows = disponiveis.map(m => {
+      const fin   = motoFinCache.find(f=>f.motorcycle_id===m.id);
+      const costs = motoCostsCache.filter(c=>c.motorcycle_id===m.id).reduce((t,c)=>t+Number(c.amount),0);
+      const purch = fin?.purchase_price ? Number(fin.purchase_price) : Number(m.preco||0);
+      const sale  = fin?.sale_price ? Number(fin.sale_price) : Number(m.preco||0);
+      const dias  = diasNoEstoque(m);
+      return [m.titulo||m.id, m.status==="ativo"?"Disponível":"Reservada", BRL(purch), BRL(sale), BRL(costs), dias !== null ? `${dias}d` : "—"];
+    });
+    rows.push(["","<strong>TOTAL ESTOQUE</strong>",`<strong>${BRL(totalValor)}</strong>`,"","",""]);
+    printReport("Estoque Atual", `${disponiveis.length} moto(s) em estoque`,
+      ["Moto","Status","Preço compra","Preço venda","Custos extras","Dias em estoque"], rows);
   });
 
   $("rptImprimir")?.addEventListener("click", () => window.print());
