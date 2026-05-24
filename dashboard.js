@@ -2121,7 +2121,18 @@ $("btnApplyFixed")?.addEventListener("click", async () => {
   const active = fixedExpensesCache.filter(f => f.active);
   if (!active.length) { toast("Nenhum gasto fixo ativo para aplicar.", "warn"); return; }
   const now = new Date();
-  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const mm = now.getMonth() + 1, yy = now.getFullYear();
+  const dateStr = `${yy}-${String(mm).padStart(2, "0")}-01`;
+
+  // Verifica se já foi aplicado neste mês (evita duplicata)
+  const jaAplicado = expensesCache.some(e =>
+    e.notes === "Aplicado automaticamente (gasto fixo)" &&
+    e.expense_date && e.expense_date.startsWith(`${yy}-${String(mm).padStart(2, "0")}`)
+  );
+  if (jaAplicado) {
+    if (!confirm(`Os gastos fixos já foram aplicados em ${MONTHS[mm-1]} ${yy}. Aplicar novamente?`)) return;
+  }
+
   const rows = active.map(f => ({
     type:           f.type,
     category:       f.category,
@@ -2133,7 +2144,7 @@ $("btnApplyFixed")?.addEventListener("click", async () => {
   }));
   const { error } = await supabase.from("financial_expenses").insert(rows);
   if (error) { toast("Erro ao aplicar gastos: " + error.message, "err"); return; }
-  toast(`✅ ${rows.length} gasto(s) fixo(s) aplicado(s) em ${MONTHS[now.getMonth()]}!`, "ok", 4000);
+  toast(`✅ ${rows.length} gasto(s) fixo(s) aplicado(s) em ${MONTHS[mm-1]}!`, "ok", 4000);
   await loadExpenses();
   renderExpenseList();
   await renderOverview();

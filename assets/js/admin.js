@@ -145,7 +145,6 @@ function renderMotoSelect() {
     list.forEach((m) => {
       const st = String(m.status || "ativo").toLowerCase();
       if (groups[st]) groups[st].push(m);
-      else groups.disponivel.push(m);
     });
 
     options = Object.keys(groups)
@@ -892,14 +891,11 @@ async function tryUpsert(p) {
     obs_internas: p.obs_internas
   };
 
-  console.log("PAYLOAD MOTOS:", clean);
-
   const r = await supabase
     .from("motos")
     .upsert(clean, { onConflict: "id" })
     .select();
 
-  console.log("RESPOSTA UPSERT:", r);
   return r;
 }
 
