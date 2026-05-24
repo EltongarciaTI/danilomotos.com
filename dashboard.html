@@ -1739,7 +1739,13 @@
       <button class="modalClose" id="modalSaleClose">×</button>
     </div>
     <div class="field">
-      <label>Moto vendida</label>
+      <label>Filtrar motos</label>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button type="button" class="filterTab active" id="slFilterAtiva"  data-sl-filter="ativo">Ativas</button>
+        <button type="button" class="filterTab"        id="slFilterVendida" data-sl-filter="vendida">Vendidas</button>
+        <button type="button" class="filterTab"        id="slFilterTodas"   data-sl-filter="todas">Todas</button>
+      </div>
+      <label>Moto</label>
       <select class="sel" id="slMoto"></select>
     </div>
     <div class="row2">

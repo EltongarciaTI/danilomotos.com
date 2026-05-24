@@ -1662,7 +1662,15 @@ function fillMotoSelects() {
   if (mfM) mfM.innerHTML = motosCache.map(m => `<option value="${m.id}">${m.titulo||m.id} [${m.status}]</option>`).join("");
 
   const slM = $("slMoto");
-  if (slM) slM.innerHTML = `<option value="">— Sem vínculo —</option>` + motosCache.map(m => `<option value="${m.id}">${m.titulo||m.id} [${m.status}]</option>`).join("");
+  if (slM) {
+    const activeFilter = document.querySelector("[data-sl-filter].active");
+    const slFilter = activeFilter?.dataset.slFilter || "ativo";
+    const order = { ativo: 0, reservada: 1, vendida: 2 };
+    const filtered = slFilter === "todas"
+      ? [...motosCache].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3))
+      : motosCache.filter(m => m.status === slFilter);
+    slM.innerHTML = `<option value="">— Sem vínculo —</option>` + filtered.map(m => `<option value="${m.id}">${m.titulo||m.id} [${m.status}]</option>`).join("");
+  }
 }
 
 // ── FILTERS ───────────────────────────────────────────
@@ -1702,6 +1710,14 @@ function bindFilters() {
 
   const mfs = $("searchMotoFin");
   if (mfs) mfs.oninput = () => renderMotoFinList();
+
+  document.querySelectorAll("[data-sl-filter]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-sl-filter]").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      fillMotoSelects();
+    });
+  });
 }
 
 // ── FICHA COMPLETA ────────────────────────────────────
