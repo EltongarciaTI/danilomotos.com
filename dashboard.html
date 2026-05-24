@@ -1,0 +1,2223 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Dashboard · Danilo Motos</title>
+  <link rel="icon" href="./logo.png" type="image/png"/>
+  <link rel="manifest" href="./manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <meta name="theme-color" content="#050607"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="DaniloFinanças"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* ── TEMA ESCURO (padrão) ── */
+    :root {
+      --bg:       #07080a;
+      --panel:    #0e1117;
+      --panel2:   #131820;
+      --panel3:   #181e28;
+      --line:     rgba(255,255,255,.07);
+      --line2:    rgba(255,255,255,.04);
+      --text:     #eef2f7;
+      --muted:    #7c8899;
+      --muted2:   #556070;
+      --red:      #e8192c;
+      --red2:     #ff3b4e;
+      --green:    #22c55e;
+      --green2:   #16a34a;
+      --orange:   #f59e0b;
+      --blue:     #3b82f6;
+      --purple:   #8b5cf6;
+      --radius:   14px;
+      --radius-sm: 10px;
+      --shadow:   0 8px 32px rgba(0,0,0,.5);
+      --shadow-sm:0 2px 10px rgba(0,0,0,.3);
+      --topbar-bg:   rgba(7,8,10,.94);
+      --sidebar-bg:  #0b0d11;
+      --bottomnav-bg:rgba(8,9,12,.97);
+      --sel-opt-bg:  #1a1e28;
+    }
+
+    /* ── TEMA CLARO ── */
+    html.light {
+      --bg:       #f1f4f8;
+      --panel:    #ffffff;
+      --panel2:   #f8f9fb;
+      --panel3:   #eef1f5;
+      --line:     rgba(0,0,0,.08);
+      --line2:    rgba(0,0,0,.04);
+      --text:     #0f1724;
+      --muted:    #64748b;
+      --muted2:   #94a3b8;
+      --red:      #dc2626;
+      --red2:     #ef4444;
+      --green:    #16a34a;
+      --green2:   #15803d;
+      --orange:   #d97706;
+      --blue:     #2563eb;
+      --purple:   #7c3aed;
+      --shadow:   0 8px 32px rgba(0,0,0,.10);
+      --shadow-sm:0 2px 10px rgba(0,0,0,.07);
+      --topbar-bg:   rgba(255,255,255,.96);
+      --sidebar-bg:  #ffffff;
+      --bottomnav-bg:rgba(255,255,255,.97);
+      --sel-opt-bg:  #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    button { font-family: inherit; }
+
+    /* ── CAMPOS ── */
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); }
+    .inp, .sel {
+      width: 100%; padding: 10px 14px;
+      border-radius: var(--radius-sm); border: 1px solid var(--line);
+      background: var(--panel2); color: var(--text);
+      font-size: 14px; font-weight: 500; font-family: inherit; outline: none;
+      transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; appearance: none;
+    }
+    .inp:focus, .sel:focus { border-color: rgba(232,28,28,.45); box-shadow: 0 0 0 3px rgba(232,28,28,.08); }
+    .inp::placeholder { color: var(--muted2); font-weight: 400; }
+    .sel { cursor: pointer; }
+    .sel option, .sel optgroup { background: var(--sel-opt-bg); color: var(--text); }
+    textarea.inp { resize: vertical; min-height: 72px; line-height: 1.5; font-size: 14px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    /* ── BOTÕES ── */
+    .btn-primary {
+      padding: 11px 22px; border-radius: var(--radius-sm); border: none;
+      background: linear-gradient(135deg,#e8192c 0%,#9f0011 100%); color: #fff;
+      font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer; letter-spacing: .2px;
+      box-shadow: 0 2px 12px rgba(232,28,28,.3);
+      transition: filter .15s, transform .1s, box-shadow .15s; white-space: nowrap;
+    }
+    .btn-primary:hover  { filter: brightness(1.08); box-shadow: 0 4px 20px rgba(232,28,28,.4); }
+    .btn-primary:active { transform: scale(.97); }
+    .btn-ghost {
+      padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--line);
+      background: var(--panel2); color: var(--text);
+      font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .btn-ghost:hover { background: var(--panel3); border-color: rgba(255,255,255,.12); }
+    .btn-danger {
+      padding: 8px 14px; border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,60,60,.2); background: rgba(255,30,30,.06);
+      color: var(--red2); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s;
+    }
+    .btn-danger:hover { background: rgba(255,30,30,.13); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    /* ── MENSAGENS ── */
+    .hint { font-size: 13px; color: var(--muted); min-height: 18px; }
+    .hint.ok   { color: var(--green); font-weight: 800; }
+    .hint.err  { color: var(--red2); font-weight: 800; }
+    .hint.warn { color: var(--orange); font-weight: 700; }
+
+    /* ── SEÇÕES ── */
+    .aSection {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 16px;
+    }
+    .aSectionHead {
+      padding: 14px 20px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .aSectionHead strong { font-size: 14px; font-weight: 700; }
+    .aSectionBody { padding: 18px 20px; display: grid; gap: 12px; }
+
+    /* ── LAYOUT ── */
+    #appWrapper { display: none; }
+    #appWrapper.visible { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .topBar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--topbar-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 28px; height: 62px; flex-shrink: 0;
+    }
+    .topBar .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 15px; letter-spacing: -.3px; }
+    .topBar .brand img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 8px rgba(232,28,28,.25); }
+    .topBar .brand .brandName { display: flex; flex-direction: column; line-height: 1.2; }
+    .topBar .brand .brandName small { font-size: 11px; color: var(--muted); font-weight: 500; }
+    .topDivider { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
+    .topBar .topRight { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .topMonthBadge {
+      font-size: 12px; color: var(--muted); font-weight: 600;
+      background: var(--panel2); padding: 5px 12px; border-radius: 8px;
+      border: 1px solid var(--line); letter-spacing: .2px;
+    }
+    .topIconBtn {
+      width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--line);
+      background: var(--panel2); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); transition: background .15s, color .15s, border-color .15s;
+      font-size: 15px;
+    }
+    .topIconBtn:hover { background: var(--panel3); color: var(--text); border-color: rgba(255,255,255,.12); }
+    .topUserChip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 10px 4px 4px; border-radius: 20px;
+      border: 1px solid var(--line); background: var(--panel2);
+      cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text);
+      transition: background .15s;
+    }
+    .topUserChip:hover { background: var(--panel3); }
+    .topUserAvatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg,#e8192c,#9f0011);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: #fff;
+    }
+
+    #mainLayout { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
+    #sideNav {
+      width: 252px; flex-shrink: 0;
+      background: var(--sidebar-bg); border-right: 1px solid var(--line);
+      padding: 16px 10px 12px; display: flex; flex-direction: column; gap: 1px;
+      position: sticky; top: 62px; height: calc(100vh - 62px); overflow-y: auto;
+    }
+    .sideLabel {
+      font-size: 10px; font-weight: 700; color: var(--muted2); letter-spacing: 1.1px;
+      text-transform: uppercase; padding: 10px 14px 5px;
+    }
+    .sideBtn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-radius: 9px; border: none;
+      background: none; color: var(--muted); font-size: 13px; font-weight: 600;
+      cursor: pointer; width: 100%; text-align: left;
+      transition: background .12s, color .12s;
+      position: relative;
+    }
+    .sideBtn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .sideBtn:hover   { background: var(--panel2); color: var(--text); }
+    .sideBtn.active  { background: rgba(232,28,28,.1); color: #ff3b4e; font-weight: 700; }
+    .sideBtn.active::before {
+      content: ''; position: absolute; left: 0; top: 25%; bottom: 25%;
+      width: 3px; border-radius: 0 3px 3px 0; background: var(--red);
+    }
+    .sideBtn.danger  { color: var(--red2); }
+    .sideBtn.danger:hover { background: rgba(255,30,30,.07); }
+    .sideSep { height: 1px; background: var(--line); margin: 8px 6px; }
+    .sideSpacer { flex: 1; }
+    .sideVersion { padding: 8px 14px; font-size: 11px; color: var(--muted2); font-weight: 500; }
+
+    #contentArea { flex: 1; overflow-x: hidden; overflow-y: auto; background: var(--bg); }
+    .aWrap { max-width: 1380px; margin: 0 auto; padding: 28px 28px 48px; }
+
+    /* Screens */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Bottom nav mobile */
+    #bottomNav {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: var(--bottomnav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--line);
+      padding: 6px 0 max(8px, env(safe-area-inset-bottom));
+    }
+    .navBtn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 5px 2px; border: none; background: none;
+      cursor: pointer; color: var(--muted); font-size: 9px; font-weight: 700;
+      letter-spacing: .2px; transition: color .15s; font-family: inherit;
+    }
+    .navBtn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .navBtn.active { color: var(--red); }
+
+    @media (max-width: 767px) {
+      #sideNav  { display: none; }
+      #bottomNav { display: flex; }
+      body { padding-bottom: 74px; }
+      .aWrap { padding: 16px 14px 28px; }
+      .row2, .row3 { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 1440px) { #sideNav { width: 268px; } }
+
+    /* ── LOGIN ── */
+    #loginSection {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 20px; background: var(--bg);
+    }
+    html:not(.light) #loginSection {
+      background: radial-gradient(ellipse at 20% 0%, rgba(232,28,28,.07) 0%, transparent 55%),
+                  radial-gradient(ellipse at 80% 100%, rgba(59,130,246,.04) 0%, transparent 50%),
+                  var(--bg);
+    }
+    .loginCard {
+      width: 100%; max-width: 400px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 20px; padding: 38px 32px 32px; display: grid; gap: 16px;
+      box-shadow: var(--shadow);
+    }
+    .loginLogo { text-align: center; margin-bottom: 2px; }
+    .loginLogo img { width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 14px; display: block; box-shadow: 0 4px 20px rgba(232,28,28,.3); }
+    .loginLogo strong { display: block; font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+    .loginLogo span { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .divider { height: 1px; background: var(--line); }
+
+    /* ── PAGE HEADER ── */
+    .pageHeader { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 28px; }
+    .pageTitle { font-size: 22px; font-weight: 800; letter-spacing: -.4px; margin: 0; }
+    .pageSubtitle { font-size: 13px; color: var(--muted); font-weight: 500; margin-top: 4px; }
+
+    /* ── FILTER PILL ── */
+    .filterPill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 10px; padding: 6px 10px;
+    }
+    .filterSel {
+      background: transparent; border: none; outline: none; cursor: pointer;
+      color: var(--text); font-size: 13px; font-weight: 700;
+      font-family: inherit; padding: 0 2px;
+      -webkit-appearance: none; appearance: none;
+    }
+    .filterSel option { background: var(--sel-opt-bg); color: var(--text); }
+
+    /* ── KPI CARDS ── */
+    .kpiGrid {
+      display: grid; gap: 16px; margin-bottom: 16px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .kpiCard {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 22px 22px 20px;
+      position: relative; overflow: hidden;
+      transition: transform .15s, box-shadow .2s, border-color .15s;
+      cursor: default;
+    }
+    .kpiCard:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .kpiCard.green  { border-color: rgba(34,197,94,.18); }
+    .kpiCard.red    { border-color: rgba(232,28,28,.18); }
+    .kpiCard.orange { border-color: rgba(245,158,11,.18); }
+    .kpiCard.blue   { border-color: rgba(59,130,246,.18); }
+    .kpiCard.purple { border-color: rgba(139,92,246,.18); }
+
+    /* Glow corner accent */
+    .kpiCard::after {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 100px; height: 100px; border-radius: 50%;
+      opacity: .07; pointer-events: none; transform: translate(30%, -30%);
+    }
+    .kpiCard.green::after  { background: radial-gradient(circle, #22c55e, transparent); }
+    .kpiCard.red::after    { background: radial-gradient(circle, #e8192c, transparent); }
+    .kpiCard.orange::after { background: radial-gradient(circle, #f59e0b, transparent); }
+    .kpiCard.blue::after   { background: radial-gradient(circle, #3b82f6, transparent); }
+    .kpiCard.purple::after { background: radial-gradient(circle, #8b5cf6, transparent); }
+
+    /* Badge colorido com ícone */
+    .kpiBadge {
+      width: 40px; height: 40px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; flex-shrink: 0;
+    }
+    .kpiBadge svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .kpiBadge.green  { background: linear-gradient(135deg, #15803d, #22c55e); box-shadow: 0 4px 12px rgba(34,197,94,.3); }
+    .kpiBadge.red    { background: linear-gradient(135deg, #9f0011, #e8192c); box-shadow: 0 4px 12px rgba(232,28,28,.3); }
+    .kpiBadge.orange { background: linear-gradient(135deg, #b45309, #f59e0b); box-shadow: 0 4px 12px rgba(245,158,11,.3); }
+    .kpiBadge.blue   { background: linear-gradient(135deg, #1d4ed8, #3b82f6); box-shadow: 0 4px 12px rgba(59,130,246,.3); }
+    .kpiBadge.purple { background: linear-gradient(135deg, #5b21b6, #8b5cf6); box-shadow: 0 4px 12px rgba(139,92,246,.3); }
+    .kpiBadge.neutral{ background: linear-gradient(135deg, #374151, #6b7280); box-shadow: 0 4px 12px rgba(107,114,128,.3); }
+
+    .kpiLabel { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .kpiVal   { font-size: 28px; font-weight: 800; line-height: 1.1; letter-spacing: -.6px; }
+    .kpiVal.green  { color: var(--green); }
+    .kpiVal.red    { color: var(--red2); }
+    .kpiVal.orange { color: var(--orange); }
+    .kpiVal.blue   { color: var(--blue); }
+    .kpiTrend { font-size: 12px; font-weight: 600; margin-top: 10px; display: flex; align-items: center; gap: 4px; }
+    .kpiTrend.up   { color: var(--green); }
+    .kpiTrend.down { color: var(--red2); }
+    .kpiTrend.flat { color: var(--muted); }
+
+    /* Mini stats row */
+    .miniGrid {
+      display: grid; gap: 12px; margin-bottom: 20px;
+      grid-template-columns: repeat(7, 1fr);
+    }
+    .miniCard {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius-sm); padding: 16px 16px 14px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+      transition: border-color .15s;
+    }
+    .miniCard:hover { border-color: rgba(255,255,255,.12); }
+    .miniDot { width: 6px; height: 6px; border-radius: 50%; margin-bottom: 2px; }
+    .miniVal   { font-size: 22px; font-weight: 800; line-height: 1; letter-spacing: -.4px; }
+    .miniLabel { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+    @media (max-width: 1050px) { .kpiGrid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 1200px) { .miniGrid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 767px)  {
+      .kpiGrid  { grid-template-columns: 1fr 1fr; }
+      .miniGrid { grid-template-columns: 1fr 1fr; }
+      .kpiVal   { font-size: 22px; }
+    }
+    @media (max-width: 420px)  { .kpiGrid { grid-template-columns: 1fr; } }
+
+    /* ── GRÁFICOS ── */
+    .chartsRow { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; margin-bottom: 14px; }
+    .chartsRow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    @media (max-width: 900px) {
+      .chartsRow, .chartsRow2 { grid-template-columns: 1fr; }
+    }
+    .chartBox {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); overflow: hidden;
+      transition: box-shadow .2s;
+    }
+    .chartBox:hover { box-shadow: var(--shadow); }
+    .chartHead {
+      padding: 16px 20px 14px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chartTitle { font-size: 14px; font-weight: 900; color: var(--text); letter-spacing: -.2px; }
+    .chartSub   { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 3px; letter-spacing: .2px; text-transform: uppercase; }
+    .chartBody  { padding: 20px 20px 18px; }
+    .chartBody canvas { max-height: 340px; }
+
+    /* ── ALERTAS ── */
+    .alertBox {
+      border-radius: 12px; padding: 12px 16px; margin-bottom: 8px;
+      font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px;
+      border: 1px solid;
+    }
+    .alertBox.warn   { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.2); color: var(--orange); }
+    .alertBox.danger { background: rgba(232,28,28,.08); border-color: rgba(232,28,28,.2); color: var(--red2); }
+    .alertBox.ok     { background: rgba(34,197,94,.07); border-color: rgba(34,197,94,.2); color: var(--green); }
+    #alertsArea { margin-bottom: 14px; }
+
+    /* ── TABS ── */
+    .tabRow { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab {
+      padding: 7px 18px; border-radius: 20px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.04); color: var(--muted);
+      font-size: 13px; font-weight: 800; cursor: pointer; transition: all .15s;
+    }
+    .tab:hover  { background: rgba(255,255,255,.08); color: var(--text); }
+    .tab.active { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 0 2px 10px rgba(232,28,28,.3); }
+
+    /* ── LISTA DE GASTOS ── */
+    .expenseList { display: grid; gap: 8px; }
+    .expenseItem {
+      background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 12px; padding: 13px 16px;
+      display: flex; align-items: center; gap: 12px;
+      transition: border-color .15s;
+    }
+    .expenseItem:hover { border-color: rgba(255,255,255,.12); }
+    .expenseItem .eDate { font-size: 11px; color: var(--muted); font-weight: 700; white-space: nowrap; min-width: 52px; }
+    .expenseItem .eInfo { flex: 1; min-width: 0; }
+    .expenseItem .eDesc { font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .expenseItem .eCat  { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .expenseItem .eAmt  { font-size: 15px; font-weight: 900; color: var(--red2); white-space: nowrap; }
+    .expenseItem .eActions { display: flex; gap: 4px; }
+
+    /* ── BADGE STATUS ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 6px;
+      font-size: 10px; font-weight: 900; letter-spacing: .4px; border: 1px solid;
+    }
+    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+    .badge.ativo, .badge.disponivel  { background: rgba(34,197,94,.1); color: var(--green); border-color: rgba(34,197,94,.2); }
+    .badge.ativo::before, .badge.disponivel::before { background: var(--green); }
+    .badge.reservada { background: rgba(245,158,11,.1); color: var(--orange); border-color: rgba(245,158,11,.2); }
+    .badge.reservada::before { background: var(--orange); }
+    .badge.vendida   { background: rgba(59,130,246,.1); color: var(--blue); border-color: rgba(59,130,246,.2); }
+    .badge.vendida::before { background: var(--blue); }
+    .badge.lucro     { background: rgba(34,197,94,.1); color: var(--green); border-color: rgba(34,197,94,.2); }
+    .badge.lucro::before { background: var(--green); }
+    .badge.prejuizo  { background: rgba(232,28,28,.1); color: var(--red2); border-color: rgba(232,28,28,.2); }
+    .badge.prejuizo::before { background: var(--red2); }
+
+    /* ── ESTOQUE ── */
+    .stockGrid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 767px) { .stockGrid { grid-template-columns: 1fr 1fr; } }
+    .stockCard {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+      padding: 16px 16px 14px; text-align: center;
+    }
+    .stockVal   { font-size: 26px; font-weight: 900; margin-bottom: 4px; }
+    .stockLabel { font-size: 10px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+
+    .motoCard {
+      background: var(--panel2); border: 1px solid var(--line); border-radius: 14px;
+      padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: flex-start;
+      gap: 14px; transition: border-color .15s;
+    }
+    .motoCard:hover { border-color: rgba(255,255,255,.12); }
+    .motoCardMain { flex: 1; min-width: 0; }
+    .motoCardTitle { font-size: 15px; font-weight: 900; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .motoCardStats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+    .motoStatItem .mLabel { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+    .motoStatItem .mVal   { font-size: 14px; font-weight: 900; }
+    .motoCardActions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+
+    /* Status selector inline */
+    .statusSel {
+      padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.04); color: var(--text);
+      font-size: 12px; font-weight: 800; cursor: pointer; -webkit-appearance: none; appearance: none;
+    }
+    .statusSel option { background: #1a1c20; }
+
+    /* ── MOTO FINANCEIRO ── */
+    .motoFinCard {
+      background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px 18px; margin-bottom: 10px;
+    }
+    .motoFinTitle { font-size: 15px; font-weight: 900; margin-bottom: 4px; }
+    .motoFinRow   { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; }
+    .motoFinItem .label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+    .motoFinItem .value { font-size: 14px; font-weight: 900; }
+
+    /* ── METAS ── */
+    .goalCard { background: var(--panel2); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 10px; }
+    .goalLabel { font-size: 13px; font-weight: 800; margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .progressBar { height: 8px; background: rgba(255,255,255,.07); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+    .progressFill { height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .progressFill.ok     { background: linear-gradient(90deg, var(--green2), var(--green)); }
+    .progressFill.warn   { background: linear-gradient(90deg, #d97706, var(--orange)); }
+    .progressFill.danger { background: linear-gradient(90deg, #991b1b, var(--red2)); }
+    .goalNumbers { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 700; }
+
+    /* ── RELATÓRIOS ── */
+    .reportGrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .reportGrid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 420px) { .reportGrid { grid-template-columns: 1fr; } }
+    .reportCard {
+      background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 14px; padding: 22px 18px; cursor: pointer;
+      transition: border-color .15s, transform .1s; text-align: center;
+    }
+    .reportCard:hover { border-color: rgba(232,28,28,.3); transform: translateY(-1px); }
+    .reportCard .rIcon  { font-size: 34px; margin-bottom: 10px; }
+    .reportCard .rTitle { font-size: 14px; font-weight: 900; margin-bottom: 4px; }
+    .reportCard .rSub   { font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    /* ── COMPROVANTE ── */
+    .receiptThumb {
+      width: 56px; height: 56px; object-fit: cover;
+      border-radius: 8px; border: 1px solid var(--line); cursor: pointer;
+    }
+    .uploadArea {
+      border: 2px dashed var(--line); border-radius: 12px;
+      padding: 22px; text-align: center; cursor: pointer;
+      transition: border-color .15s; position: relative;
+    }
+    .uploadArea:hover { border-color: rgba(232,28,28,.35); }
+    .uploadArea input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .uploadText { font-size: 13px; color: var(--muted); font-weight: 700; margin-top: 6px; }
+
+    /* ── MODAL ── */
+    .modalOverlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modalOverlay.open { display: flex; }
+    .modalBox {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 22px; padding: 24px; width: 100%; max-width: 520px;
+      max-height: 92vh; overflow-y: auto; display: grid; gap: 14px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.6);
+    }
+    .modalHead { display: flex; align-items: center; justify-content: space-between; }
+    .modalHead strong { font-size: 17px; font-weight: 900; }
+    .modalClose { background: none; border: none; color: var(--muted); font-size: 26px; cursor: pointer; padding: 0; line-height: 1; transition: color .15s; }
+    .modalClose:hover { color: var(--text); }
+
+    /* ── BUSCA ── */
+    .searchWrap { position: relative; }
+    .searchWrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+    .searchWrap .inp { padding-left: 38px; }
+
+    /* ── EMPTY STATE ── */
+    .emptyState { text-align: center; padding: 56px 20px; color: var(--muted); }
+    .emptyState .emptyIcon { font-size: 44px; margin-bottom: 12px; opacity: .7; }
+    .emptyState p { font-size: 14px; font-weight: 700; }
+
+    /* ── LIGHTBOX ── */
+    #lightbox { display: none; position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,.92); align-items: center; justify-content: center; }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 90vw; max-height: 88vh; border-radius: 12px; }
+    #lightbox .lbClose { position: absolute; top: 20px; right: 24px; background: rgba(255,255,255,.1); border: none; color: #fff; font-size: 28px; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+    #lightbox .lbClose:hover { background: rgba(255,255,255,.2); }
+
+    /* ── PAGINAÇÃO ── */
+    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+    .pageBtn { padding: 7px 13px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--muted); font-size: 13px; font-weight: 800; cursor: pointer; }
+    .pageBtn.active { background: var(--red); border-color: var(--red); color: #fff; }
+    .pageBtn:hover:not(.active) { background: rgba(255,255,255,.08); }
+
+    /* ── TRANSAÇÕES RECENTES ── */
+    .recentList { display: grid; gap: 6px; }
+    .recentItem {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px; background: var(--panel3);
+      border: 1px solid var(--line2);
+    }
+    .recentDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .recentDot.business { background: var(--red2); }
+    .recentDot.personal { background: var(--blue); }
+    .recentDot.sale { background: var(--green); }
+    .recentInfo { flex: 1; min-width: 0; }
+    .recentDesc { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recentMeta { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .recentAmt  { font-size: 13px; font-weight: 900; white-space: nowrap; }
+
+    /* ── SKELETON LOADING ── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position:  600px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--panel2) 25%, var(--panel3) 50%, var(--panel2) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 8px;
+    }
+    .skelCard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 20px 18px; }
+    .skelLine { height: 12px; margin-bottom: 10px; }
+    .skelBig  { height: 32px; margin-bottom: 12px; width: 65%; }
+    .skelSm   { height: 10px; width: 45%; }
+
+    /* ── TOAST ── */
+    #toastContainer {
+      position: fixed; bottom: 88px; right: 16px; z-index: 900;
+      display: flex; flex-direction: column-reverse; gap: 8px; pointer-events: none;
+    }
+    @media (min-width: 768px) { #toastContainer { bottom: 24px; } }
+    .toast {
+      min-width: 220px; max-width: 320px;
+      padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+      pointer-events: all; cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0,0,0,.35);
+      border: 1px solid; background: var(--panel);
+      animation: toastIn .3s cubic-bezier(.4,0,.2,1);
+    }
+    .toast.ok   { border-color: rgba(22,163,74,.35);  color: var(--green); }
+    .toast.err  { border-color: rgba(220,38,38,.35);  color: var(--red2); }
+    .toast.info { border-color: rgba(37,99,235,.35);  color: var(--blue); }
+    .toast.warn { border-color: rgba(217,119,6,.35);  color: var(--orange); }
+    @keyframes toastIn  { from { opacity:0; transform: translateX(20px) scale(.95); } to { opacity:1; transform: translateX(0) scale(1); } }
+    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform: scale(.9); } }
+
+    /* ── FADE-UP ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fadeUp { animation: fadeUp .38s cubic-bezier(.4,0,.2,1) both; }
+    .kpiGrid  .kpiCard:nth-child(1) { animation: fadeUp .4s .04s cubic-bezier(.4,0,.2,1) both; }
+    .kpiGrid  .kpiCard:nth-child(2) { animation: fadeUp .4s .09s cubic-bezier(.4,0,.2,1) both; }
+    .kpiGrid  .kpiCard:nth-child(3) { animation: fadeUp .4s .14s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(1) { animation: fadeUp .4s .18s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(2) { animation: fadeUp .4s .22s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(3) { animation: fadeUp .4s .26s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(4) { animation: fadeUp .4s .30s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(5) { animation: fadeUp .4s .34s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(6) { animation: fadeUp .4s .38s cubic-bezier(.4,0,.2,1) both; }
+    .miniGrid .miniCard:nth-child(7) { animation: fadeUp .4s .42s cubic-bezier(.4,0,.2,1) both; }
+
+    /* ── TOP LOAD BAR ── */
+    #topLoadBar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      height: 3px;
+      background: linear-gradient(90deg, #9f0011 0%, #e8192c 40%, #ff6b6b 70%, #e8192c 100%);
+      background-size: 300% 100%;
+      animation: loadShimmer 1.1s linear infinite;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s;
+    }
+    #topLoadBar.active { opacity: 1; }
+    @keyframes loadShimmer {
+      0%   { background-position: 100% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── SCREEN TRANSITION ── */
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .screen.active { animation: screenIn .22s cubic-bezier(.4,0,.2,1) both; }
+
+    /* ── SPARKLINES ── */
+    .kpiSparkWrap { margin-top: 10px; height: 28px; opacity: .8; }
+    .kpiSparkWrap svg { display: block; width: 100%; height: 28px; }
+
+    /* ── LIVE CLOCK ── */
+    #liveClock {
+      font-size: 12px; color: var(--muted); font-weight: 600;
+      padding: 5px 11px; border-radius: 8px;
+      background: var(--panel2); border: 1px solid var(--line);
+      letter-spacing: .2px; white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 700px) { #liveClock { display: none; } }
+
+    /* ── GOAL RINGS ── */
+    .goalRingsGrid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 14px; margin-bottom: 20px;
+    }
+    @media (max-width: 700px) { .goalRingsGrid { grid-template-columns: 1fr; } }
+    .goalRingCard {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 22px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      text-align: center; transition: transform .15s, box-shadow .2s;
+    }
+    .goalRingCard:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .goalRingLabel { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+    .goalRingSub   { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .goalRingVal   { font-size: 15px; font-weight: 900; }
+
+    /* ── PRINT ── */
+    @media print {
+      #sideNav, #bottomNav, .topBar, .btn-row, .tabRow, .btn-primary, .btn-ghost, .btn-danger, .kpiTrend { display: none !important; }
+      body { background: #fff; color: #000; padding: 0; }
+      .aWrap { padding: 0; max-width: 100%; }
+      .kpiCard, .chartBox, .miniCard { border: 1px solid #ddd; background: #fff; }
+    }
+
+    /* ════════════════════════════════════════
+       MELHORIAS VISUAIS — PREMIUM POLISH
+    ════════════════════════════════════════ */
+
+    /* Scrollbar customizada */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
+    html.light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); }
+    html.light ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.22); }
+
+    /* ── LOGIN melhorado ── */
+    html:not(.light) #loginSection {
+      background:
+        radial-gradient(ellipse at 15% 0%,  rgba(232,28,28,.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 100%, rgba(139,92,246,.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%,  rgba(59,130,246,.04) 0%, transparent 70%),
+        var(--bg);
+    }
+    .loginCard {
+      position: relative;
+      background: linear-gradient(145deg, rgba(20,23,32,1) 0%, rgba(14,17,23,1) 100%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 32px 80px rgba(0,0,0,.6), 0 0 60px rgba(232,28,28,.05);
+    }
+    html.light .loginCard {
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.06), 0 32px 80px rgba(0,0,0,.1);
+    }
+    .loginCard::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #9f0011 0%, #e8192c 40%, #ff6b6b 70%, #8b5cf6 100%);
+      border-radius: 20px 20px 0 0;
+    }
+    .loginLogo img {
+      box-shadow: 0 8px 32px rgba(232,28,28,.4), 0 0 0 4px rgba(232,28,28,.08);
+    }
+
+    /* ── TOPBAR melhorada ── */
+    .topBar {
+      box-shadow: 0 1px 0 var(--line), 0 4px 24px rgba(0,0,0,.2);
+    }
+    html:not(.light) .topBar {
+      background: rgba(7,8,10,.96);
+    }
+
+    /* ── SIDEBAR melhorada ── */
+    html:not(.light) #sideNav {
+      background: linear-gradient(180deg, #08090d 0%, #0b0d11 100%);
+      box-shadow: inset -1px 0 0 rgba(255,255,255,.04);
+    }
+    .sideBtn {
+      transition: background .15s, color .15s, transform .1s;
+    }
+    .sideBtn:hover {
+      transform: translateX(2px);
+    }
+    .sideBtn.active {
+      background: linear-gradient(90deg, rgba(232,28,28,.14) 0%, rgba(232,28,28,.04) 100%);
+      box-shadow: inset 0 1px 0 rgba(255,60,60,.08), inset 0 -1px 0 rgba(255,60,60,.08);
+    }
+    .sideBtn.active::before {
+      box-shadow: 0 0 8px rgba(232,28,28,.5);
+    }
+
+    /* ── KPI CARDS melhorados ── */
+    .kpiCard {
+      background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+    }
+    .kpiCard::after {
+      width: 160px; height: 160px;
+      opacity: .1;
+    }
+    .kpiCard.green  { box-shadow: 0 0 0 1px rgba(34,197,94,.12); }
+    .kpiCard.red    { box-shadow: 0 0 0 1px rgba(232,28,28,.12); }
+    .kpiCard.orange { box-shadow: 0 0 0 1px rgba(245,158,11,.12); }
+    .kpiCard.blue   { box-shadow: 0 0 0 1px rgba(59,130,246,.12); }
+    .kpiCard.purple { box-shadow: 0 0 0 1px rgba(139,92,246,.12); }
+    .kpiCard:hover {
+      transform: translateY(-3px);
+    }
+    .kpiCard.green:hover  { box-shadow: 0 12px 40px rgba(34,197,94,.12),  0 0 0 1px rgba(34,197,94,.2); }
+    .kpiCard.red:hover    { box-shadow: 0 12px 40px rgba(232,28,28,.12),   0 0 0 1px rgba(232,28,28,.2); }
+    .kpiCard.orange:hover { box-shadow: 0 12px 40px rgba(245,158,11,.12),  0 0 0 1px rgba(245,158,11,.2); }
+    .kpiCard.blue:hover   { box-shadow: 0 12px 40px rgba(59,130,246,.12),  0 0 0 1px rgba(59,130,246,.2); }
+    .kpiCard.purple:hover { box-shadow: 0 12px 40px rgba(139,92,246,.12),  0 0 0 1px rgba(139,92,246,.2); }
+
+    /* Linha superior colorida no kpiCard */
+    .kpiCard::before {
+      content: '';
+      position: absolute; top: 0; left: 20px; right: 20px; height: 2px;
+      border-radius: 0 0 4px 4px;
+      opacity: .6;
+    }
+    .kpiCard.green::before  { background: var(--green); }
+    .kpiCard.red::before    { background: var(--red2); }
+    .kpiCard.orange::before { background: var(--orange); }
+    .kpiCard.blue::before   { background: var(--blue); }
+    .kpiCard.purple::before { background: var(--purple); }
+
+    .kpiVal { text-shadow: 0 1px 8px rgba(0,0,0,.2); }
+
+    /* ── MINI CARDS melhorados ── */
+    .miniCard {
+      background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .miniCard:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    }
+    .miniDot { box-shadow: 0 0 6px currentColor; }
+
+    /* ── CHART BOXES melhorados ── */
+    .chartBox {
+      background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+    }
+    .chartBox:hover {
+      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+      transform: translateY(-1px);
+      transition: box-shadow .2s, transform .2s;
+    }
+
+    /* ── EXPENSE / SALE ITEMS melhorados ── */
+    .expenseItem {
+      background: linear-gradient(90deg, var(--panel2) 0%, var(--panel3) 100%);
+      transition: border-color .15s, transform .1s, box-shadow .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .expenseItem::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--red2);
+      opacity: 0;
+      transition: opacity .15s;
+      border-radius: 12px 0 0 12px;
+    }
+    .expenseItem:hover::before { opacity: 1; }
+    .expenseItem:hover {
+      transform: translateX(2px);
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+      border-color: rgba(255,255,255,.14);
+    }
+
+    /* ── MOTO CARDS melhorados ── */
+    .motoCard {
+      background: linear-gradient(135deg, var(--panel2) 0%, var(--panel3) 100%);
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .motoCard:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.25);
+      border-color: rgba(255,255,255,.16);
+    }
+
+    /* ── STOCK CARDS melhorados ── */
+    .stockCard {
+      background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .stockCard:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    }
+
+    /* ── REPORT CARDS melhorados ── */
+    .reportCard {
+      background: linear-gradient(145deg, var(--panel2) 0%, var(--panel3) 100%);
+      position: relative; overflow: hidden;
+    }
+    .reportCard::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(232,28,28,.06) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .reportCard:hover::after { opacity: 1; }
+    .reportCard:hover {
+      border-color: rgba(232,28,28,.35);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(232,28,28,.08);
+    }
+    .reportCard .rIcon { transition: transform .2s; }
+    .reportCard:hover .rIcon { transform: scale(1.15); }
+
+    /* ── META / GOAL CARDS melhorados ── */
+    .goalCard {
+      background: linear-gradient(145deg, var(--panel2) 0%, var(--panel3) 100%);
+    }
+    .progressBar {
+      background: rgba(255,255,255,.05);
+      border-radius: 6px;
+      height: 10px;
+    }
+    .progressFill {
+      height: 100%;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+    .progressFill::after {
+      content: '';
+      position: absolute; top: 0; left: -100%; bottom: 0; width: 60%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+      animation: progressShine 2.2s infinite;
+    }
+    @keyframes progressShine {
+      0%   { left: -100%; }
+      60%  { left: 160%; }
+      100% { left: 160%; }
+    }
+    .goalRingCard {
+      background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+    }
+
+    /* ── MODAL melhorado ── */
+    .modalBox {
+      background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 40px 100px rgba(0,0,0,.7);
+    }
+    html.light .modalBox {
+      box-shadow: 0 0 0 1px rgba(0,0,0,.07), 0 40px 80px rgba(0,0,0,.15);
+    }
+    .modalBox::before {
+      content: '';
+      position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
+      background: linear-gradient(90deg, var(--red), var(--purple));
+      border-radius: 2px;
+      opacity: .5;
+    }
+    .modalBox { position: relative; }
+
+    /* Modal entrada animada */
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(.94) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modalOverlay.open .modalBox {
+      animation: modalIn .22s cubic-bezier(.4,0,.2,1) both;
+    }
+
+    /* ── BOTÃO PRIMARY melhorado ── */
+    .btn-primary {
+      background: linear-gradient(135deg, #e8192c 0%, #9f0011 55%, #c70020 100%);
+      box-shadow: 0 2px 12px rgba(232,28,28,.35), inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 24px rgba(232,28,28,.45), inset 0 1px 0 rgba(255,255,255,.15);
+    }
+
+    /* ── TABS melhoradas ── */
+    .tab.active {
+      box-shadow: 0 4px 16px rgba(232,28,28,.35);
+      background: linear-gradient(135deg, #e8192c 0%, #9f0011 100%);
+    }
+
+    /* ── BADGE melhorado ── */
+    .badge {
+      backdrop-filter: blur(4px);
+    }
+    .badge.ativo::before, .badge.disponivel::before { box-shadow: 0 0 4px var(--green); }
+    .badge.reservada::before { box-shadow: 0 0 4px var(--orange); }
+    .badge.vendida::before   { box-shadow: 0 0 4px var(--blue); }
+    .badge.lucro::before     { box-shadow: 0 0 4px var(--green); }
+    .badge.prejuizo::before  { box-shadow: 0 0 4px var(--red2); }
+
+    /* ── TOAST melhorado ── */
+    .toast {
+      box-shadow: 0 16px 48px rgba(0,0,0,.45);
+      backdrop-filter: blur(16px);
+      background: rgba(14,17,23,.96);
+    }
+    html.light .toast { background: rgba(255,255,255,.97); }
+    .toast.ok   { border-left: 3px solid var(--green); }
+    .toast.err  { border-left: 3px solid var(--red2); }
+    .toast.info { border-left: 3px solid var(--blue); }
+    .toast.warn { border-left: 3px solid var(--orange); }
+
+    /* ── UPLOAD AREA melhorada ── */
+    .uploadArea:hover {
+      border-color: rgba(232,28,28,.5);
+      background: rgba(232,28,28,.03);
+    }
+
+    /* ── CAMPOS FOCUS melhorado ── */
+    .inp:focus, .sel:focus {
+      border-color: rgba(232,28,28,.5);
+      box-shadow: 0 0 0 3px rgba(232,28,28,.1), 0 1px 0 rgba(232,28,28,.15);
+    }
+
+    /* ── RECENT ITEMS melhorados ── */
+    .recentItem {
+      background: linear-gradient(90deg, var(--panel3) 0%, var(--panel2) 100%);
+      transition: border-color .15s, transform .1s;
+    }
+    .recentItem:hover {
+      transform: translateX(2px);
+      border-color: rgba(255,255,255,.1);
+    }
+
+    /* ── PAGE TITLE decorativo ── */
+    .pageTitle {
+      position: relative;
+    }
+
+    /* Glow sutil no brand logo */
+    .topBar .brand img {
+      box-shadow: 0 2px 12px rgba(232,28,28,.35), 0 0 0 2px rgba(232,28,28,.1);
+    }
+
+    /* ── Separador sidebar ── */
+    .sideSep {
+      background: linear-gradient(90deg, transparent, var(--line), transparent);
+    }
+
+    /* ── MOTO FIN CARD melhorado ── */
+    .motoFinCard {
+      background: linear-gradient(135deg, var(--panel2) 0%, var(--panel3) 100%);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .motoFinCard:hover {
+      box-shadow: 0 4px 24px rgba(0,0,0,.2);
+      border-color: rgba(255,255,255,.12);
+    }
+
+    /* ── ALERT BOXES melhorados ── */
+    .alertBox {
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    /* ── DIAS EM ESTOQUE badge ── */
+    .diasBadge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 900;
+      letter-spacing: .3px; border: 1px solid;
+    }
+    .diasBadge.ok     { background: rgba(34,197,94,.1);  color: var(--green);  border-color: rgba(34,197,94,.2); }
+    .diasBadge.warn   { background: rgba(245,158,11,.1); color: var(--orange); border-color: rgba(245,158,11,.2); }
+    .diasBadge.danger { background: rgba(232,28,28,.1);  color: var(--red2);   border-color: rgba(232,28,28,.2); }
+
+    /* ── CALCULADORA modal ── */
+    .calcResult {
+      background: var(--panel3); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px 18px; display: grid; gap: 10px;
+    }
+    .calcRow { display: flex; justify-content: space-between; align-items: center; }
+    .calcLabel { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .calcVal   { font-size: 15px; font-weight: 900; }
+    .calcValDestaque { font-size: 20px; font-weight: 900; color: var(--green); }
+    .calcSep { height: 1px; background: var(--line); }
+
+    /* ── BOTÃO CALCULADORA sidebar ── */
+    .sideBtn.calcBtn { color: var(--orange); }
+    .sideBtn.calcBtn:hover { background: rgba(245,158,11,.08); }
+
+    /* ── GASTOS FIXOS ── */
+    .fixedItem {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: var(--radius-sm);
+      background: linear-gradient(90deg, var(--panel2) 0%, var(--panel3) 100%);
+      border: 1px solid var(--line); margin-bottom: 8px;
+      transition: border-color .15s, transform .1s;
+    }
+    .fixedItem:hover { transform: translateX(2px); border-color: rgba(255,255,255,.12); }
+    .fixedItem.inactive { opacity: .45; }
+    .fixedItem .fixedIcon {
+      width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .fixedItem .fixedBody { flex: 1; min-width: 0; }
+    .fixedItem .fixedName { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fixedItem .fixedMeta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .fixedItem .fixedAmt { font-size: 17px; font-weight: 900; flex-shrink: 0; }
+    .fixedItem .fixedActions { display: flex; gap: 6px; flex-shrink: 0; }
+    .fixedToggle {
+      padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; border: none; cursor: pointer;
+      font-family: inherit; transition: background .15s;
+    }
+    .fixedToggle.on  { background: rgba(34,197,94,.15);  color: var(--green); }
+    .fixedToggle.off { background: rgba(124,136,153,.12); color: var(--muted); }
+    .fixedEditBtn {
+      padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid var(--line);
+      background: transparent; color: var(--muted); cursor: pointer; font-family: inherit;
+    }
+    .fixedEditBtn:hover { background: var(--panel3); color: var(--text); }
+    .fixedSummary {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .fixedSumCard {
+      flex: 1; min-width: 140px; padding: 14px 18px; border-radius: var(--radius-sm);
+      background: var(--panel2); border: 1px solid var(--line);
+    }
+    .fixedSumCard .fsl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 6px; }
+    .fixedSumCard .fsv { font-size: 20px; font-weight: 900; }
+  </style>
+</head>
+<body>
+<div id="topLoadBar"></div>
+
+<!-- ════ LOGIN ════ -->
+<div id="loginSection">
+  <form class="loginCard" id="loginForm" onsubmit="return false">
+    <div class="loginLogo">
+      <img src="logo.png" alt="" onerror="this.style.display='none'">
+      <strong>Danilo Motos</strong>
+      <span>Dashboard Financeira</span>
+    </div>
+    <div class="divider"></div>
+    <div class="field">
+      <label>E-mail</label>
+      <input class="inp" id="dEmail" type="email" placeholder="admin@email.com" inputmode="email" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input class="inp" id="dSenha" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-primary" id="btnLogin" type="submit" style="width:100%;margin-top:4px">Entrar</button>
+    <div class="hint" id="loginMsg"></div>
+  </form>
+</div>
+
+<!-- ════ APP ════ -->
+<div id="toastContainer"></div>
+
+<div id="appWrapper">
+  <!-- Top bar -->
+  <div class="topBar">
+    <div class="brand">
+      <img src="logo.png" alt="" onerror="this.style.display='none'">
+      <div class="brandName">
+        <span>Danilo Motos</span>
+        <small>Dashboard Financeiro</small>
+      </div>
+    </div>
+    <div class="topDivider"></div>
+    <div class="topMonthBadge" id="monthLabel"></div>
+    <div class="topRight">
+      <div id="liveClock"></div>
+      <button class="topIconBtn" id="btnTheme" type="button" title="Alternar tema">🌙</button>
+      <button class="topUserChip" id="btnLogout" type="button">
+        <div class="topUserAvatar">DM</div>
+        Sair
+      </button>
+    </div>
+  </div>
+
+  <div id="mainLayout">
+    <!-- Sidebar desktop -->
+    <nav id="sideNav">
+      <div class="sideLabel">Principal</div>
+      <button class="sideBtn active" data-screen="screenOverview" type="button">
+        <!-- Ícone: grid/dashboard moderno -->
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Visão Geral
+      </button>
+      <button class="sideBtn" data-screen="screenEstoque" type="button">
+        <!-- Ícone: caixa/estoque 3D moderno -->
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Estoque
+      </button>
+      <div class="sideLabel" style="margin-top:6px">Financeiro</div>
+      <button class="sideBtn" data-screen="screenExpenses" type="button">
+        <!-- Ícone: carteira/gastos moderno -->
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M2 10h20"/></svg>
+        Gastos
+      </button>
+      <button class="sideBtn" data-screen="screenMotos" type="button">
+        <!-- Ícone: ficha/clipboard moderno -->
+        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+        Ficha por Moto
+      </button>
+      <button class="sideBtn" data-screen="screenSales" type="button">
+        <!-- Ícone: gráfico de venda subindo -->
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/><polyline points="14 9 18 9 18 13"/></svg>
+        Vendas
+      </button>
+      <button class="sideBtn" data-screen="screenGoals" type="button">
+        <!-- Ícone: alvo/meta moderno -->
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4"/><path d="M6 12H2"/><path d="M12 6V2"/><path d="M12 22v-4"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8" opacity=".3"/></svg>
+        Metas
+      </button>
+      <button class="sideBtn" data-screen="screenReports" type="button">
+        <!-- Ícone: gráfico de barras relatório -->
+        <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/><path d="M3 3h18"/></svg>
+        Relatórios
+      </button>
+      <button class="sideBtn" data-screen="screenFixedExpenses" type="button">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        Gastos Fixos
+      </button>
+      <div class="sideSep"></div>
+      <div class="sideLabel" style="margin-top:2px">Ferramentas</div>
+      <button class="sideBtn calcBtn" id="btnCalcLucro" type="button">
+        <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+        Calculadora de Lucro
+      </button>
+      <div class="sideSpacer"></div>
+      <button class="sideBtn danger" id="btnLogoutSide" type="button">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Sair da conta
+      </button>
+      <div class="sideVersion">Danilo Motos · v2.0</div>
+    </nav>
+
+    <!-- Content -->
+    <div id="contentArea">
+
+      <!-- ══ VISÃO GERAL ══ -->
+      <div class="screen active aWrap" id="screenOverview">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Visão Geral</h1>
+            <div class="pageSubtitle" id="overviewSubtitle">Resumo financeiro do período</div>
+          </div>
+          <div class="filterPill">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <select id="filterMonth" class="filterSel"></select>
+            <span style="color:var(--line);font-size:14px;font-weight:400;line-height:1">|</span>
+            <select id="filterYear" class="filterSel" style="color:var(--muted)"></select>
+          </div>
+        </div>
+
+        <div id="alertsArea"></div>
+
+        <!-- KPIs Principais -->
+        <div class="kpiGrid">
+          <div class="kpiCard green">
+            <div class="kpiBadge green"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5A2.5 2.5 0 0 1 12 8h.5a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5H12a2.5 2.5 0 0 0 2.5-2"/></svg></div>
+            <div class="kpiLabel">Receita do mês</div>
+            <div class="kpiVal green" id="statReceita">R$ 0</div>
+            <div class="kpiTrend flat" id="trendReceita">— vs mês anterior</div>
+            <div id="kpiSparkReceita" class="kpiSparkWrap"></div>
+          </div>
+          <div class="kpiCard red">
+            <div class="kpiBadge red"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div>
+            <div class="kpiLabel">Gastos totais</div>
+            <div class="kpiVal red" id="statGastosTotal">R$ 0</div>
+            <div class="kpiTrend flat" id="trendGastos">— vs mês anterior</div>
+            <div id="kpiSparkGastos" class="kpiSparkWrap"></div>
+          </div>
+          <div class="kpiCard" id="kpiLucro">
+            <div class="kpiBadge green" id="kpiLucroBadge"><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+            <div class="kpiLabel">Lucro líquido</div>
+            <div class="kpiVal" id="statLucroLiq">R$ 0</div>
+            <div class="kpiTrend flat" id="trendLucro">— vs mês anterior</div>
+            <div id="kpiSparkLucro" class="kpiSparkWrap"></div>
+          </div>
+        </div>
+
+        <!-- Mini stats -->
+        <div class="miniGrid">
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--green)"></div>
+            <div class="miniVal" id="statVendidas">0</div>
+            <div class="miniLabel">Vendidas no mês</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--blue)"></div>
+            <div class="miniVal" id="statEstoque" style="color:var(--blue)">0</div>
+            <div class="miniLabel">Em estoque</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--orange)"></div>
+            <div class="miniVal" style="color:var(--orange)" id="statFixos">R$ 0</div>
+            <div class="miniLabel">Custos fixos</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--red2)"></div>
+            <div class="miniVal" style="color:var(--red2)" id="statGastosLoja">R$ 0</div>
+            <div class="miniLabel">Gastos loja</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--purple)"></div>
+            <div class="miniVal" style="color:var(--purple)" id="statGastosPessoal">R$ 0</div>
+            <div class="miniLabel">Gastos pessoais</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--blue)"></div>
+            <div class="miniVal" style="color:var(--blue)" id="statTicketMedio">R$ 0</div>
+            <div class="miniLabel">Ticket médio</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--green)"></div>
+            <div class="miniVal" style="color:var(--green)" id="statMargem">0%</div>
+            <div class="miniLabel">Margem líquida</div>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="chartsRow">
+          <div class="chartBox">
+            <div class="chartHead">
+              <div>
+                <div class="chartTitle">Receita × Gastos</div>
+                <div class="chartSub">Últimos 6 meses</div>
+              </div>
+            </div>
+            <div class="chartBody"><canvas id="chartReceitaGastos"></canvas></div>
+          </div>
+          <div class="chartBox">
+            <div class="chartHead">
+              <div>
+                <div class="chartTitle">Gastos por Categoria</div>
+                <div class="chartSub" id="catSubtitle">Mês atual</div>
+              </div>
+            </div>
+            <div class="chartBody"><canvas id="chartCategoria"></canvas></div>
+          </div>
+        </div>
+
+        <div class="chartsRow2">
+          <div class="chartBox">
+            <div class="chartHead">
+              <div>
+                <div class="chartTitle">Evolução do Lucro</div>
+                <div class="chartSub">Lucro líquido mensal</div>
+              </div>
+            </div>
+            <div class="chartBody"><canvas id="chartLucro"></canvas></div>
+          </div>
+          <div class="chartBox">
+            <div class="chartHead">
+              <div>
+                <div class="chartTitle">Loja vs Pessoal</div>
+                <div class="chartSub">Distribuição de gastos</div>
+              </div>
+            </div>
+            <div class="chartBody"><canvas id="chartTipo"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Transações recentes -->
+        <div class="chartBox">
+          <div class="chartHead">
+            <div class="chartTitle">Transações Recentes</div>
+            <button class="btn-ghost btn-sm" data-screen="screenExpenses" type="button" style="font-size:12px">Ver tudo</button>
+          </div>
+          <div style="padding:12px 16px 14px" id="recentTransactions">
+            <div class="emptyState" style="padding:24px"><p>Nenhuma transação recente.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ESTOQUE ══ -->
+      <div class="screen aWrap" id="screenEstoque">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Estoque</h1>
+            <div class="pageSubtitle">Controle de inventário de motos</div>
+          </div>
+        </div>
+
+        <div class="stockGrid" id="stockSummary">
+          <div class="stockCard">
+            <div class="stockVal" id="stockTotal">0</div>
+            <div class="stockLabel">Total de motos</div>
+          </div>
+          <div class="stockCard">
+            <div class="stockVal" id="stockDisponiveis" style="color:var(--green)">0</div>
+            <div class="stockLabel">Disponíveis</div>
+          </div>
+          <div class="stockCard">
+            <div class="stockVal" id="stockReservadas" style="color:var(--orange)">0</div>
+            <div class="stockLabel">Reservadas</div>
+          </div>
+          <div class="stockCard">
+            <div class="stockVal" id="stockValorTotal" style="color:var(--blue)">R$ 0</div>
+            <div class="stockLabel">Valor do estoque</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+          <div class="searchWrap" style="flex:1;min-width:180px">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="inp" id="searchEstoque" placeholder="Buscar moto…" style="padding-top:9px;padding-bottom:9px"/>
+          </div>
+        </div>
+
+        <div class="tabRow" id="stockTabs">
+          <button class="tab active" data-stock-status="all" type="button">Todas</button>
+          <button class="tab" data-stock-status="ativo" type="button">Disponíveis</button>
+          <button class="tab" data-stock-status="reservada" type="button">Reservadas</button>
+          <button class="tab" data-stock-status="vendida" type="button">Vendidas</button>
+        </div>
+
+        <div id="estoqueList"></div>
+      </div>
+
+      <!-- ══ GASTOS ══ -->
+      <div class="screen aWrap" id="screenExpenses">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Gastos</h1>
+            <div class="pageSubtitle" id="expSubtitle">Loja e pessoal</div>
+          </div>
+          <button class="btn-primary" id="btnNovoGasto" type="button">+ Novo Gasto</button>
+        </div>
+
+        <div class="tabRow">
+          <button class="tab active" data-exp-type="business" type="button">🏪 Loja</button>
+          <button class="tab" data-exp-type="personal" type="button">👤 Pessoal</button>
+          <button class="tab" data-exp-type="all" type="button">Todos</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <div class="searchWrap" style="flex:1;min-width:180px">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="inp" id="searchExpense" placeholder="Buscar…" style="padding-top:9px;padding-bottom:9px"/>
+          </div>
+          <select class="sel" id="filterExpMonth" style="width:auto;padding:9px 12px;font-size:13px"></select>
+          <select class="sel" id="filterExpYear" style="width:auto;padding:9px 12px;font-size:13px"></select>
+        </div>
+
+        <div id="expenseList" class="expenseList"></div>
+        <div id="expensePagination" class="pagination"></div>
+      </div>
+
+      <!-- ══ MOTOS FINANCEIRO ══ -->
+      <div class="screen aWrap" id="screenMotos">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Ficha por Moto</h1>
+            <div class="pageSubtitle">Compra, custos extras e resultado financeiro</div>
+          </div>
+          <button class="btn-primary" id="btnNovoMotoFin" type="button">+ Registrar Ficha</button>
+        </div>
+        <div class="searchWrap" style="margin-bottom:16px">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="inp" id="searchMotoFin" placeholder="Buscar moto…" style="padding-top:9px;padding-bottom:9px"/>
+        </div>
+        <div id="motoFinList"></div>
+      </div>
+
+      <!-- ══ VENDAS ══ -->
+      <div class="screen aWrap" id="screenSales">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Vendas</h1>
+            <div class="pageSubtitle">Histórico de vendas registradas</div>
+          </div>
+          <button class="btn-primary" id="btnNovaVenda" type="button">+ Registrar Venda</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <select class="sel" id="filterSaleMonth" style="width:auto;padding:9px 12px;font-size:13px"></select>
+          <select class="sel" id="filterSaleYear" style="width:auto;padding:9px 12px;font-size:13px"></select>
+        </div>
+        <div id="salesList" class="expenseList"></div>
+      </div>
+
+      <!-- ══ METAS ══ -->
+      <div class="screen aWrap" id="screenGoals">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Metas Mensais</h1>
+            <div class="pageSubtitle">Defina limites e acompanhe o progresso</div>
+          </div>
+          <button class="btn-primary" id="btnEditGoal" type="button">Definir Meta</button>
+        </div>
+        <div id="goalsContent"></div>
+      </div>
+
+      <!-- ══ RELATÓRIOS ══ -->
+      <div class="screen aWrap" id="screenReports">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Relatórios</h1>
+            <div class="pageSubtitle">Exportar dados e imprimir</div>
+          </div>
+        </div>
+        <div class="reportGrid">
+          <div class="reportCard" id="rptGastosMes">
+            <div class="rIcon">📊</div>
+            <div class="rTitle">Gastos do Mês</div>
+            <div class="rSub">CSV com todos os gastos do mês atual</div>
+          </div>
+          <div class="reportCard" id="rptVendasMes">
+            <div class="rIcon">📈</div>
+            <div class="rTitle">Vendas do Mês</div>
+            <div class="rSub">CSV com todas as vendas do mês atual</div>
+          </div>
+          <div class="reportCard" id="rptLucroMes">
+            <div class="rIcon">💰</div>
+            <div class="rTitle">Lucro por Moto</div>
+            <div class="rSub">CSV com lucro por moto do mês</div>
+          </div>
+          <div class="reportCard" id="rptCategorias">
+            <div class="rIcon">🏷️</div>
+            <div class="rTitle">Por Categoria</div>
+            <div class="rSub">CSV agrupado por categoria</div>
+          </div>
+          <div class="reportCard" id="rptMotos">
+            <div class="rIcon">🏍️</div>
+            <div class="rTitle">Inventário Completo</div>
+            <div class="rSub">CSV com resultado financeiro de cada moto</div>
+          </div>
+          <div class="reportCard" id="rptEstoque">
+            <div class="rIcon">📦</div>
+            <div class="rTitle">Estoque Atual</div>
+            <div class="rSub">CSV com motos disponíveis e reservadas</div>
+          </div>
+          <div class="reportCard" id="rptImprimir" style="grid-column: span 3">
+            <div class="rIcon">🖨️</div>
+            <div class="rTitle">Imprimir / Salvar PDF</div>
+            <div class="rSub">Abre o diálogo de impressão do navegador</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ GASTOS FIXOS RECORRENTES ══ -->
+      <div class="screen aWrap" id="screenFixedExpenses">
+        <div class="pageHeader">
+          <div>
+            <h1 class="pageTitle">Gastos Fixos Recorrentes</h1>
+            <div class="pageSubtitle">Templates mensais — aplique com um clique</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost" id="btnApplyFixed" type="button">⚡ Aplicar no Mês Atual</button>
+            <button class="btn-primary" id="btnNovoFixed" type="button">+ Novo Fixo</button>
+          </div>
+        </div>
+        <div class="fixedSummary" id="fixedSummary"></div>
+        <div id="fixedList"></div>
+      </div>
+
+    </div><!-- /contentArea -->
+  </div><!-- /mainLayout -->
+
+  <!-- Bottom nav mobile -->
+  <nav id="bottomNav">
+    <button class="navBtn active" data-screen="screenOverview" type="button">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Início
+    </button>
+    <button class="navBtn" data-screen="screenEstoque" type="button">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Estoque
+    </button>
+    <button class="navBtn" data-screen="screenExpenses" type="button">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M2 10h20"/></svg>
+      Gastos
+    </button>
+    <button class="navBtn" data-screen="screenSales" type="button">
+      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/><polyline points="14 9 18 9 18 13"/></svg>
+      Vendas
+    </button>
+    <button class="navBtn" data-screen="screenReports" type="button">
+      <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+      Relatórios
+    </button>
+  </nav>
+</div><!-- /appWrapper -->
+
+<!-- ════ MODAL GASTO ════ -->
+<div class="modalOverlay" id="modalExpense">
+  <div class="modalBox">
+    <div class="modalHead">
+      <strong id="modalExpenseTitle">Novo Gasto</strong>
+      <button class="modalClose" id="modalExpenseClose">×</button>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Tipo</label>
+        <select class="sel" id="expType">
+          <option value="business">🏪 Loja</option>
+          <option value="personal">👤 Pessoal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Data</label>
+        <input class="inp" id="expDate" type="date"/>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Valor (R$)</label>
+        <input class="inp" id="expAmount" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <label>Pagamento</label>
+        <select class="sel" id="expPayment">
+          <option value="">Selecionar…</option>
+          <option>Dinheiro</option><option>PIX</option><option>Cartão de crédito</option>
+          <option>Cartão de débito</option><option>Transferência</option>
+          <option>Boleto</option><option>Cheque</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Categoria</label>
+        <select class="sel" id="expCategory">
+          <option value="">Selecionar…</option>
+          <optgroup label="Loja">
+            <option>Aluguel</option><option>Energia elétrica</option><option>Água</option>
+            <option>Internet</option><option>Funcionários</option><option>Impostos</option>
+            <option>Documentação</option><option>Marketing</option><option>Transporte</option>
+            <option>Manutenção</option><option>Oficina</option><option>Produtos de limpeza</option>
+          </optgroup>
+          <optgroup label="Pessoal">
+            <option>Alimentação</option><option>Saúde</option><option>Lazer</option>
+            <option>Educação</option><option>Vestuário</option><option>Moradia</option>
+          </optgroup>
+          <option>Outros</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Moto (opcional)</label>
+        <select class="sel" id="expMoto"><option value="">Nenhuma</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <input class="inp" id="expDesc" type="text" placeholder="Ex: Conta de luz de maio"/>
+    </div>
+    <div class="field">
+      <label>Observação</label>
+      <textarea class="inp" id="expNotes" placeholder="Observações adicionais…"></textarea>
+    </div>
+    <div class="field">
+      <label>Comprovante (foto)</label>
+      <div class="uploadArea" id="expReceiptArea">
+        <input type="file" id="expReceiptFile" accept="image/*" capture="environment"/>
+        <div style="font-size:26px">📎</div>
+        <div class="uploadText">Tirar foto ou escolher arquivo</div>
+      </div>
+      <img id="expReceiptPreview" style="display:none;max-height:120px;border-radius:8px;margin-top:6px;object-fit:cover"/>
+    </div>
+    <div class="hint" id="expMsg"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btnSaveExpense" type="button" style="flex:1">Salvar</button>
+      <button class="btn-danger" id="btnDeleteExpense" type="button" style="display:none">Excluir</button>
+    </div>
+    <input type="hidden" id="expId"/>
+    <input type="hidden" id="expReceiptUrl"/>
+  </div>
+</div>
+
+<!-- ════ MODAL MOTO FINANCEIRO ════ -->
+<div class="modalOverlay" id="modalMotoFin">
+  <div class="modalBox">
+    <div class="modalHead">
+      <strong id="modalMotoFinTitle">Registrar Ficha</strong>
+      <button class="modalClose" id="modalMotoFinClose">×</button>
+    </div>
+    <div class="field">
+      <label>Moto</label>
+      <select class="sel" id="mfMoto"></select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Valor de Compra (R$)</label>
+        <input class="inp" id="mfPurchase" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <label>Valor de Venda (R$)</label>
+        <input class="inp" id="mfSale" type="text" placeholder="0,00 (se vendida)" inputmode="decimal"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Data da Venda</label>
+      <input class="inp" id="mfSoldAt" type="date"/>
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <textarea class="inp" id="mfNotes" placeholder="Observações sobre a moto…"></textarea>
+    </div>
+    <div class="hint" id="mfMsg"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btnSaveMotoFin" type="button" style="flex:1">Salvar</button>
+    </div>
+    <input type="hidden" id="mfId"/>
+  </div>
+</div>
+
+<!-- ════ MODAL CUSTO POR MOTO ════ -->
+<div class="modalOverlay" id="modalMotoCost">
+  <div class="modalBox">
+    <div class="modalHead">
+      <strong id="modalMotoCostTitle">Adicionar Custo</strong>
+      <button class="modalClose" id="modalMotoCostClose">×</button>
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <input class="inp" id="mcDesc" type="text" placeholder="Ex: Troca de óleo, peça, revisão…"/>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Valor (R$)</label>
+        <input class="inp" id="mcAmount" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <label>Data</label>
+        <input class="inp" id="mcDate" type="date"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Comprovante (foto)</label>
+      <div class="uploadArea" id="mcReceiptArea">
+        <input type="file" id="mcReceiptFile" accept="image/*" capture="environment"/>
+        <div style="font-size:26px">📎</div>
+        <div class="uploadText">Foto do comprovante</div>
+      </div>
+      <img id="mcReceiptPreview" style="display:none;max-height:100px;border-radius:8px;margin-top:6px"/>
+    </div>
+    <div class="hint" id="mcMsg"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btnSaveMotoCost" type="button" style="flex:1">Salvar</button>
+      <button class="btn-danger" id="btnDeleteMotoCost" type="button" style="display:none">Excluir</button>
+    </div>
+    <input type="hidden" id="mcId"/>
+    <input type="hidden" id="mcMotoId"/>
+    <input type="hidden" id="mcReceiptUrl"/>
+  </div>
+</div>
+
+<!-- ════ MODAL VENDA ════ -->
+<div class="modalOverlay" id="modalSale">
+  <div class="modalBox">
+    <div class="modalHead">
+      <strong id="modalSaleTitle">Registrar Venda</strong>
+      <button class="modalClose" id="modalSaleClose">×</button>
+    </div>
+    <div class="field">
+      <label>Moto vendida</label>
+      <select class="sel" id="slMoto"></select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Valor de Venda (R$)</label>
+        <input class="inp" id="slAmount" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <label>Data da Venda</label>
+        <input class="inp" id="slDate" type="date"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Forma de Pagamento</label>
+      <select class="sel" id="slPayment">
+        <option value="">Selecionar…</option>
+        <option>Dinheiro</option><option>PIX</option><option>Financiamento</option>
+        <option>Cartão de crédito</option><option>Transferência</option><option>Parcelado</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <textarea class="inp" id="slNotes" placeholder="Comprador, negociação, etc…"></textarea>
+    </div>
+    <div class="field">
+      <label>Comprovante (foto)</label>
+      <div class="uploadArea" id="slReceiptArea">
+        <input type="file" id="slReceiptFile" accept="image/*" capture="environment"/>
+        <div style="font-size:26px">📎</div>
+        <div class="uploadText">Foto do comprovante</div>
+      </div>
+      <img id="slReceiptPreview" style="display:none;max-height:100px;border-radius:8px;margin-top:6px"/>
+    </div>
+    <div class="hint" id="slMsg"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btnSaveSale" type="button" style="flex:1">Registrar Venda</button>
+      <button class="btn-danger" id="btnDeleteSale" type="button" style="display:none">Excluir</button>
+    </div>
+    <input type="hidden" id="slId"/>
+    <input type="hidden" id="slReceiptUrl"/>
+  </div>
+</div>
+
+<!-- ════ MODAL META ════ -->
+<div class="modalOverlay" id="modalGoal">
+  <div class="modalBox">
+    <div class="modalHead">
+      <strong>Definir Meta Mensal</strong>
+      <button class="modalClose" id="modalGoalClose">×</button>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Mês</label>
+        <select class="sel" id="goalMonth"></select>
+      </div>
+      <div class="field">
+        <label>Ano</label>
+        <select class="sel" id="goalYear"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Limite gastos da loja (R$)</label>
+      <input class="inp" id="goalBusiness" type="text" placeholder="5.000,00" inputmode="decimal"/>
+    </div>
+    <div class="field">
+      <label>Limite gastos pessoais (R$)</label>
+      <input class="inp" id="goalPersonal" type="text" placeholder="2.000,00" inputmode="decimal"/>
+    </div>
+    <div class="field">
+      <label>Meta de lucro (R$)</label>
+      <input class="inp" id="goalProfit" type="text" placeholder="10.000,00" inputmode="decimal"/>
+    </div>
+    <div class="hint" id="goalMsg"></div>
+    <button class="btn-primary" id="btnSaveGoal" type="button" style="width:100%">Salvar Meta</button>
+    <input type="hidden" id="goalId"/>
+  </div>
+</div>
+
+<!-- ════ MODAL FICHA COMPLETA ════ -->
+<div class="modalOverlay" id="modalFicha">
+  <div class="modalBox" style="max-width:620px">
+    <div class="modalHead">
+      <div>
+        <strong id="modalFichaTitle">Ficha Completa</strong>
+        <div id="modalFichaSubtitle" style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px"></div>
+      </div>
+      <button class="modalClose" id="modalFichaClose">×</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabRow" style="margin-bottom:0">
+      <button class="tab active" data-ficha-tab="info" type="button">📋 Informações</button>
+      <button class="tab" data-ficha-tab="docs" type="button">📄 Documentos</button>
+      <button class="tab" data-ficha-tab="buyer" type="button">👤 Comprador</button>
+    </div>
+
+    <!-- ── ABA INFORMAÇÕES ── -->
+    <div id="fichaTabInfo">
+      <div style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Dados da moto</div>
+      <div class="row2">
+        <div class="field">
+          <label>Placa</label>
+          <input class="inp" id="fiPlaca" type="text" placeholder="ABC-1234"/>
+        </div>
+        <div class="field">
+          <label>Chassi</label>
+          <input class="inp" id="fiChassi" type="text" placeholder="Número do chassi"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Onde foi comprada</label>
+        <input class="inp" id="fiWhere" type="text" placeholder="Ex: Leilão SP, Particular, Revenda…"/>
+      </div>
+      <div class="field">
+        <label>Observações da compra</label>
+        <textarea class="inp" id="fiPurchaseNotes" placeholder="Condição na compra, histórico, detalhes…" style="min-height:60px"></textarea>
+      </div>
+
+      <div style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 10px">De quem a moto foi comprada</div>
+      <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:8px 12px">
+        📋 Guarde esses dados para documentação, transferência e qualquer contato futuro necessário.
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Nome do vendedor</label>
+          <input class="inp" id="fiOwnerName" type="text" placeholder="Nome completo de quem vendeu"/>
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <input class="inp" id="fiOwnerPhone" type="tel" placeholder="(11) 99999-9999" inputmode="tel"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Endereço / Como localizar</label>
+        <input class="inp" id="fiOwnerAddress" type="text" placeholder="Endereço, bairro, cidade — como achar a pessoa"/>
+      </div>
+      <div class="field">
+        <label>Informações extras sobre o vendedor</label>
+        <textarea class="inp" id="fiOwnerNotes" placeholder="CPF, referências, histórico, situação do documento, pendências…" style="min-height:70px"></textarea>
+      </div>
+      <div style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 10px">Observações gerais</div>
+      <div class="field">
+        <label>Pendências / Situação atual</label>
+        <textarea class="inp" id="fiGeneralNotes" placeholder="Ex: Falta transferir, ainda no nome do antigo dono, doc pendente no Detran, IPVA atrasado, restrição…" style="min-height:80px"></textarea>
+      </div>
+      <div class="hint" id="fiInfoMsg"></div>
+      <button class="btn-primary" id="btnSaveFiInfo" type="button" style="width:100%">Salvar Informações</button>
+      <input type="hidden" id="fiInfoId"/>
+      <input type="hidden" id="fiMotoId"/>
+    </div>
+
+    <!-- ── ABA DOCUMENTOS ── -->
+    <div id="fichaTabDocs" style="display:none">
+      <div id="docList" style="margin-bottom:14px"></div>
+
+      <div style="border-top:1px solid var(--line);padding-top:14px">
+        <div style="font-size:12px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px" id="docFormTitle">Adicionar Documento</div>
+        <div class="row2">
+          <div class="field">
+            <label>Tipo de documento</label>
+            <select class="sel" id="docType">
+              <option value="">Selecionar…</option>
+              <option>CRV</option>
+              <option>DUT</option>
+              <option>CRLV</option>
+              <option>Nota Fiscal</option>
+              <option>Laudo de vistoria</option>
+              <option>Contrato de compra</option>
+              <option>Procuração</option>
+              <option>Outros</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select class="sel" id="docStatus">
+              <option value="pendente">⏳ Pendente</option>
+              <option value="em_dia">✅ Em dia</option>
+              <option value="atrasado">⚠️ Atrasado</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Onde está</label>
+            <input class="inp" id="docLocation" type="text" placeholder="Na loja, no Detran, com cliente…"/>
+          </div>
+          <div class="field">
+            <label>Vencimento</label>
+            <input class="inp" id="docExpiry" type="date"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Dias de atraso</label>
+          <input class="inp" id="docDelay" type="number" placeholder="0" min="0" inputmode="numeric"/>
+        </div>
+        <div class="field">
+          <label>Arquivo (PDF ou foto)</label>
+          <div class="uploadArea" id="docFileArea">
+            <input type="file" id="docFile" accept="image/*,application/pdf"/>
+            <div style="font-size:24px">📎</div>
+            <div class="uploadText">Foto, imagem ou PDF do documento</div>
+          </div>
+          <div id="docFilePreviewWrap" style="display:none;margin-top:8px">
+            <img id="docFileImgPreview" style="max-height:80px;border-radius:8px;display:none"/>
+            <div id="docFilePdfPreview" style="display:none;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--blue)">📄 PDF selecionado</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Observações</label>
+          <textarea class="inp" id="docNotes" placeholder="Detalhes extras sobre o documento…" style="min-height:56px"></textarea>
+        </div>
+        <div class="hint" id="docMsg"></div>
+        <div class="btn-row">
+          <button class="btn-primary" id="btnSaveDoc" type="button" style="flex:1">Salvar Documento</button>
+          <button class="btn-danger" id="btnDeleteDoc" type="button" style="display:none">Excluir</button>
+          <button class="btn-ghost" id="btnCancelDocEdit" type="button" style="display:none">Cancelar</button>
+        </div>
+        <input type="hidden" id="docId"/>
+        <input type="hidden" id="docMotoId"/>
+        <input type="hidden" id="docFileUrl"/>
+      </div>
+    </div>
+
+    <!-- ── ABA COMPRADOR ── -->
+    <div id="fichaTabBuyer" style="display:none">
+      <div style="font-size:11px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Dados de quem comprou a moto</div>
+      <div class="row2">
+        <div class="field">
+          <label>Nome completo</label>
+          <input class="inp" id="buName" type="text" placeholder="Nome do comprador"/>
+        </div>
+        <div class="field">
+          <label>CPF</label>
+          <input class="inp" id="buCpf" type="text" placeholder="000.000.000-00" inputmode="numeric"/>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Telefone</label>
+          <input class="inp" id="buPhone" type="tel" placeholder="(11) 99999-9999" inputmode="tel"/>
+        </div>
+        <div class="field">
+          <label>Data da venda</label>
+          <input class="inp" id="buDate" type="date"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Endereço completo</label>
+        <input class="inp" id="buAddress" type="text" placeholder="Rua, número, bairro, cidade…"/>
+      </div>
+      <div class="field">
+        <label>Observações</label>
+        <textarea class="inp" id="buNotes" placeholder="Informações para contato futuro, referências, observações…" style="min-height:72px"></textarea>
+      </div>
+      <div class="hint" id="buMsg"></div>
+      <button class="btn-primary" id="btnSaveBuyer" type="button" style="width:100%">Salvar Dados do Comprador</button>
+      <input type="hidden" id="buId"/>
+      <input type="hidden" id="buMotoId"/>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL GASTO FIXO ════ -->
+<div class="modalOverlay" id="modalFixed">
+  <div class="modalBox" style="max-width:460px">
+    <div class="modalHead">
+      <strong id="modalFixedTitle">Novo Gasto Fixo</strong>
+      <button class="modalClose" id="modalFixedClose">×</button>
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <input class="inp" id="fxDesc" type="text" placeholder="Ex: Aluguel, internet, salário…"/>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Categoria</label>
+        <input class="inp" id="fxCategory" type="text" list="fxCatList" placeholder="Ex: Aluguel"/>
+        <datalist id="fxCatList">
+          <option>Aluguel</option><option>Energia elétrica</option><option>Água</option>
+          <option>Internet</option><option>Funcionários</option><option>Telefone</option>
+          <option>Contabilidade</option><option>Seguro</option><option>Manutenção</option>
+          <option>Material de escritório</option><option>Outros</option>
+        </datalist>
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select class="sel" id="fxType">
+          <option value="business">🏪 Loja</option>
+          <option value="personal">👤 Pessoal</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Valor mensal (R$)</label>
+        <input class="inp" id="fxAmount" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <label>Forma de Pagamento</label>
+        <select class="sel" id="fxPayment">
+          <option value="">Selecionar…</option>
+          <option>Dinheiro</option><option>PIX</option><option>Débito automático</option>
+          <option>Cartão de crédito</option><option>Boleto</option><option>Transferência</option>
+        </select>
+      </div>
+    </div>
+    <div class="hint" id="fxMsg"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="btnSaveFixed" type="button" style="flex:1">Salvar</button>
+      <button class="btn-danger" id="btnDeleteFixed" type="button" style="display:none">Excluir</button>
+    </div>
+    <input type="hidden" id="fxId"/>
+  </div>
+</div>
+
+<!-- ════ LIGHTBOX ════ -->
+<!-- ════ MODAL CALCULADORA DE LUCRO ════ -->
+<div class="modalOverlay" id="modalCalc">
+  <div class="modalBox" style="max-width:440px">
+    <div class="modalHead">
+      <strong>🧮 Calculadora de Lucro</strong>
+      <button class="modalClose" id="modalCalcClose">×</button>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Preço de Compra (R$)</label>
+        <input class="inp" id="calcCompra" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+      <div class="field">
+        <label>Custos Extras (R$)</label>
+        <input class="inp" id="calcCustos" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Margem de lucro desejada (%)</label>
+      <input class="inp" id="calcMargem" type="number" placeholder="20" min="0" max="500" value="20"/>
+    </div>
+    <button class="btn-primary" id="btnCalcCalc" type="button" style="width:100%">Calcular</button>
+    <div class="calcResult" id="calcResult" style="display:none">
+      <div class="calcRow">
+        <span class="calcLabel">Custo total</span>
+        <span class="calcVal" id="calcTotalCusto">—</span>
+      </div>
+      <div class="calcSep"></div>
+      <div class="calcRow">
+        <span class="calcLabel">Preço mínimo de venda</span>
+        <span class="calcVal" id="calcPrecoMin">—</span>
+      </div>
+      <div class="calcRow">
+        <span class="calcLabel" style="font-size:13px;font-weight:900;color:var(--text)">💰 Preço sugerido</span>
+        <span class="calcValDestaque" id="calcPrecoSug">—</span>
+      </div>
+      <div class="calcSep"></div>
+      <div class="calcRow">
+        <span class="calcLabel">Lucro esperado</span>
+        <span class="calcVal" style="color:var(--green)" id="calcLucroEsp">—</span>
+      </div>
+      <div class="calcRow">
+        <span class="calcLabel">Retorno sobre o custo</span>
+        <span class="calcVal" id="calcROI">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <button class="lbClose" id="lbClose">×</button>
+  <img id="lbImg" src="" alt="Comprovante"/>
+</div>
+
+<script type="module" src="./dashboard.js"></script>
+<script>
+  /* ── TEMA CLARO / ESCURO ── */
+  (function() {
+    const saved = localStorage.getItem("dm_theme");
+    if (saved === "light") document.documentElement.classList.add("light");
+  })();
+
+  const btnTheme = document.getElementById("btnTheme");
+  function updateThemeBtn() {
+    const isLight = document.documentElement.classList.contains("light");
+    if (btnTheme) btnTheme.textContent = isLight ? "🌙" : "☀️";
+    if (btnTheme) btnTheme.title = isLight ? "Mudar para escuro" : "Mudar para claro";
+  }
+  updateThemeBtn();
+
+  if (btnTheme) {
+    btnTheme.addEventListener("click", () => {
+      const isLight = document.documentElement.classList.toggle("light");
+      localStorage.setItem("dm_theme", isLight ? "light" : "dark");
+      updateThemeBtn();
+    });
+  }
+
+  function goScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('[data-screen]').forEach(b => b.classList.remove('active'));
+    const s = document.getElementById(id);
+    if (s) {
+      void s.offsetWidth; // força reflow para reiniciar animação
+      s.classList.add('active');
+    }
+    document.querySelectorAll(`[data-screen="${id}"]`).forEach(b => b.classList.add('active'));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Relógio ao vivo
+  (function() {
+    const clockEl = document.getElementById('liveClock');
+    const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    function tick() {
+      if (!clockEl) return;
+      const n = new Date();
+      const h = n.getHours().toString().padStart(2,'0');
+      const m = n.getMinutes().toString().padStart(2,'0');
+      const s = n.getSeconds().toString().padStart(2,'0');
+      clockEl.textContent = `${dias[n.getDay()]} ${n.getDate().toString().padStart(2,'0')} · ${h}:${m}:${s}`;
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+  document.querySelectorAll('[data-screen]').forEach(btn => {
+    btn.addEventListener('click', () => goScreen(btn.dataset.screen));
+  });
+  window.goScreen = goScreen;
+
+  window.openLightbox = function(src) {
+    document.getElementById('lbImg').src = src;
+    document.getElementById('lightbox').classList.add('open');
+  };
+  document.getElementById('lbClose').onclick = () => document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+
+  document.getElementById('btnLogoutSide').addEventListener('click', () => document.getElementById('btnLogout').click());
+
+  /* ── CALCULADORA DE LUCRO ── */
+  const parseMoney = v => Number(String(v||'').replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,'')) || 0;
+
+  document.getElementById('btnCalcLucro').addEventListener('click', () => {
+    document.getElementById('calcResult').style.display = 'none';
+    document.getElementById('modalCalc').classList.add('open');
+    document.getElementById('calcCompra').focus();
+  });
+  document.getElementById('modalCalcClose').addEventListener('click', () => {
+    document.getElementById('modalCalc').classList.remove('open');
+  });
+  document.getElementById('modalCalc').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+  });
+
+  function applyMoneyMask(el) {
+    el.addEventListener('input', () => {
+      let raw = el.value.replace(/\D/g,'');
+      if (!raw) { el.value = ''; return; }
+      const n = Number(raw)/100;
+      el.value = n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    });
+  }
+  applyMoneyMask(document.getElementById('calcCompra'));
+  applyMoneyMask(document.getElementById('calcCustos'));
+
+  document.getElementById('btnCalcCalc').addEventListener('click', () => {
+    const compra   = parseMoney(document.getElementById('calcCompra').value);
+    const custos   = parseMoney(document.getElementById('calcCustos').value);
+    const margem   = Number(document.getElementById('calcMargem').value) || 20;
+    const total    = compra + custos;
+    const precoMin = total;
+    const precoSug = total * (1 + margem / 100);
+    const lucro    = precoSug - total;
+    const roi      = total > 0 ? ((lucro / total) * 100).toFixed(1) : '0';
+    const fmt = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+
+    document.getElementById('calcTotalCusto').textContent = fmt(total);
+    document.getElementById('calcPrecoMin').textContent   = fmt(precoMin);
+    document.getElementById('calcPrecoSug').textContent   = fmt(precoSug);
+    document.getElementById('calcLucroEsp').textContent   = fmt(lucro);
+    document.getElementById('calcROI').textContent        = roi + '%';
+    document.getElementById('calcResult').style.display   = '';
+  });
+
+  /* Enter na calculadora dispara o cálculo */
+  ['calcCompra','calcCustos','calcMargem'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btnCalcCalc').click();
+    });
+  });
+</script>
+</body>
+</html>
