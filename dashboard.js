@@ -1520,28 +1520,28 @@ function downloadCSV(filename, rows) {
 }
 
 function bindReports() {
-  const m = overviewFilter.month, y = overviewFilter.year;
-  const mName = MONTHS[m-1];
-
   $("rptGastosMes")?.addEventListener("click", () => {
+    const m = overviewFilter.month, y = overviewFilter.year;
     const exp = filterByPeriod(expensesCache, "expense_date", m, y);
-    downloadCSV(`gastos_${mName}_${y}.csv`, [
+    downloadCSV(`gastos_${MONTHS[m-1]}_${y}.csv`, [
       ["Data","Tipo","Categoria","Descrição","Valor","Pagamento","Moto","Observação"],
       ...exp.map(e => [fmtDate(e.expense_date), e.type==="business"?"Loja":"Pessoal", e.category||"", e.description||"", Number(e.amount).toFixed(2).replace(".",","), e.payment_method||"", e.motorcycle_id||"", e.notes||""])
     ]);
   });
 
   $("rptVendasMes")?.addEventListener("click", () => {
+    const m = overviewFilter.month, y = overviewFilter.year;
     const sv = filterByPeriod(salesCache, "sale_date", m, y);
-    downloadCSV(`vendas_${mName}_${y}.csv`, [
+    downloadCSV(`vendas_${MONTHS[m-1]}_${y}.csv`, [
       ["Data","Moto","Valor","Pagamento","Observação"],
       ...sv.map(s => { const mt = motosCache.find(x=>x.id===s.motorcycle_id); return [fmtDate(s.sale_date), mt?.titulo||s.motorcycle_id||"", Number(s.sale_price).toFixed(2).replace(".",","), s.payment_method||"", s.notes||""]; })
     ]);
   });
 
   $("rptLucroMes")?.addEventListener("click", () => {
+    const m = overviewFilter.month, y = overviewFilter.year;
     const sv = filterByPeriod(salesCache, "sale_date", m, y);
-    downloadCSV(`lucro_motos_${mName}_${y}.csv`, [
+    downloadCSV(`lucro_motos_${MONTHS[m-1]}_${y}.csv`, [
       ["Moto","Venda","Compra","Custos extras","Lucro líquido"],
       ...sv.map(s => {
         const mt = motosCache.find(x=>x.id===s.motorcycle_id);
@@ -1555,10 +1555,11 @@ function bindReports() {
   });
 
   $("rptCategorias")?.addEventListener("click", () => {
+    const m = overviewFilter.month, y = overviewFilter.year;
     const exp = filterByPeriod(expensesCache, "expense_date", m, y);
     const map = {};
     exp.forEach(e => { const k = (e.category||"Outros")+" ("+(e.type==="business"?"Loja":"Pessoal")+")"; map[k]=(map[k]||0)+Number(e.amount); });
-    downloadCSV(`categorias_${mName}_${y}.csv`, [["Categoria","Total"], ...Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k, v.toFixed(2).replace(".",",")])]);
+    downloadCSV(`categorias_${MONTHS[m-1]}_${y}.csv`, [["Categoria","Total"], ...Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k, v.toFixed(2).replace(".",",")])]);
   });
 
   $("rptMotos")?.addEventListener("click", () => {
