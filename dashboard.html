@@ -548,6 +548,25 @@
     .modalClose { background: none; border: none; color: var(--muted); font-size: 26px; cursor: pointer; padding: 0; line-height: 1; transition: color .15s; }
     .modalClose:hover { color: var(--text); }
 
+    /* ── SEGMENTED CONTROL ── */
+    .segmented {
+      display: flex; background: rgba(255,255,255,.06);
+      border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px;
+    }
+    .segmented button {
+      flex: 1; border: none; background: none; color: var(--muted);
+      font-size: 12px; font-weight: 800; padding: 7px 4px; border-radius: 7px;
+      cursor: pointer; transition: background .15s, color .15s; letter-spacing: .3px;
+    }
+    .segmented button:hover { color: var(--text); }
+    .segmented button.active {
+      background: var(--panel); color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,.35);
+    }
+    .segmented button[data-sl-filter="ativo"].active   { color: #25D366; }
+    .segmented button[data-sl-filter="vendida"].active { color: #ff6b6b; }
+    .segmented button[data-sl-filter="todas"].active   { color: var(--text); }
+
     /* ── BUSCA ── */
     .searchWrap { position: relative; }
     .searchWrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; pointer-events: none; }
@@ -1739,13 +1758,12 @@
       <button class="modalClose" id="modalSaleClose">×</button>
     </div>
     <div class="field">
-      <label>Filtrar motos</label>
-      <div style="display:flex;gap:6px;margin-bottom:6px">
-        <button type="button" class="filterTab active" id="slFilterAtiva"  data-sl-filter="ativo">Ativas</button>
-        <button type="button" class="filterTab"        id="slFilterVendida" data-sl-filter="vendida">Vendidas</button>
-        <button type="button" class="filterTab"        id="slFilterTodas"   data-sl-filter="todas">Todas</button>
+      <label>Moto vendida</label>
+      <div class="segmented" style="margin-bottom:8px">
+        <button type="button" class="active" id="slFilterAtiva"   data-sl-filter="ativo">Ativas</button>
+        <button type="button"                id="slFilterVendida"  data-sl-filter="vendida">Vendidas</button>
+        <button type="button"                id="slFilterTodas"    data-sl-filter="todas">Todas</button>
       </div>
-      <label>Moto</label>
       <select class="sel" id="slMoto"></select>
     </div>
     <div class="row2">
