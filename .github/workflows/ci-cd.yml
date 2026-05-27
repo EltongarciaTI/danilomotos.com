@@ -1,0 +1,191 @@
+name: CI/CD — Validate, Build & Deploy
+
+on:
+  push:
+    # `migration/vps` = staging atual (VPS Hostinger via tunnel danilomotos.oqay.pro)
+    # `main` = produção futura (após cutover DNS de danilomotos.com)
+    branches: [main, migration/vps]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancela runs antigos da mesma branch (poupa minutos)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/danilomotos-api
+  REGISTRY: ghcr.io
+
+jobs:
+  # ============================================================
+  # 1) VALIDATE — sintaxe HTML/JS/YAML/Caddyfile (rápido, ~30s)
+  # ============================================================
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check JS syntax (client files)
+        run: |
+          for f in assets/js/*.js; do
+            echo "→ $f"
+            node --check "$f"
+          done
+
+      - name: Check JS syntax (API)
+        working-directory: infra/api
+        run: |
+          npm install --omit=dev --no-audit --no-fund --silent
+          for f in src/*.js; do
+            echo "→ $f"
+            node --check "$f"
+          done
+
+      - name: Check HTML validity (basic)
+        run: |
+          for f in *.html; do
+            echo "→ $f"
+            # Validação mínima: balanceamento de tags via tidy (warnings ignorados)
+            python3 -c "
+          import html.parser, sys
+          class V(html.parser.HTMLParser):
+              def __init__(self): super().__init__(); self.stack=[]; self.errors=[]
+              def handle_starttag(self,t,a):
+                  if t not in ('br','hr','img','input','meta','link','source','area','base','col','embed','param','track','wbr'):
+                      self.stack.append(t)
+              def handle_endtag(self,t):
+                  if self.stack and self.stack[-1]==t: self.stack.pop()
+                  elif t in self.stack:
+                      self.errors.append(f'tag {t} fechada fora de ordem')
+                      self.stack.remove(t)
+          v=V()
+          with open('$f',encoding='utf-8') as fh: v.feed(fh.read())
+          if v.errors: print('ERROS:',v.errors); sys.exit(1)
+          print('  OK')
+          "
+          done
+
+      - name: Validate Caddyfile
+        run: |
+          docker run --rm -v "$PWD/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+            caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Validate docker-compose
+        working-directory: infra
+        run: |
+          cp .env.example .env
+          # Injeta valores fake só pra passar validação
+          sed -i 's/troque-essa-senha-forte/test-pwd/' .env
+          sed -i 's/cole-aqui-64-bytes-hex-gerados-com-openssl/$(openssl rand -hex 64)/' .env
+          sed -i 's/cole-aqui-o-tunnel-token-do-cloudflare/fake-token/' .env
+          docker compose --env-file .env config --quiet
+          rm .env
+
+      - name: Validate API package.json
+        working-directory: infra/api
+        run: node -e "JSON.parse(require('fs').readFileSync('package.json'))"
+
+  # ============================================================
+  # 2) BUILD — imagem Docker da API → GHCR (só main)
+  # ============================================================
+  build:
+    name: Build & Push API image
+    needs: validate
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migration/vps')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tag
+        id: meta
+        run: |
+          SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-7)
+          TAG="main-${SHA_SHORT}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Tag: $TAG"
+
+      - name: Build & push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./infra/api
+          file: ./infra/api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  # ============================================================
+  # 3) DEPLOY — SSH na VPS, atualiza tudo, smoke test (só main)
+  # ============================================================
+  deploy:
+    name: Deploy to VPS
+    needs: [validate, build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migration/vps')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://danilomotos.oqay.pro
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Login GHCR from VPS (so docker pull works)
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin"
+
+      - name: Run deploy script
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "bash /home/elton/danilomotos/infra/scripts/deploy.sh ${{ needs.build.outputs.image_tag }}"
+
+      - name: Smoke test (público via tunnel)
+        run: |
+          chmod +x infra/scripts/smoke-test.sh
+          BASE_URL=https://danilomotos.oqay.pro ./infra/scripts/smoke-test.sh
+
+      - name: Notify status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Deploy OK · imagem ${{ needs.build.outputs.image_tag }} no ar em https://danilomotos.oqay.pro"
+          else
+            echo "Deploy FALHOU · verifique os logs acima"
+            exit 1
+          fi
