@@ -1,5 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260521b";
-import { loadMotos } from "./loader.js?v=20260521b";
+import { loadMotos } from "./loader.js?v=20260526";
 
 // Atualiza tags Open Graph quando a moto carrega.
 // Faz o link da moto bonitão no WhatsApp/Insta (preview com foto e descrição).

@@ -4,3 +4,33 @@ Thumbs.db
 .env
 .env.local
 node_modules/
+
+# Local infra helpers — contêm senhas/dumps, nunca commitar
+.vps/
+.vps-audit.bat
+*.pem
+*.key
+ssh_*
+
+# Playwright artifacts (snapshots/screenshots de teste — podem ter dados sensíveis)
+.playwright-mcp/
+dashboard-loaded.*
+dashboard-logged.*
+page-*.yml
+console-*.log
+
+# Editor (preferência local — não vai pro repo)
+.vscode/
+.idea/
+
+# Secrets/env de qualquer lugar
+**/.env
+**/.env.*
+!**/.env.example
+infra/.env.deploy
+
+# Backups locais (dumps de DB, fotos compactadas)
+*.sql.gz
+*.tar.zst
+/backups/
+# *.sql não — schema/migrations devem ir pro git (sob infra/migrations/)

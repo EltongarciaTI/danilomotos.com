@@ -1,0 +1,117 @@
+# Caddy 2 — Frontend (estático) + Reverse Proxy pra API + Storage público
+#
+# Cloudflare Tunnel encaminha pra esse Caddy via rede Docker interna.
+# TLS é terminado no Cloudflare (modo "Flexible"/"Full") — aqui é HTTP simples.
+#
+# Logs vão pra stdout (visíveis em `docker compose logs caddy`).
+
+{
+	# Global options
+	admin off                          # API admin do Caddy desligada (segurança)
+	servers {
+		trusted_proxies static private_ranges    # confia em proxies internos
+		client_ip_headers Cf-Connecting-Ip X-Forwarded-For
+	}
+	log {
+		output stdout
+		format json
+		level INFO
+	}
+}
+
+# ============================================================================
+# Site principal — danilomotos.com (e qualquer host, já que CF Tunnel filtra)
+# ============================================================================
+:80 {
+	encode zstd gzip
+
+	# Headers de segurança (paridade com o setup atual do Supabase/GH Pages)
+	header {
+		Strict-Transport-Security  "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options     "nosniff"
+		X-Frame-Options            "DENY"
+		Referrer-Policy            "strict-origin-when-cross-origin"
+		Permissions-Policy         "geolocation=(), microphone=(), camera=()"
+		-Server
+	}
+
+	# ----------------------------------------------------------
+	# API: /api/* → container api:3000 (preserva prefix /api)
+	# ----------------------------------------------------------
+	handle /api/* {
+		reverse_proxy api:3000 {
+			header_up X-Real-IP {http.request.header.Cf-Connecting-Ip}
+			header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+		}
+	}
+
+	# ----------------------------------------------------------
+	# Storage público — fotos das motos (bucket "motos" do Supabase)
+	# ----------------------------------------------------------
+	handle_path /storage/motos/* {
+		root * /srv/uploads
+		file_server {
+			precompressed gzip
+		}
+		header Cache-Control "public, max-age=2592000, immutable"
+	}
+
+	# ----------------------------------------------------------
+	# Storage público — recibos/comprovantes (bucket "financeiro")
+	# Compat com URL antiga: /storage/v1/object/public/financeiro/...
+	# Cache menor (1 dia) — recibos podem ser re-uploadados
+	# ----------------------------------------------------------
+	handle_path /storage/financeiro/* {
+		root * /srv/uploads-fin
+		file_server
+		header Cache-Control "public, max-age=86400"
+	}
+
+	# ----------------------------------------------------------
+	# Healthcheck simples
+	# ----------------------------------------------------------
+	respond /health 200 {
+		body "ok"
+	}
+
+	# ----------------------------------------------------------
+	# Site estático (catálogo público + admin)
+	# Root é o repo inteiro (read-only) — Caddy serve index.html etc.
+	# ----------------------------------------------------------
+	handle {
+		root * /srv/site
+		try_files {path} {path}/index.html /index.html
+		file_server {
+			precompressed gzip
+			hide .git .vps infra node_modules .gitignore .env*
+		}
+		# Cache HTML: no-cache (sempre revalida via ETag) — atualiza rápido após deploy
+		@html path *.html /
+		header @html Cache-Control "no-cache"
+
+		# Assets COM cache-bust (?v=qualquer-coisa) → cache forte 1 ano (immutable)
+		# Identifica via query string não-vazia
+		@assetsVersioned {
+			path /assets/*
+			expression {query} != ""
+		}
+		header @assetsVersioned Cache-Control "public, max-age=31536000, immutable"
+
+		# Assets SEM cache-bust → cache curto 5min (permite mudanças sem reload eterno)
+		@assetsNoVersion {
+			path /assets/*
+			expression {query} == ""
+		}
+		header @assetsNoVersion Cache-Control "public, max-age=300, must-revalidate"
+
+		# Manifest e ícones: cache moderado (1 dia)
+		@meta path /manifest.json /logo.png /favicon.ico
+		header @meta Cache-Control "public, max-age=86400"
+	}
+
+	# Log de acesso
+	log {
+		output stdout
+		format json
+	}
+}

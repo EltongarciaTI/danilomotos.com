@@ -1,0 +1,160 @@
+# Danilo Motos — Stack VPS (Caddy + API Hono + Postgres)
+# Roda em: /home/elton/danilomotos/infra/
+# Network isolada de DuploGreen (godds_*).
+# Cloudflare Tunnel encaminha danilomotos.com → caddy:80 (interno na network).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: danilomotos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-danilomotos}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?obrigatorio no .env}"
+      POSTGRES_DB: "${POSTGRES_DB:-danilomotos}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - danilomotos-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-danilomotos}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  api:
+    # Em prod (CI/CD): API_IMAGE=ghcr.io/eltongarciati/danilomotos-api:<tag>
+    # Em dev local: vazio = builda do ./api/
+    image: "${API_IMAGE:-danilomotos-api:local}"
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: danilomotos-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-danilomotos}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-danilomotos}"
+      JWT_SECRET: "${JWT_SECRET:?obrigatorio no .env}"
+      COOKIE_DOMAIN: "${COOKIE_DOMAIN:-danilomotos.com}"
+      UPLOAD_DIR: /uploads
+      UPLOAD_DIR_FIN: /uploads-fin
+      MAX_UPLOAD_MB: "10"
+      ALLOWED_ORIGIN: "${ALLOWED_ORIGIN:-https://danilomotos.com}"
+    volumes:
+      - uploads:/uploads
+      - uploads-fin:/uploads-fin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - danilomotos-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: danilomotos-caddy
+    restart: unless-stopped
+    # NÃO publica :80/:443 do host — Cloudflare Tunnel acessa via rede Docker
+    expose:
+      - "80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../:/srv/site:ro              # serve arquivos estáticos do repo
+      - uploads:/srv/uploads:ro        # storage público de fotos
+      - uploads-fin:/srv/uploads-fin:ro # storage público de recibos
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - danilomotos-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # Cloudflared rodando em container, conectado à conta CF do Lucas.
+  # Tunnel novo dedicado (danilomotos-tunnel) — isolamento de blast radius
+  # vs o tunnel oqay-vps existente.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: danilomotos-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: "${CF_TUNNEL_TOKEN:?token do tunnel danilomotos-tunnel}"
+    depends_on:
+      - caddy
+    networks:
+      - danilomotos-net
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # Backup automático diário (pg_dump + tar /uploads)
+  backup:
+    image: postgres:16-alpine
+    container_name: danilomotos-backup
+    restart: unless-stopped
+    environment:
+      PGUSER: "${POSTGRES_USER:-danilomotos}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      PGDATABASE: "${POSTGRES_DB:-danilomotos}"
+      PGHOST: postgres
+      BACKUP_KEEP_DAYS: "${BACKUP_KEEP_DAYS:-30}"
+    volumes:
+      - uploads:/uploads:ro
+      - backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache tzdata zstd dcron > /dev/null
+        echo "0 4 * * * /backup.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+        echo "[backup] cron iniciado — diário às 04:00"
+        crond -f -l 2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - danilomotos-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  danilomotos-net:
+    driver: bridge
+    name: danilomotos-net
+
+volumes:
+  postgres-data:
+    name: danilomotos_postgres-data
+  uploads:
+    name: danilomotos_uploads
+  uploads-fin:
+    name: danilomotos_uploads-fin
+  caddy-data:
+    name: danilomotos_caddy-data
+  caddy-config:
+    name: danilomotos_caddy-config
+  backups:
+    name: danilomotos_backups

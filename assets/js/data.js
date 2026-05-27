@@ -1,72 +1,48 @@
-// Busca motos no Supabase (substitui o Apps Script)
+// assets/js/data.js
+// ======================================================
+// Busca motos na API self-hosted (substituiu Supabase REST)
+// ======================================================
 
-export const SUPABASE_URL = "https://zhivqujoneqzviasioug.supabase.co";
-export const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpoaXZxdWpvbmVxenZpYXNpb3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2ODYwNzEsImV4cCI6MjA4NTI2MjA3MX0.ZvbcSoCPA4_cIIQoDBtZQMo7DrLGqqLHHiAQbvnpDL8";
+import { API_BASE, STORAGE_PUBLIC_BASE } from "./config.js?v=20260526";
 
-export const STORAGE_PUBLIC_BASE =
-  `${SUPABASE_URL}/storage/v1/object/public/motos`;
+// Re-export pra manter compat com módulos que importam daqui
+export { API_BASE, STORAGE_PUBLIC_BASE };
+// Aliases de compat (código legacy que importava daqui)
+export const SUPABASE_URL = API_BASE;
+export const SUPABASE_ANON_KEY = "";
 
 /**
- * Conta motos do Supabase sem baixar o conteúdo (só header Content-Range).
- * Usado nos contadores da UI sem custo de banda.
+ * Conta motos sem baixar conteúdo (rota /api/motos/count).
  * @param {Object} options
  * @param {string} options.status
  */
 export async function fetchMotosCount({ status = "disponivel" } = {}) {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/motos`);
-  url.searchParams.set("select", "id");
-  if (status === "disponivel") {
-    url.searchParams.set("or", "(status.eq.disponivel,status.eq.ativo)");
-  } else if (status !== "all") {
-    url.searchParams.set("status", `eq.${status}`);
-  }
-  const res = await fetch(url.toString(), {
-    method: "HEAD",
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      Prefer: "count=exact",
-      Range: "0-0",
-    },
-  });
-  const cr = res.headers.get("content-range") || "*/0";
-  const count = Number(cr.split("/")[1]) || 0;
-  return count;
+  const url = new URL(`${API_BASE}/api/motos/count`, window.location.origin);
+  url.searchParams.set("status", status);
+  const res = await fetch(url.toString(), { credentials: "same-origin" });
+  if (!res.ok) return 0;
+  const body = await res.json().catch(() => null);
+  return Number(body?.count) || 0;
 }
 
 /**
- * Busca motos do Supabase
+ * Busca motos da API.
  * @param {Object} options
  * @param {string} options.status - "ativo" | "vendida" | "all" | "disponivel" | "reservada"
  * @param {string} [options.id] - se passar, faz query individual por ID
  */
 export async function fetchMotos({ status = "disponivel", id = null } = {}) {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/motos`);
-  url.searchParams.set("select", "*");
-
+  const url = new URL(`${API_BASE}/api/motos`, window.location.origin);
   if (id) {
-    url.searchParams.set("id", `eq.${id}`);
-  } else if (status !== "all") {
-    if (status === "disponivel") {
-      url.searchParams.set("or", "(status.eq.disponivel,status.eq.ativo)");
-    } else {
-      url.searchParams.set("status", `eq.${status}`);
-    }
+    url.searchParams.set("id", id);
+  } else {
+    url.searchParams.set("status", status);
   }
 
-  url.searchParams.set("order", "id.desc");
-
-  const res = await fetch(url.toString(), {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-  });
-
+  const res = await fetch(url.toString(), { credentials: "same-origin" });
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error("Erro ao carregar motos do Supabase: " + txt);
+    throw new Error("Erro ao carregar motos: " + txt);
   }
 
   const data = await res.json();
@@ -90,7 +66,7 @@ export async function fetchMotos({ status = "disponivel", id = null } = {}) {
           .map((p) => `${STORAGE_PUBLIC_BASE}/${p}`);
         fotosUrl = [coverUrl, ...extras];
       } else {
-        const legacyExtras = [1,2,3,4].map((i) => `${STORAGE_PUBLIC_BASE}/${m.id}/${i}.jpg`);
+        const legacyExtras = [1, 2, 3, 4].map((i) => `${STORAGE_PUBLIC_BASE}/${m.id}/${i}.jpg`);
         fotosUrl = [coverUrl, ...legacyExtras];
       }
     }

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="assets/css/style.css?v=20260521g"/>
   <link rel="icon" href="./logo.png" type="image/png">
   <link rel="apple-touch-icon" href="./logo.png">
+  <link rel="manifest" href="./manifest.json">
   <meta name="robots" content="noindex, nofollow">
   <style>
 
@@ -15,14 +16,23 @@
        BASE
     ══════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; padding-bottom: 0; }
+    body {
+      margin: 0; padding-bottom: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 6px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
+    ::selection { background: rgba(255,29,29,.35); color: #fff; }
 
     /* ══════════════════════════════════════
        CAMPOS
     ══════════════════════════════════════ */
     .field { display: grid; gap: 6px; }
     .field label {
-      font-size: 11px; font-weight: 900; letter-spacing: .6px;
+      font-size: 11px; font-weight: 900; letter-spacing: .7px;
       text-transform: uppercase; color: var(--muted);
     }
     .inp, .sel {
@@ -30,14 +40,15 @@
       border-radius: 10px; border: 1px solid var(--line);
       background: rgba(255,255,255,.04); color: var(--text);
       font-size: 15px; font-weight: 700; outline: none;
-      transition: border-color .15s, background .15s;
+      transition: border-color .2s, background .2s, box-shadow .2s;
       -webkit-appearance: none; appearance: none;
     }
     .inp:focus, .sel:focus {
-      border-color: rgba(255,29,29,.55);
-      background: rgba(255,29,29,.04);
+      border-color: rgba(255,29,29,.6);
+      background: rgba(255,29,29,.05);
+      box-shadow: 0 0 0 3px rgba(255,29,29,.1);
     }
-    .inp::placeholder { color: rgba(255,255,255,.25); font-weight: 500; }
+    .inp::placeholder { color: rgba(255,255,255,.2); font-weight: 500; }
     .sel { background: rgba(255,255,255,.04); cursor: pointer; }
     .sel option, .sel optgroup { background: #1a1c20; color: #fff; }
     textarea.inp { resize: vertical; min-height: 80px; line-height: 1.55; font-size: 14px; }
@@ -50,9 +61,9 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
       background: rgba(255,255,255,.04); cursor: pointer; user-select: none;
-      transition: border-color .15s;
+      transition: border-color .15s, background .15s;
     }
-    .toggle:hover { border-color: rgba(255,255,255,.18); }
+    .toggle:hover { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.06); }
     .toggle span { font-size: 14px; font-weight: 700; }
     .toggle input { display: none; }
     .toggleSwitch {
@@ -72,29 +83,35 @@
     ══════════════════════════════════════ */
     .aBtnPrimary {
       padding: 13px 22px; border-radius: 12px; border: none;
-      background: linear-gradient(160deg,#ff1d1d,#b00000); color: #fff;
+      background: linear-gradient(160deg,#ff3333,#b00000); color: #fff;
       font-size: 14px; font-weight: 900; cursor: pointer;
-      box-shadow: 0 4px 18px rgba(255,29,29,.3);
-      transition: filter .15s, transform .1s; white-space: nowrap;
+      box-shadow: 0 4px 18px rgba(255,29,29,.35), inset 0 1px 0 rgba(255,255,255,.15);
+      transition: filter .15s, transform .1s, box-shadow .15s; white-space: nowrap;
+      position: relative; overflow: hidden;
     }
-    .aBtnPrimary:hover  { filter: brightness(1.08); }
+    .aBtnPrimary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.12) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .aBtnPrimary:hover  { filter: brightness(1.12); box-shadow: 0 8px 28px rgba(255,29,29,.5), inset 0 1px 0 rgba(255,255,255,.15); }
     .aBtnPrimary:active { filter: brightness(.9); transform: scale(.98); }
 
     .aBtnGhost {
       padding: 12px 18px; border-radius: 12px; border: 1px solid var(--line);
       background: rgba(255,255,255,.06); color: var(--text);
       font-size: 14px; font-weight: 800; cursor: pointer;
-      transition: background .15s; white-space: nowrap;
+      transition: background .15s, border-color .15s; white-space: nowrap;
     }
-    .aBtnGhost:hover  { background: rgba(255,255,255,.1); }
+    .aBtnGhost:hover  { background: rgba(255,255,255,.11); border-color: rgba(255,255,255,.2); }
 
     .aBtnDanger {
       padding: 12px 18px; border-radius: 12px;
-      border: 1px solid rgba(255,60,60,.3); background: rgba(255,30,30,.1);
+      border: 1px solid rgba(255,60,60,.3); background: rgba(255,30,30,.08);
       color: #ff6b6b; font-size: 14px; font-weight: 800; cursor: pointer;
-      transition: background .15s; white-space: nowrap;
+      transition: background .15s, border-color .15s; white-space: nowrap;
     }
-    .aBtnDanger:hover { background: rgba(255,30,30,.18); }
+    .aBtnDanger:hover { background: rgba(255,30,30,.18); border-color: rgba(255,60,60,.5); }
 
     .btnRow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
@@ -112,29 +129,52 @@
     .aSection {
       background: var(--panel); border: 1px solid var(--line);
       border-radius: 16px; overflow: hidden; margin-bottom: 14px;
+      transition: border-color .2s;
     }
+    .aSection:focus-within { border-color: rgba(255,29,29,.25); }
     .aSectionHead {
       padding: 13px 18px 12px; border-bottom: 1px solid var(--line);
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: rgba(255,255,255,.018);
+      position: relative;
     }
-    .aSectionHead strong { font-size: 14px; font-weight: 900; }
+    .aSectionHead::before {
+      content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+      width: 3px; background: linear-gradient(180deg, #ff2222, #880000);
+      border-radius: 0 3px 3px 0; opacity: .7;
+    }
+    .aSectionHead strong { font-size: 14px; font-weight: 900; padding-left: 2px; }
     .aSectionHead span   { font-size: 12px; color: var(--muted); }
     .aSectionBody { padding: 16px 18px; display: grid; gap: 12px; }
 
     /* ══════════════════════════════════════
        LOGIN
     ══════════════════════════════════════ */
-    #screenLogin {
-      max-width: 420px; margin: 60px auto; padding: 0 20px;
+    #loginSection {
+      min-height: calc(100vh - 64px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      background: radial-gradient(ellipse 70% 50% at 50% 40%, rgba(255,29,29,.07) 0%, transparent 70%);
     }
+    #screenLogin { width: 100%; max-width: 400px; }
+
     .loginCard {
-      background: var(--panel); border: 1px solid var(--line);
-      border-radius: 24px; padding: 32px 24px 28px; display: grid; gap: 14px;
+      background: var(--panel); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 24px; padding: 36px 28px 32px; display: grid; gap: 14px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05), 0 0 60px rgba(255,29,29,.06);
+      animation: loginFadeIn .35s ease;
+    }
+    @keyframes loginFadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
     .loginLogo { text-align: center; margin-bottom: 4px; }
-    .loginLogo img { width: 60px; height: 60px; border-radius: 18px; margin: 0 auto 12px; display: block; }
-    .loginLogo strong { display: block; font-size: 20px; }
-    .loginLogo span { font-size: 13px; color: var(--muted); }
+    .loginLogoImg {
+      width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 14px; display: block;
+      box-shadow: 0 8px 24px rgba(255,29,29,.25);
+    }
+    .loginLogo strong { display: block; font-size: 22px; font-weight: 900; letter-spacing: -.3px; }
+    .loginLogo span { font-size: 13px; color: var(--muted); margin-top: 4px; display: block; }
     .aDivider { height: 1px; background: var(--line); }
 
     /* ══════════════════════════════════════
@@ -142,7 +182,7 @@
     ══════════════════════════════════════ */
     #appLayout {
       display: grid;
-      grid-template-columns: 230px 1fr;
+      grid-template-columns: 240px 1fr;
       min-height: calc(100vh - 64px);
     }
 
@@ -151,41 +191,77 @@
       position: sticky; top: 64px;
       height: calc(100vh - 64px); overflow-y: auto;
       background: var(--panel); border-right: 1px solid var(--line);
-      padding: 16px 10px; display: flex; flex-direction: column; gap: 4px;
+      padding: 14px 10px 18px; display: flex; flex-direction: column; gap: 2px;
     }
+    #sideNav::-webkit-scrollbar { width: 4px; }
+    #sideNav::-webkit-scrollbar-track { background: transparent; }
+    #sideNav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+    .sideLabel {
+      font-size: 10px; font-weight: 900; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,.28);
+      padding: 12px 14px 4px; user-select: none;
+    }
+
     .sideBtn {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; border-radius: 12px; border: none;
-      background: none; color: var(--muted); font-size: 14px; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 11px; border: none;
+      background: none; color: var(--muted); font-size: 14px; font-weight: 700;
       cursor: pointer; width: 100%; text-align: left;
-      transition: background .15s, color .15s;
+      transition: background .15s, color .15s, transform .1s;
+      position: relative;
     }
-    .sideBtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .sideBtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; opacity: .8; }
     .sideBtn:hover  { background: rgba(255,255,255,.07); color: var(--text); }
-    .sideBtn.active { background: rgba(255,29,29,.12); color: var(--red); }
-    .sideBtn.danger { color: #ff6b6b; }
-    .sideBtn.danger:hover { background: rgba(255,30,30,.1); }
-    .sideDivider { height: 1px; background: var(--line); margin: 8px 4px; }
+    .sideBtn:hover svg { opacity: 1; }
+    .sideBtn.active {
+      background: rgba(255,29,29,.13); color: #ff4444;
+      box-shadow: inset 3px 0 0 #ff2222;
+    }
+    .sideBtn.active svg { opacity: 1; }
+    .sideBtn.danger { color: rgba(255,107,107,.8); }
+    .sideBtn.danger:hover { background: rgba(255,30,30,.1); color: #ff6b6b; }
+    .sideBtn.extLink { color: rgba(255,255,255,.5); }
+    .sideBtn.extLink:hover { color: var(--text); }
+
+    .sideDivider { height: 1px; background: var(--line); margin: 6px 4px; }
     .sideSpacer  { flex: 1; }
 
     /* ── Botão modo celular (no sidebar) ── */
     #btnMobileMode {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line);
-      background: rgba(255,255,255,.04); color: var(--muted);
+      padding: 9px 14px; border-radius: 11px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.03); color: var(--muted);
       font-size: 13px; font-weight: 700; cursor: pointer; width: 100%;
       transition: background .15s, color .15s;
     }
-    #btnMobileMode:hover { background: rgba(255,255,255,.08); color: var(--text); }
-    #btnMobileMode svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
+    #btnMobileMode:hover { background: rgba(255,255,255,.07); color: var(--text); }
+    #btnMobileMode svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
 
     /* ── Content area ── */
     #contentArea { overflow-x: hidden; }
-    .aWrap { max-width: 100%; padding: 24px 28px 32px; }
+    .aWrap { max-width: 100%; padding: 28px 30px 36px; }
+
+    /* Page header */
+    .pageHeader {
+      margin-bottom: 24px; padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .pageHeader h1 {
+      margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -.4px; line-height: 1.2;
+    }
+    .pageHeader p {
+      margin: 4px 0 0; font-size: 13px; color: var(--muted); font-weight: 500;
+    }
 
     /* Screens */
     .screen { display: none; }
-    .screen.active { display: block; }
+    .screen.active { display: block; animation: screenIn .2s ease; }
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
     /* Bottom nav (oculto por padrão no modo tablet) */
     #bottomNav { display: none; }
@@ -197,7 +273,7 @@
     }
     .navBtn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .navBtn.active { color: var(--red); }
-    .navBtn .navDot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); opacity: 0; transition: opacity .15s; }
+    .navBtn .navDot { width: 4px; height: 4px; border-radius: 50%; background: var(--red); opacity: 0; transition: opacity .15s; margin-top: 1px; }
     .navBtn.active .navDot { opacity: 1; }
 
     /* ══════════════════════════════════════
@@ -208,53 +284,78 @@
     body.mobileMode #sideNav   { display: none; }
     body.mobileMode #bottomNav {
       display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
-      background: rgba(8,9,11,.97); backdrop-filter: blur(16px);
+      background: rgba(8,9,11,.97); backdrop-filter: blur(20px);
       border-top: 1px solid var(--line);
       padding: 8px 0 max(10px,env(safe-area-inset-bottom));
     }
-    body.mobileMode .aWrap { padding: 14px 14px 24px; }
+    body.mobileMode .aWrap { padding: 16px 16px 28px; }
+    body.mobileMode .pageHeader { margin-bottom: 16px; padding-bottom: 14px; }
+    body.mobileMode .pageHeader h1 { font-size: 18px; }
 
     /* ══════════════════════════════════════
        DASHBOARD — CONTADORES
     ══════════════════════════════════════ */
     .dashGrid {
       display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 12px; margin-bottom: 18px;
+      gap: 12px; margin-bottom: 22px;
     }
     .dashCard {
       background: rgba(255,255,255,.04); border: 1px solid var(--line);
-      border-radius: 14px; padding: 20px 16px; text-align: center;
+      border-radius: 16px; padding: 22px 18px 20px; text-align: center;
+      transition: border-color .2s, transform .15s, box-shadow .15s;
+      cursor: default; position: relative; overflow: hidden;
+    }
+    .dashCard::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.03) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .dashCard:hover {
+      border-color: rgba(255,255,255,.18);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0,0,0,.25);
     }
     .dashCard.accent {
-      background: linear-gradient(135deg,rgba(255,29,29,.12),rgba(180,0,0,.05));
-      border-color: rgba(255,29,29,.2);
+      background: linear-gradient(135deg,rgba(255,29,29,.15),rgba(140,0,0,.06));
+      border-color: rgba(255,29,29,.25);
     }
-    .dashNum   { font-size: 38px; font-weight: 1100; line-height: 1; }
-    .dashLabel { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 6px; letter-spacing: .4px; text-transform: uppercase; }
+    .dashCard.accent:hover { border-color: rgba(255,29,29,.45); box-shadow: 0 12px 32px rgba(255,29,29,.15); }
+    .dashNum {
+      font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -2px;
+      font-feature-settings: "tnum";
+    }
+    .dashLabel {
+      font-size: 10px; color: var(--muted); font-weight: 800;
+      margin-top: 7px; letter-spacing: .6px; text-transform: uppercase;
+    }
+    /* nth-child gradients para os 3 cards sem accent */
+    .dashCard:nth-child(2) { border-top: 2px solid rgba(37,211,102,.3); }
+    .dashCard:nth-child(3) { border-top: 2px solid rgba(255,170,0,.3); }
+    .dashCard:nth-child(4) { border-top: 2px solid rgba(255,107,107,.3); }
 
     /* ══════════════════════════════════════
        BUSCA / FILTROS
     ══════════════════════════════════════ */
     .topBar {
-      display: flex; align-items: center; gap: 12px;
+      display: flex; align-items: center; gap: 10px;
       margin-bottom: 14px; flex-wrap: wrap;
     }
     .searchWrap { position: relative; flex: 1; min-width: 200px; }
     .searchWrap svg {
       position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-      width: 16px; height: 16px; stroke: var(--muted); fill: none;
+      width: 15px; height: 15px; stroke: var(--muted); fill: none;
       stroke-width: 2; stroke-linecap: round; pointer-events: none;
     }
-    .searchWrap .inp { padding-left: 38px; }
+    .searchWrap .inp { padding-left: 36px; }
 
-    .filterTabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .filterTabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
     .filterTab {
       padding: 7px 18px; border-radius: 20px; border: 1px solid var(--line);
       background: rgba(255,255,255,.05); color: var(--muted);
       font-size: 13px; font-weight: 800; cursor: pointer; transition: all .15s;
     }
-    .filterTab:hover  { background: rgba(255,255,255,.09); color: var(--text); }
-    .filterTab.active { background: var(--red); border-color: var(--red); color: #fff; }
+    .filterTab:hover  { background: rgba(255,255,255,.09); color: var(--text); border-color: rgba(255,255,255,.15); }
+    .filterTab.active { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 0 3px 12px rgba(255,29,29,.3); }
 
     /* ══════════════════════════════════════
        CARDS DE MOTOS
@@ -263,32 +364,47 @@
 
     .motoCard {
       background: var(--panel); border: 1px solid var(--line);
-      border-radius: 14px; overflow: hidden;
-      display: grid; grid-template-columns: 130px 1fr;
-      transition: border-color .15s, box-shadow .15s;
+      border-radius: 16px; overflow: hidden;
+      display: grid; grid-template-columns: 120px 1fr;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
     }
-    .motoCard:hover { border-color: rgba(255,255,255,.2); box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+    .motoCard:hover {
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 8px 28px rgba(0,0,0,.35);
+      transform: translateY(-2px);
+    }
     .motoCard__img {
-      width: 130px; height: 130px; object-fit: cover;
+      width: 120px; height: 120px; object-fit: cover;
       background: rgba(255,255,255,.05);
     }
     .motoCard__body {
       padding: 12px 14px; display: flex; flex-direction: column;
       gap: 3px; justify-content: center; min-width: 0;
     }
-    .motoCard__title { font-size: 14px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .motoCard__title { font-size: 14px; font-weight: 900; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .motoCard__meta  { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .motoCard__preco { font-size: 15px; font-weight: 900; color: var(--red); margin-top: 3px; }
-    .motoCard__badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+    .motoCard__preco { font-size: 16px; font-weight: 900; color: var(--red); margin-top: 4px; letter-spacing: -.3px; }
+    .motoCard__badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
 
     .statusBadge {
-      display: inline-block; padding: 3px 9px; border-radius: 6px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px 3px 7px; border-radius: 20px;
       font-size: 10px; font-weight: 900; letter-spacing: .4px;
     }
-    .statusBadge.ativo     { background: rgba(37,211,102,.15); color: #25D366; }
-    .statusBadge.reservada { background: rgba(255,165,0,.15);  color: #ffaa00; }
-    .statusBadge.vendida   { background: rgba(255,60,60,.15);  color: #ff6b6b; }
-    .destaqueFlag { font-size: 10px; color: #ffcc00; font-weight: 900; }
+    .statusBadge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .statusBadge.ativo     { background: rgba(37,211,102,.12); color: #25D366; border: 1px solid rgba(37,211,102,.2); }
+    .statusBadge.ativo::before { background: #25D366; box-shadow: 0 0 6px #25D366; animation: pulse 2s infinite; }
+    .statusBadge.reservada { background: rgba(255,165,0,.12);  color: #ffaa00; border: 1px solid rgba(255,165,0,.2); }
+    .statusBadge.reservada::before { background: #ffaa00; }
+    .statusBadge.vendida   { background: rgba(255,60,60,.12);  color: #ff6b6b; border: 1px solid rgba(255,60,60,.2); }
+    .statusBadge.vendida::before { background: #ff6b6b; }
+    .destaqueFlag { font-size: 10px; color: #ffcc00; font-weight: 900; letter-spacing: .3px; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
 
     .motoCard__actions {
       grid-column: 1 / -1; border-top: 1px solid var(--line);
@@ -300,19 +416,21 @@
       font-size: 12px; font-weight: 800; cursor: pointer;
       transition: background .15s, color .15s;
     }
-    .motoCard__actions button:hover { background: rgba(255,255,255,.08); }
+    .motoCard__actions button:hover { background: rgba(255,255,255,.09); }
     .motoCard__actions .cardEdit { color: #60aaff; }
     .motoCard__actions .cardVend { color: #ff6b6b; }
     .motoCard__actions .cardResv { color: #ffaa00; }
     .motoCard__actions .cardAtiv { color: #25D366; }
-    .motoCard__actions .cardDel  { color: rgba(255,100,100,.7); }
+    .motoCard__actions .cardDel  { color: rgba(255,100,100,.6); }
     .motoCard__actions button:first-child { border-radius: 0 0 0 14px; }
     .motoCard__actions button:last-child  { border-radius: 0 0 14px 0; }
 
     .emptyState {
-      text-align: center; padding: 60px 20px;
+      text-align: center; padding: 80px 20px;
       color: var(--muted); font-size: 15px; font-weight: 700;
       grid-column: 1 / -1;
+      background: rgba(255,255,255,.015); border-radius: 14px;
+      border: 1px dashed var(--line);
     }
 
     /* ══════════════════════════════════════
@@ -328,7 +446,7 @@
     ══════════════════════════════════════ */
     #txtRapido { min-height: 100px; font-size: 13px; font-weight: 600; font-family: inherit; }
     .rapidoTip {
-      font-size: 12px; color: var(--muted); line-height: 1.7;
+      font-size: 12px; color: var(--muted); line-height: 1.75;
       background: rgba(255,255,255,.03); border: 1px solid var(--line);
       border-radius: 10px; padding: 12px 14px;
     }
@@ -339,14 +457,15 @@
     ══════════════════════════════════════ */
     .uploadArea {
       border: 2px dashed var(--line); border-radius: 14px;
-      padding: 32px 20px; text-align: center; cursor: pointer;
-      transition: border-color .15s, background .15s; position: relative;
+      padding: 36px 20px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s; position: relative;
     }
-    .uploadArea:hover { border-color: rgba(255,29,29,.4); background: rgba(255,29,29,.03); }
+    .uploadArea:hover { border-color: rgba(255,29,29,.5); background: rgba(255,29,29,.04); }
     .uploadArea input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .uploadIcon { margin: 0 auto 10px; display: block; color: var(--muted); }
+    .uploadIcon { margin: 0 auto 12px; display: block; color: var(--muted); transition: transform .2s; }
+    .uploadArea:hover .uploadIcon { transform: translateY(-3px); }
     .uploadText { font-size: 14px; color: var(--muted); font-weight: 700; }
-    .uploadSub  { font-size: 12px; color: rgba(255,255,255,.3); margin-top: 4px; }
+    .uploadSub  { font-size: 12px; color: rgba(255,255,255,.28); margin-top: 5px; }
 
     .fotosGrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; }
     .fotoSlot {
@@ -361,14 +480,16 @@
       width: 100%; padding: 7px; border-radius: 8px;
       border: 1px solid rgba(255,60,60,.25); background: rgba(255,30,30,.08);
       color: #ff6b6b; font-size: 11px; font-weight: 800; cursor: pointer;
+      transition: background .15s;
     }
+    .fotoBtnDel:hover { background: rgba(255,30,30,.16); }
 
     /* ══════════════════════════════════════
        TELAS GRANDES ≥ 1400px
     ══════════════════════════════════════ */
     @media (min-width: 1400px) {
       #motosCards { grid-template-columns: repeat(4,1fr); }
-      #appLayout  { grid-template-columns: 250px 1fr; }
+      #appLayout  { grid-template-columns: 258px 1fr; }
     }
 
     /* ══════════════════════════════════════
@@ -381,6 +502,26 @@
     body.mobileMode .fotosGrid  { grid-template-columns: 1fr 1fr; }
     body.mobileMode .fotoSlot.capa { grid-column: 1 / -1; }
     body.mobileMode #btnMobileMode { display: none; }
+
+    /* ══════════════════════════════════════
+       ADIÇÕES (Lucas — migração VPS, UX fotos)
+    ══════════════════════════════════════ */
+
+    /* Atalho "Gerenciar fotos desta moto" no topo do form */
+    .gotoPhotosLink {
+      display:inline-flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12);
+      color:#fff; padding:12px 18px; border-radius:8px; font-weight:600; font-size:14px;
+      cursor:pointer; transition:all .15s; text-decoration:none;
+    }
+    .gotoPhotosLink:hover { background:rgba(234,179,8,.1); border-color:#eab308; color:#eab308; }
+    .gotoPhotosLink[disabled] { opacity:.4; cursor:not-allowed; }
+
+    /* Botão Salvar Fotos — estados idle/active */
+    #btnSavePhotos.__btnIdle   { background:#2a2d33; color:#6b7280; cursor:not-allowed; }
+    #btnSavePhotos.__btnActive { background:#16a34a; color:#fff;    cursor:pointer; box-shadow:0 4px 14px rgba(22,163,74,.35); }
+    #btnSavePhotos.__btnActive:hover { background:#15803d; transform:translateY(-1px); }
+    #btnDiscardPhotos:hover { background:rgba(255,255,255,.05); }
 
   </style>
 </head>
@@ -407,8 +548,8 @@
     <div id="screenLogin">
       <form class="loginCard" id="loginBox" onsubmit="event.preventDefault();document.getElementById('btnLogin').click()">
         <div class="loginLogo">
-          <img src="logo.png" onerror="this.style.display='none'" alt="">
-          <strong>Acesso Admin</strong>
+          <img class="loginLogoImg" src="logo.png" onerror="this.style.display='none'" alt="">
+          <strong>Acesso Restrito</strong>
           <span>Somente administrador autorizado</span>
         </div>
         <div class="aDivider"></div>
@@ -420,7 +561,7 @@
           <label>Senha</label>
           <input class="inp" id="senha" type="password" placeholder="••••••••" autocomplete="current-password"/>
         </div>
-        <button class="aBtnPrimary" id="btnLogin" type="submit" style="width:100%">Entrar</button>
+        <button class="aBtnPrimary" id="btnLogin" type="submit" style="width:100%;margin-top:4px">Entrar</button>
         <div id="loginMsg" class="aMsg" style="text-align:center"></div>
       </form>
     </div>
@@ -432,6 +573,8 @@
 
       <!-- ── SIDEBAR ── -->
       <nav id="sideNav">
+
+        <div class="sideLabel">Gerenciar</div>
 
         <button class="sideBtn navBtn active" data-screen="screenDash" type="button">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -446,6 +589,18 @@
         <button class="sideBtn navBtn" data-screen="screenFotos" type="button">
           <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M9 5l1-2h4l1 2"/></svg>
           Fotos
+        </button>
+
+        <div class="sideLabel" style="margin-top:4px">Navegar</div>
+
+        <button class="sideBtn extLink" onclick="location.href='dashboard.html'" type="button">
+          <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Dashboard
+        </button>
+
+        <button class="sideBtn extLink" onclick="location.href='index.html'" type="button">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Ver site
         </button>
 
         <div class="sideSpacer"></div>
@@ -473,10 +628,17 @@
         <div id="screenDash" class="screen active">
           <div class="aWrap">
 
+            <div class="pageHeader">
+              <div>
+                <h1>Painel de motos</h1>
+                <p>Visão geral do estoque e ações rápidas</p>
+              </div>
+              <button class="aBtnPrimary" id="btnNovaQuick" type="button">+ Nova moto</button>
+            </div>
+
             <div class="dashGrid" id="dashGrid"></div>
 
             <div class="topBar">
-              <button class="aBtnPrimary" id="btnNovaQuick" type="button">+ Nova moto</button>
               <div class="searchWrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
                 <input class="inp" id="buscaMoto" placeholder="Buscar por modelo, cor, ano, preço…"/>
@@ -500,6 +662,26 @@
         <!-- ══ MOTO (FORM) ══ -->
         <div id="screenMoto" class="screen">
           <div class="aWrap">
+
+            <div class="pageHeader">
+              <div>
+                <h1>Cadastro de moto</h1>
+                <p>Preencha os dados ou use o cadastro rápido</p>
+              </div>
+              <div class="btnRow">
+                <button class="aBtnGhost" id="btnNova" type="button">+ Nova</button>
+                <button class="aBtnDanger" id="btnApagar" type="button">Apagar</button>
+              </div>
+            </div>
+
+            <!-- ATALHO: Gerenciar fotos desta moto (aparece só se moto já tem id) -->
+            <div id="motoTopActions" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <a class="gotoPhotosLink" id="btnGotoFotos">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>Gerenciar fotos desta moto</span>
+              </a>
+              <span style="font-size:12px;color:#9aa0a6">Salve os dados antes (capa, fotos extras, troca de fotos)</span>
+            </div>
 
             <!-- Cadastro rápido -->
             <div class="aSection">
@@ -631,8 +813,6 @@
               <div class="aSectionBody">
                 <div class="btnRow">
                   <button class="aBtnPrimary" id="btnSalvar" type="button">Salvar moto</button>
-                  <button class="aBtnGhost"   id="btnNova"   type="button">+ Nova</button>
-                  <button class="aBtnDanger"  id="btnApagar" type="button">Apagar</button>
                 </div>
               </div>
             </div>
@@ -642,35 +822,77 @@
 
         <!-- ══ FOTOS ══ -->
         <div id="screenFotos" class="screen">
-          <div class="aWrap">
+          <!-- Padding extra no rodapé pra não ficar atrás da barra fixa -->
+          <div class="aWrap" style="padding-bottom:110px">
 
+            <!-- HEADER: contexto da moto + voltar -->
+            <div id="fotosContext" class="aSection" style="background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2)">
+              <div class="aSectionBody" style="padding:14px 20px">
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                  <div style="font-size:13px;color:#9aa0a6">Editando fotos de:</div>
+                  <div id="fotosContextTitle" style="font-weight:700;font-size:15px;color:#fff;flex:1;min-width:0">— Nenhuma moto selecionada —</div>
+                  <button type="button" class="aBtnGhost" onclick="window.goScreen('screenDash')" style="font-size:13px;padding:8px 14px;display:inline-flex;align-items:center;gap:6px">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Voltar ao painel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ENVIO EM LOTE -->
             <div class="aSection">
               <div class="aSectionHead">
-                <strong>Upload em lote</strong>
-                <span>até 5 fotos — 1ª vira capa</span>
+                <strong>Adicionar várias fotos de uma vez</strong>
+                <span>até 5 fotos · a 1ª vira a capa</span>
               </div>
               <div class="aSectionBody">
-                <div class="uploadArea">
-                  <input id="multiFotos" type="file" accept="image/*" multiple/>
-                  <svg class="uploadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="36" height="36" aria-hidden="true">
+                <ol style="margin:0 0 16px 18px;padding:0;color:#c5c8cd;font-size:13px;line-height:1.7">
+                  <li>Arraste as fotos pro retângulo abaixo (ou clique pra escolher)</li>
+                  <li>A <b>1ª foto vira a CAPA</b> — a que aparece na vitrine</li>
+                  <li>As outras 4 viram Foto 1, 2, 3 e 4 da galeria de detalhes</li>
+                  <li>Compressão é automática — pode mandar foto enorme do celular</li>
+                  <li>Depois clique em <b>SALVAR ALTERAÇÕES</b> (barra verde no rodapé)</li>
+                </ol>
+                <label for="multiFotos" class="uploadArea" id="dropZone" style="cursor:pointer;display:block">
+                  <input id="multiFotos" type="file" accept="image/*" multiple style="display:none"/>
+                  <svg class="uploadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="48" height="48" aria-hidden="true">
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                     <polyline points="17 8 12 3 7 8"/>
                     <line x1="12" y1="3" x2="12" y2="15"/>
                   </svg>
-                  <div class="uploadText">Clique ou arraste as fotos aqui</div>
-                  <div class="uploadSub">1ª foto = Capa &middot; depois Foto 1, 2, 3, 4</div>
-                </div>
-                <div id="fotoMsg" class="aMsg"></div>
+                  <div class="uploadText" style="font-size:16px;font-weight:600">Arraste as fotos pra cá ou clique pra escolher</div>
+                  <div class="uploadSub">1ª = Capa · depois Foto 1, 2, 3, 4</div>
+                </label>
+                <div id="fotoMsg" class="aMsg" style="margin-top:12px"></div>
               </div>
             </div>
 
+            <!-- GRID INDIVIDUAL -->
             <div class="aSection">
-              <div class="aSectionHead"><strong>Fotos da moto</strong></div>
+              <div class="aSectionHead">
+                <strong>Fotos atuais da moto</strong>
+                <span>clique em "Trocar foto" pra substituir uma só</span>
+              </div>
               <div class="aSectionBody">
                 <div class="fotosGrid" id="fotosGrid"></div>
               </div>
             </div>
 
+          </div>
+
+          <!-- BARRA FIXA NO RODAPÉ — botão Salvar SEMPRE visível -->
+          <div id="fotosActionBar" style="position:fixed;bottom:0;left:0;right:0;z-index:200;background:#0f0f12;border-top:1px solid rgba(255,255,255,.1);padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 -8px 32px rgba(0,0,0,.5)">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+              <div style="font-weight:700;font-size:14px;color:#fff">Alterações de fotos</div>
+              <div id="fotosPendingLabel" style="font-size:12px;color:#9aa0a6">Suas fotos estão sincronizadas com o servidor.</div>
+            </div>
+            <button type="button" id="btnDiscardPhotos" class="aBtnGhost" style="display:none;font-size:13px">
+              Descartar
+            </button>
+            <button type="button" id="btnSavePhotos" disabled class="__btnIdle" style="padding:14px 28px;font-weight:800;font-size:15px;border:none;border-radius:8px;min-height:48px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s">
+              <span class="__btnIcon" style="display:inline-flex;align-items:center"></span>
+              <span class="__btnLabel">Nenhuma alteração pendente</span>
+            </button>
           </div>
         </div>
 
@@ -694,6 +916,11 @@
         Fotos
         <div class="navDot"></div>
       </button>
+      <button class="navBtn" onclick="location.href='dashboard.html'" type="button">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Dashboard
+        <div class="navDot"></div>
+      </button>
       <button class="navBtn" id="btnTabletMode" type="button">
         <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         Tablet
@@ -710,7 +937,7 @@
   <input type="hidden" id="whatsapp_texto"/>
   <input type="hidden" id="obs_internas"/>
 
-  <script type="module" src="assets/js/admin.js?v=20260521j"></script>
+  <script type="module" src="assets/js/admin.js?v=20260526g"></script>
   <script>
     /* ── MODO (tablet/PC por padrão, toggle celular) ── */
     const MOBILE_KEY = 'adminMobileMode';
@@ -720,7 +947,6 @@
       const btnM = document.getElementById('btnMobileMode');
       if (btnM) btnM.textContent = isMobile ? 'Modo tablet' : 'Modo celular';
     }
-    // Carrega preferência salva
     const savedMode = localStorage.getItem(MOBILE_KEY);
     applyMode(savedMode === '1');
 

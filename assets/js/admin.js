@@ -11,17 +11,16 @@
 // - Preview de fotos com cache-bust (?v=timestamp) pra mostrar a imagem nova na hora
 // ======================================================
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+// API self-hosted (substituiu @supabase/supabase-js — interface drop-in)
+import { createClient } from "./api.js?v=20260526";
+import { API_BASE, STORAGE_PUBLIC_BASE } from "./config.js?v=20260526";
 
-// ======================================================
-// ===== CONFIG SUPABASE
-// ======================================================
-// URL do seu projeto e ANON KEY (cliente). Ideal: rotacionar se repo for público.
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./data.js?v=20260521a";
-// Nome do bucket do Storage onde ficam as fotos
-const BUCKET = "motos";
+// Mantido só pra logs/strings de erro mais claros
+const SUPABASE_URL = API_BASE;
+const SUPABASE_ANON_KEY = "";
+const BUCKET = "motos"; // mantido pra paridade de interface
 
-// Cria o client do Supabase (Auth + Database + Storage)
+// Cria o client (wrapper local — mesma API: auth, from, storage)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ======================================================
@@ -97,11 +96,132 @@ let allowedStatusSet = null;
 let _currentMoto = null;
 let idManuallyEdited = false;
 
+// ======================================================
+// ===== STAGING DE FOTOS (modelo "review → salvar")
+// ======================================================
+// Estrutura: { "<id>/capa.jpg": { type:"upload", file:File, previewUrl:string } | { type:"delete" } }
+// Mudanças locais (não persistidas). Botão "Salvar" no UI executa tudo.
+let pendingPhotos = {};
+function clearPendingPhotos() {
+  // Revoga as object URLs locais pra liberar memória
+  Object.values(pendingPhotos).forEach((ch) => {
+    if (ch && ch.previewUrl) URL.revokeObjectURL(ch.previewUrl);
+  });
+  pendingPhotos = {};
+}
+function pendingCount() { return Object.keys(pendingPhotos).length; }
+
 // Mostra mensagens (ok/err/normal)
 function msg(el, text, type = "") {
   if (!el) return;
   el.className = "hint " + (type === "ok" ? "ok" : type === "err" ? "err" : "");
   el.textContent = text || "";
+}
+
+// ======================================================
+// ===== ICONES SVG (Heroicons outline, sem dependência externa)
+// ======================================================
+const ICONS = {
+  save:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+  trash:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>',
+  swap:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>',
+  undo:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>',
+  plus:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  camera:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  check:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  alert:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  x:       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  arrowL:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+  image:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  spinner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="animation:dmSpin 1s linear infinite"><circle cx="12" cy="12" r="9" stroke-opacity=".25"/><path d="M21 12a9 9 0 01-9 9"/></svg>',
+  // Icones de ação dos cards
+  pencil:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  eye:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>',
+  dollar:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
+};
+function icon(name, size = 16) {
+  const svg = ICONS[name] || "";
+  return svg.replace("<svg ", `<svg width="${size}" height="${size}" `);
+}
+// Animação do spinner (injetada uma única vez)
+if (typeof document !== "undefined" && !document.getElementById("__dmIconStyles")) {
+  const st = document.createElement("style");
+  st.id = "__dmIconStyles";
+  st.textContent = "@keyframes dmSpin{to{transform:rotate(360deg)}}";
+  document.head.appendChild(st);
+}
+
+// ======================================================
+// ===== MODAL DE CONFIRMAÇÃO (substitui confirm() nativo)
+// ======================================================
+function confirmDialog({ title, message, confirmText = "Confirmar", cancelText = "Cancelar", danger = false } = {}) {
+  return new Promise((resolve) => {
+    // Overlay backdrop
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .15s ease;backdrop-filter:blur(2px);";
+
+    // Modal box
+    const box = document.createElement("div");
+    box.style.cssText = "background:#1a1c20;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.95);transition:transform .15s ease;color:#e8e9ec;";
+
+    const titleHtml = title ? `<h3 style="margin:0 0 12px;font-size:18px;font-weight:700;color:${danger ? "#ff6b6b" : "#fff"}">${title}</h3>` : "";
+    const msgHtml = `<p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#c5c8cd;white-space:pre-line">${message}</p>`;
+    const actionsHtml = `
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="__cancel" style="background:transparent;border:1px solid rgba(255,255,255,.15);color:#c5c8cd;padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">${cancelText}</button>
+        <button class="__confirm" style="background:${danger ? "#dc2626" : "#16a34a"};border:none;color:#fff;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">${confirmText}</button>
+      </div>`;
+    box.innerHTML = titleHtml + msgHtml + actionsHtml;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    // Animar entrada
+    requestAnimationFrame(() => { overlay.style.opacity = "1"; box.style.transform = "scale(1)"; });
+
+    const close = (result) => {
+      overlay.style.opacity = "0";
+      box.style.transform = "scale(.95)";
+      setTimeout(() => { overlay.remove(); resolve(result); }, 150);
+    };
+
+    box.querySelector(".__confirm").addEventListener("click", () => close(true));
+    box.querySelector(".__cancel").addEventListener("click", () => close(false));
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) close(false); });
+    const onKey = (e) => {
+      if (e.key === "Escape") { close(false); document.removeEventListener("keydown", onKey); }
+      if (e.key === "Enter")  { close(true);  document.removeEventListener("keydown", onKey); }
+    };
+    document.addEventListener("keydown", onKey);
+    setTimeout(() => box.querySelector(".__confirm").focus(), 200);
+  });
+}
+
+// ======================================================
+// ===== TOAST (feedback flutuante, autodissolve em 2s)
+// ======================================================
+function toast(text, type = "ok") {
+  let host = document.getElementById("__dmToastHost");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "__dmToastHost";
+    host.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;";
+    document.body.appendChild(host);
+  }
+  const t = document.createElement("div");
+  const colors = type === "err"
+    ? "background:#dc2626;color:#fff;"
+    : type === "warn"
+    ? "background:#f59e0b;color:#000;"
+    : "background:#16a34a;color:#fff;";
+  t.style.cssText = `${colors}padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;transform:translateY(-12px);transition:all .25s ease;pointer-events:auto;`;
+  t.textContent = text;
+  host.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = "1"; t.style.transform = "translateY(0)"; });
+  setTimeout(() => {
+    t.style.opacity = "0"; t.style.transform = "translateY(-12px)";
+    setTimeout(() => t.remove(), 250);
+  }, 2200);
 }
 
 
@@ -145,7 +265,6 @@ function renderMotoSelect() {
     list.forEach((m) => {
       const st = String(m.status || "ativo").toLowerCase();
       if (groups[st]) groups[st].push(m);
-      else groups.disponivel.push(m);
     });
 
     options = Object.keys(groups)
@@ -173,7 +292,7 @@ function renderMotoSelect() {
   }
 // mantém seleção atual se possível
   const keep = els.motoSelect.value || "";
-  els.motoSelect.innerHTML = `<option value="">➕ Criar nova moto…</option>` + options;
+  els.motoSelect.innerHTML = `<option value="">+ Criar nova moto…</option>` + options;
 
   if (keep && list.some((m) => String(m.id) === keep)) {
     els.motoSelect.value = keep;
@@ -306,10 +425,10 @@ function formatPrecoBR(value) {
 // ===== STORAGE (URL, LIST, DELETE, UPLOAD)
 // ======================================================
 
-// Monta URL pública do storage (bucket público)
+// Monta URL pública do storage — agora servido pelo Caddy na mesma origem
 // Ex: publicUrl("xre-300-2022/capa.jpg")
 function publicUrl(path) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  return `${STORAGE_PUBLIC_BASE}/${path}`;
 }
 
 // Cache-bust no preview do admin baseado na versao REAL do arquivo
@@ -499,16 +618,17 @@ async function uploadSingleToPath(path, file) {
     return;
   }
 
-  msg(els.fotoMsg, `Foto enviada ✅ (${sizeKB}KB)`, "ok");
+  msg(els.fotoMsg, `Foto enviada (${sizeKB} KB)`, "ok");
 }
 
-// Multi-upload: usuário seleciona até 5 fotos no input
+// Multi-upload: usuário seleciona arquivos → STAGING (preview local, ainda NÃO salvo)
 // - a primeira vira capa
 // - as outras viram 1..4
-async function handleMultiUpload(fileList) {
+// Botão "Salvar" persiste tudo.
+function handleMultiUpload(fileList) {
   const id = cleanId(els.id?.value);
   if (!id) {
-    msg(els.fotoMsg, "Informe o ID antes de enviar fotos.", "err");
+    toast("Selecione uma moto antes de adicionar fotos", "warn");
     return;
   }
 
@@ -527,21 +647,128 @@ async function handleMultiUpload(fileList) {
   ];
 
   for (let i = 0; i < picked.length; i++) {
-    msg(els.fotoMsg, `Processando ${i + 1} de ${picked.length}...`);
-    await uploadSingleToPath(targets[i], picked[i]);
+    const path = targets[i];
+    // Revoga URL anterior se já tinha pending nesse slot
+    if (pendingPhotos[path]?.previewUrl) URL.revokeObjectURL(pendingPhotos[path].previewUrl);
+    pendingPhotos[path] = {
+      type: "upload",
+      file: picked[i],
+      previewUrl: URL.createObjectURL(picked[i]),
+    };
   }
 
-  // ajuda o site público a atualizar a capa quando trocamos fotos
-  await touchUpdatedAt(id);
-  await syncPhotoPathsToDB(id);
-
-  msg(els.fotoMsg, "Fotos enviadas ✅", "ok");
-  await renderFotosGrid(id);
+  msg(els.fotoMsg, `${picked.length} foto(s) prontas pra salvar`, "ok");
+  toast(`${picked.length} foto${picked.length > 1 ? "s prontas" : " pronta"} — clique em SALVAR`, "warn");
+  renderFotosGrid(id);
 }
 
 // ======================================================
 // ===== GRID DE FOTOS (PREVIEW + BOTÕES)
 // ======================================================
+
+// ======================================================
+// ===== COMMIT / DISCARD das mudanças pendentes
+// ======================================================
+function updateActionBar(_id) {
+  const bar = document.getElementById("fotosActionBar");
+  if (!bar) return;
+  const count = pendingCount();
+  const btnSave = document.getElementById("btnSavePhotos");
+  const btnDiscard = document.getElementById("btnDiscardPhotos");
+  const helper = document.getElementById("fotosPendingLabel");
+  const labelSpan = btnSave?.querySelector(".__btnLabel");
+
+  if (count === 0) {
+    if (btnSave) {
+      btnSave.disabled = true;
+      btnSave.classList.add("__btnIdle");
+      btnSave.classList.remove("__btnActive");
+      if (labelSpan) labelSpan.textContent = "Nenhuma alteração pendente";
+    }
+    if (btnDiscard) btnDiscard.style.display = "none";
+    if (helper) helper.textContent = "Suas fotos estão sincronizadas com o servidor.";
+  } else {
+    if (btnSave) {
+      btnSave.disabled = false;
+      btnSave.classList.remove("__btnIdle");
+      btnSave.classList.add("__btnActive");
+      if (labelSpan) labelSpan.textContent = `Salvar ${count} alteração${count > 1 ? "ões" : ""}`;
+    }
+    if (btnDiscard) btnDiscard.style.display = "inline-flex";
+    if (helper) helper.textContent = `${count} alteração${count > 1 ? "ões" : ""} aguardando salvamento`;
+  }
+}
+
+async function commitPendingPhotos(id) {
+  if (pendingCount() === 0) return;
+  const btnSave = document.getElementById("btnSavePhotos");
+  const labelSpan = btnSave?.querySelector(".__btnLabel");
+  const iconSpan  = btnSave?.querySelector(".__btnIcon");
+  if (btnSave) {
+    btnSave.disabled = true;
+    if (labelSpan) labelSpan.textContent = "Salvando...";
+    if (iconSpan)  iconSpan.innerHTML = icon("spinner", 18);
+  }
+
+  const entries = Object.entries(pendingPhotos);
+  const total = entries.length;
+  let ok = 0, fail = 0, i = 0;
+
+  for (const [path, change] of entries) {
+    i++;
+    if (labelSpan) labelSpan.textContent = `Salvando ${i} de ${total}...`;
+    try {
+      if (change.type === "upload") {
+        msg(els.fotoMsg, `Enviando ${path.split("/").pop()}...`);
+        await uploadSingleToPath(path, change.file);
+        ok++;
+      } else if (change.type === "delete") {
+        msg(els.fotoMsg, `Removendo ${path.split("/").pop()}...`);
+        const { error } = await supabase.storage.from(BUCKET).remove([path]);
+        if (error) throw error;
+        ok++;
+      }
+    } catch (e) {
+      console.error(`commit failed ${path}:`, e);
+      fail++;
+    }
+  }
+
+  try { await touchUpdatedAt(id); } catch {}
+  try { await syncPhotoPathsToDB(id); } catch {}
+
+  ["disponivel","reservada","vendida","all","ativo"].forEach((s) => {
+    try { localStorage.removeItem(`daniloMotosCache_${s}`); } catch {}
+  });
+
+  clearPendingPhotos();
+  if (iconSpan) iconSpan.innerHTML = icon("save", 18);
+
+  if (fail === 0) {
+    toast(`${ok} alteração${ok > 1 ? "ões salvas" : " salva"} com sucesso`, "ok");
+    msg(els.fotoMsg, "Tudo salvo", "ok");
+  } else {
+    toast(`${ok} salvas, ${fail} falharam — veja console`, "err");
+    msg(els.fotoMsg, `${ok} ok, ${fail} erros`, "err");
+  }
+
+  await renderFotosGrid(id);
+}
+
+async function discardPendingPhotos(id) {
+  if (pendingCount() === 0) return;
+  const ok = await confirmDialog({
+    title: "Descartar alterações?",
+    message: `Você tem ${pendingCount()} mudança(s) pendente(s) que ainda não foram salvas.\nDescartar elas?`,
+    confirmText: "Sim, descartar",
+    cancelText: "Continuar editando",
+    danger: true,
+  });
+  if (!ok) return;
+  clearPendingPhotos();
+  toast("Alterações descartadas", "ok");
+  await renderFotosGrid(id);
+}
 
 // Renderiza os slots (capa, 1..4) com:
 // - preview se o arquivo existe
@@ -550,101 +777,156 @@ async function handleMultiUpload(fileList) {
 async function renderFotosGrid(id) {
   if (!els.fotosGrid) return;
 
+  // Atualiza o banner de contexto da tela de fotos
+  const ctxTitle = document.getElementById("fotosContextTitle");
+  if (ctxTitle) {
+    const m = motosCache.find((x) => x.id === id);
+    ctxTitle.textContent = m ? `${m.id} — ${m.titulo || "(sem título)"} · ${(m.status || "").toUpperCase()}` : id || "— Nenhuma moto selecionada —";
+  }
+
   // se não tem id, limpa o grid
   if (!id) {
-    els.fotosGrid.innerHTML = "";
+    els.fotosGrid.innerHTML = "<div style='color:#9aa0a6;padding:20px;text-align:center'>Selecione uma moto no painel pra gerenciar fotos.</div>";
     msg(els.fotoMsg, "");
     return;
   }
 
   const slots = fotosSlots(id);
 
-  // Descobre quais arquivos existem (pra mostrar preview) + metadata (pra cache-bust)
+  // Descobre quais arquivos existem no SERVIDOR (pra mostrar preview) + metadata
   let existing = new Set();
-  let fileMeta = new Map(); // filename -> updated_at
+  let fileMeta = new Map();
   try {
     const data = await listMotoFiles(id);
     existing = new Set(data.map((x) => x.name));
     data.forEach((x) => fileMeta.set(x.name, x.updated_at || x.created_at));
-  } catch {
-    // se falhar list (policy, etc), ainda renderiza os slots (sem preview)
-  }
+  } catch {}
 
-  // Monta o HTML dos slots
+  // Render: pra cada slot decide o estado visual:
+  //   - PENDING UPLOAD  → mostra preview local (laranja "Não salvo")
+  //   - PENDING DELETE  → mostra ícone lixeira (vermelho "Será removido")
+  //   - SALVO           → preview do servidor (verde "Salvo")
+  //   - VAZIO           → placeholder (cinza "Vazio")
   els.fotosGrid.innerHTML = slots
     .map((s) => {
-      const exists = existing.has(s.filename);
-      // Cache-bust pela versao REAL do arquivo (nao Date.now()): browser cacheia
-      // ate a foto realmente mudar no Storage. Foto trocada -> updated_at muda -> reload.
-      const src = exists ? publicUrlV(s.path, fileMeta.get(s.filename)) : "";
-      const label = s.key === "capa" ? "Capa" : `Foto ${s.key}`;
+      const pend = pendingPhotos[s.path];
+      const existsOnServer = existing.has(s.filename);
+      const isCover = s.key === "capa";
+      const label = isCover ? "CAPA" : `Foto ${s.key}`;
+
+      // Estado visual: pendingUpload | pendingDelete | saved | empty
+      let state, stateLabel, stateColor, imgSrc, imgStyle = "";
+      if (pend?.type === "upload") {
+        state = "pendingUpload";
+        stateLabel = "Nova — não salva";
+        stateColor = "#3b82f6";
+        imgSrc = pend.previewUrl;
+      } else if (pend?.type === "delete") {
+        state = "pendingDelete";
+        stateLabel = "Será removida";
+        stateColor = "#dc2626";
+        imgSrc = existsOnServer ? publicUrlV(s.path, fileMeta.get(s.filename)) : "";
+        imgStyle = "filter:grayscale(1) opacity(.5);";
+      } else if (existsOnServer) {
+        state = "saved";
+        stateLabel = "Salva";
+        stateColor = "#16a34a";
+        imgSrc = publicUrlV(s.path, fileMeta.get(s.filename));
+      } else {
+        state = "empty";
+        stateLabel = "Sem foto";
+        stateColor = "#6b7280";
+        imgSrc = "";
+      }
+
+      const isPending = state === "pendingUpload" || state === "pendingDelete";
+      const hasImage = !!imgSrc;
+
+      // Capa: borda dourada + header destacado (não usa ribbon flutuante pra evitar overlap)
+      const coverBorder = isCover ? "border:2px solid #eab308;" : "border:1px solid rgba(255,255,255,.08);";
+      const pendingBorder = isPending ? `border:2px solid ${stateColor} !important;` : "";
+      const titleText = isCover ? "FOTO PRINCIPAL (CAPA)" : `Foto ${s.key}`;
+      const headerBg   = isCover ? "background:linear-gradient(90deg,#eab308 0%,#f59e0b 100%);color:#000;padding:8px 12px;margin:-14px -14px 12px;border-radius:8px 8px 0 0" : "";
+      const titleStyle = isCover ? "font-weight:800;font-size:12px;letter-spacing:1.2px" : `font-weight:700;font-size:13px;color:#fff`;
+
+      const placeholderHtml = hasImage ? "" : `
+        <div style="display:flex;align-items:center;justify-content:center;height:160px;background:rgba(255,255,255,.02);border:2px dashed rgba(255,255,255,.1);border-radius:8px;color:#5a5d64;flex-direction:column;gap:8px">
+          ${icon("image", 36)}
+          <span style="font-size:13px">Sem foto ainda</span>
+        </div>`;
+
+      const undoBtn = isPending ? `
+        <button class="btn ghost" type="button" data-undo="${s.path}" style="width:100%;margin-top:6px;font-size:13px;padding:10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px">
+          ${icon("undo", 14)} Desfazer alteração
+        </button>` : "";
+
+      const removeBtn = (existsOnServer && pend?.type !== "delete") ? `
+        <button class="btn danger" type="button" data-del="${s.path}" style="width:100%;margin-top:8px;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px">
+          ${icon("trash", 14)} Remover esta foto
+        </button>` : "";
+
+      const replaceBtn = pend?.type !== "delete" ? `
+        <label class="btn" style="width:100%;margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:13px;min-height:44px">
+          ${hasImage ? icon("swap", 14) + " Trocar foto" : icon("plus", 16) + " Escolher foto"}
+          <input type="file" data-path="${s.path}" accept="image/*" style="display:none"/>
+        </label>` : "";
 
       return `
-        <div class="thumb">
-          <div class="thumbTitle">${label}</div>
+        <div class="thumb" style="${coverBorder}${pendingBorder}border-radius:10px;padding:14px;background:rgba(255,255,255,.02);position:relative;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;${headerBg}">
+            <div style="${titleStyle};flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${titleText}</div>
+            <div style="background:${isCover ? "rgba(0,0,0,.2)" : stateColor + "22"};color:${isCover ? "#000" : stateColor};font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;border:1px solid ${isCover ? "rgba(0,0,0,.25)" : stateColor + "55"};white-space:nowrap">
+              ${stateLabel}
+            </div>
+          </div>
 
-          <img src="${src}" alt="${label}" decoding="async" onerror="this.style.display='none'">
+          ${hasImage ? `<img src="${imgSrc}" alt="${titleText}" decoding="async" style="width:100%;border-radius:6px;${imgStyle}" onerror="this.style.display='none'">` : placeholderHtml}
 
-          <input type="file" data-path="${s.path}" accept="image/*" />
-
-          <button class="btn danger" type="button" data-del="${s.path}" style="width:100%;margin-top:8px">
-            Remover
-          </button>
+          ${replaceBtn}
+          ${removeBtn}
+          ${undoBtn}
         </div>
       `;
     })
     .join("");
 
-  // ==========================
-  // Bind upload: quando escolhe arquivo em um slot
-  // ==========================
+  // Atualiza barra de ação no topo (botões Salvar/Descartar)
+  updateActionBar(id);
+
+  // Bind upload: agora coloca em STAGING (não envia direto)
   els.fotosGrid.querySelectorAll('input[type="file"][data-path]').forEach((inp) => {
-    inp.addEventListener("change", async () => {
+    inp.addEventListener("change", () => {
       const file = inp.files?.[0];
       if (!file) return;
-
       const path = inp.dataset.path;
-
-      await uploadSingleToPath(path, file);
-
-      // Se subiu a capa, ajuda o site público a refletir a mudança
-      if (String(path || "").endsWith("/capa.jpg")) {
-        await touchUpdatedAt(id);
-      }
-
-      await syncPhotoPathsToDB(id);
-
+      if (pendingPhotos[path]?.previewUrl) URL.revokeObjectURL(pendingPhotos[path].previewUrl);
+      pendingPhotos[path] = {
+        type: "upload",
+        file,
+        previewUrl: URL.createObjectURL(file),
+      };
       inp.value = "";
-      await renderFotosGrid(id);
+      renderFotosGrid(id);
     });
   });
 
-  // ==========================
-  // Bind delete: botão remover por slot
-  // ==========================
+  // Bind delete: marca pra remoção (não apaga direto)
   els.fotosGrid.querySelectorAll("button[data-del]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       const path = btn.dataset.del;
-      const ok = confirm("Remover essa foto? Isso apaga do Storage.");
-      if (!ok) return;
+      pendingPhotos[path] = { type: "delete" };
+      renderFotosGrid(id);
+      toast("Foto marcada — clique em SALVAR ALTERAÇÕES no rodapé pra confirmar", "warn");
+    });
+  });
 
-      msg(els.fotoMsg, "Removendo foto...");
-
-      const { error } = await supabase.storage.from(BUCKET).remove([path]);
-      if (error) {
-        console.error(error);
-        msg(els.fotoMsg, "Erro ao remover: " + error.message, "err");
-        return;
-      }
-
-      if (String(path || "").endsWith("/capa.jpg")) {
-        await touchUpdatedAt(id);
-      }
-
-      await syncPhotoPathsToDB(id);
-
-      msg(els.fotoMsg, "Foto removida ✅", "ok");
-      await renderFotosGrid(id);
+  // Bind undo: cancela mudança pendente em um slot
+  els.fotosGrid.querySelectorAll("button[data-undo]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const path = btn.dataset.undo;
+      if (pendingPhotos[path]?.previewUrl) URL.revokeObjectURL(pendingPhotos[path].previewUrl);
+      delete pendingPhotos[path];
+      renderFotosGrid(id);
     });
   });
 
@@ -699,7 +981,7 @@ async function login() {
     return;
   }
 
-  msg(els.loginMsg, "Logado ✅", "ok");
+  msg(els.loginMsg, "Logado", "ok");
   await refreshSessionUI();
 }
 
@@ -772,7 +1054,7 @@ async function loadMotosAndRender() {
 
   msg(
     els.saveMsg,
-    motosCache.length ? "Motos carregadas ✅" : "Nenhuma moto cadastrada ainda.",
+    motosCache.length ? "Motos carregadas" : "Nenhuma moto cadastrada ainda.",
     motosCache.length ? "ok" : ""
   );
 
@@ -852,9 +1134,11 @@ function getFormData() {
 }
 
 // Salva (cria ou atualiza) a moto no banco
-// Salva (cria ou atualiza) a moto no banco
 async function salvar() {
   msg(els.saveMsg, "Salvando...");
+
+  // Detecta antes do upsert: se já existia no cache, é edição; senão é criação nova
+  const wasNew = !_currentMoto?.id;
 
   const payload = getFormData();
 
@@ -892,14 +1176,11 @@ async function tryUpsert(p) {
     obs_internas: p.obs_internas
   };
 
-  console.log("PAYLOAD MOTOS:", clean);
-
   const r = await supabase
     .from("motos")
     .upsert(clean, { onConflict: "id" })
     .select();
 
-  console.log("RESPOSTA UPSERT:", r);
   return r;
 }
 
@@ -947,7 +1228,7 @@ async function tryUpsert(p) {
     return;
   }
 
- msg(els.saveMsg, "Moto salva ✅", "ok");
+ msg(els.saveMsg, "Moto salva", "ok");
 
 // limpa o cache do site público (local + session)
 ["disponivel","reservada","vendida","all","ativo"].forEach((s) => {
@@ -957,6 +1238,19 @@ async function tryUpsert(p) {
 
 await loadMotosAndRender();
 fillForm(payload);
+
+// UX: nova moto → vai direto pra Fotos (próximo passo natural)
+//     edição    → volta pra Dashboard
+if (wasNew) {
+  toast("Moto criada — agora adicione as fotos", "ok");
+  setTimeout(() => {
+    window.goScreen?.("screenFotos");
+    renderFotosGrid(payload.id);
+  }, 500);
+} else {
+  toast("Alterações salvas com sucesso", "ok");
+  setTimeout(() => { window.goScreen?.("screenDash"); }, 400);
+}
 }
 
 // Abre formulário em branco (nova moto)
@@ -975,7 +1269,13 @@ async function apagarMoto() {
   const id = cleanId(els.id?.value);
   if (!id) return msg(els.saveMsg, "Informe o ID da moto para apagar.", "err");
 
-  const ok = confirm(`Tem certeza que quer apagar a moto "${id}"?\nIsso vai apagar também as fotos no Storage.`);
+  const ok = await confirmDialog({
+    title: `Apagar a moto "${id}"?`,
+    message: "Esta ação vai apagar:\n• O registro da moto no banco\n• TODAS as fotos dela no storage\n\nNão dá pra desfazer.",
+    confirmText: "Sim, apagar tudo",
+    cancelText: "Cancelar",
+    danger: true,
+  });
   if (!ok) return;
 
   msg(els.saveMsg, "Apagando...");
@@ -993,9 +1293,11 @@ async function apagarMoto() {
   const { error } = await supabase.from("motos").delete().eq("id", id);
   if (error) return msg(els.saveMsg, "Erro ao apagar: " + error.message, "err");
 
-  msg(els.saveMsg, "Moto apagada ✅", "ok");
+  msg(els.saveMsg, "Moto apagada", "ok");
+  toast(`Moto "${id}" apagada`, "ok");
   await loadMotosAndRender();
   novaMoto();
+  window.goScreen?.("screenDash");
 }
 
 // ======================================================
@@ -1008,13 +1310,26 @@ function renderMotoCards() {
   const term = String(els.buscaMoto?.value || "").trim().toLowerCase();
   const st   = filtroStatus;
 
-  const list = motosCache.filter((m) => {
-    const mst = String(m.status || "ativo").toLowerCase();
-    if (st !== "todas" && mst !== st) return false;
-    if (!term) return true;
-    const hay = `${m.titulo || ""} ${m.cor || ""} ${m.ano || ""} ${m.preco || ""}`.toLowerCase();
-    return hay.includes(term);
-  });
+  // Ordem padrão: ATIVAS → RESERVADAS → VENDIDAS. Dentro de cada grupo, ordem
+  // por `ordem` ASC (motos com ordem definida primeiro), depois updated_at DESC.
+  const STATUS_RANK = { ativo: 0, reservada: 1, vendida: 2 };
+  const list = motosCache
+    .filter((m) => {
+      const mst = String(m.status || "ativo").toLowerCase();
+      if (st !== "todas" && mst !== st) return false;
+      if (!term) return true;
+      const hay = `${m.titulo || ""} ${m.cor || ""} ${m.ano || ""} ${m.preco || ""}`.toLowerCase();
+      return hay.includes(term);
+    })
+    .sort((a, b) => {
+      const ra = STATUS_RANK[String(a.status || "ativo").toLowerCase()] ?? 99;
+      const rb = STATUS_RANK[String(b.status || "ativo").toLowerCase()] ?? 99;
+      if (ra !== rb) return ra - rb;
+      const oa = Number(a.ordem ?? 999);
+      const ob = Number(b.ordem ?? 999);
+      if (oa !== ob) return oa - ob;
+      return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+    });
 
   if (!list.length) {
     els.motosCards.innerHTML = `<div class="emptyState">Nenhuma moto encontrada.</div>`;
@@ -1035,7 +1350,7 @@ function renderMotoCards() {
     const precoBruto = String(m.preco || "").replace(/[^\d]/g, "");
     const precoFmt   = precoBruto ? "R$ " + Number(precoBruto).toLocaleString("pt-BR") : "";
 
-    const capaUrl = `${SUPABASE_URL}/storage/v1/object/public/motos/${id}/capa.jpg`;
+    const capaUrl = `${STORAGE_PUBLIC_BASE}/${id}/capa.jpg`;
     const dest    = !!m.destaque;
 
     const isCurrent = _currentMoto?.id === id;
@@ -1055,10 +1370,11 @@ function renderMotoCards() {
           </div>
         </div>
         <div class="motoCard__actions">
-          <button class="cardEdit" data-id="${id}">Editar</button>
-          <button class="cardAtiv" data-id="${id}" data-setstatus="ativo">Ativar</button>
-          <button class="cardResv" data-id="${id}" data-setstatus="reservada">Reservar</button>
-          <button class="cardVend" data-id="${id}" data-setstatus="vendida">Vender</button>
+          <button class="cardEdit"  data-id="${id}">Editar</button>
+          <button class="cardFotos" data-id="${id}">Fotos</button>
+          ${status !== "ativo"    ? `<button class="cardAtiv" data-id="${id}" data-setstatus="ativo">Ativar</button>` : ""}
+          ${status !== "reservada" && status !== "vendida" ? `<button class="cardResv" data-id="${id}" data-setstatus="reservada">Reservar</button>` : ""}
+          ${status !== "vendida"  ? `<button class="cardVend" data-id="${id}" data-setstatus="vendida">Vender</button>` : ""}
           <button class="cardDel"  data-id="${id}">Apagar</button>
         </div>
       </div>`;
@@ -1072,6 +1388,17 @@ function renderMotoCards() {
     });
   });
 
+  // Atalho: clica em "Fotos" no card → carrega contexto da moto + abre screen de fotos
+  els.motosCards.querySelectorAll(".cardFotos").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const m = motosCache.find((x) => x.id === btn.dataset.id);
+      if (!m) return;
+      fillForm(m);                       // carrega contexto (id, status, etc)
+      window.goScreen?.("screenFotos");  // abre a tela de fotos direto
+      renderFotosGrid(m.id);             // garante grid atualizado
+    });
+  });
+
   els.motosCards.querySelectorAll("[data-setstatus]").forEach((btn) => {
     btn.addEventListener("click", () => setMotoStatus(btn.dataset.id, btn.dataset.setstatus));
   });
@@ -1079,12 +1406,20 @@ function renderMotoCards() {
   els.motosCards.querySelectorAll(".cardDel").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.dataset.id;
-      if (!confirm(`Apagar a moto "${id}"?\nIsso vai apagar também as fotos no Storage.`)) return;
+      const ok = await confirmDialog({
+        title: `Apagar a moto "${id}"?`,
+        message: "Esta ação vai apagar:\n• O registro da moto no banco\n• TODAS as fotos dela no storage\n\nNão dá pra desfazer.",
+        confirmText: "Sim, apagar tudo",
+        cancelText: "Cancelar",
+        danger: true,
+      });
+      if (!ok) return;
       msg(els.dashMsg, "Apagando...");
       try { await deleteAllMotoFiles(id); } catch {}
       const { error } = await supabase.from("motos").delete().eq("id", id);
-      if (error) { msg(els.dashMsg, "Erro: " + error.message, "err"); return; }
-      msg(els.dashMsg, "Moto apagada ✅", "ok");
+      if (error) { msg(els.dashMsg, "Erro: " + error.message, "err"); toast("Erro: " + error.message, "err"); return; }
+      msg(els.dashMsg, "Moto apagada", "ok");
+      toast(`Moto "${id}" apagada`, "ok");
       await loadMotosAndRender();
     });
   });
@@ -1093,7 +1428,16 @@ function renderMotoCards() {
 async function setMotoStatus(motoId, status) {
   if (!motoId) return;
   const labelMap = { ativo: "ATIVA", reservada: "RESERVADA", vendida: "VENDIDA" };
-  if (!confirm(`Marcar "${motoId}" como ${labelMap[status] || status}?`)) return;
+  const okStatus = await confirmDialog({
+    title: `Mudar status pra ${labelMap[status] || status}`,
+    message: status === "vendida"
+      ? `Marcar "${motoId}" como VENDIDA.\nIsso também apaga as fotos extras (mantém só a capa).`
+      : `Marcar "${motoId}" como ${labelMap[status] || status}.`,
+    confirmText: `Sim, ${status === "vendida" ? "vender" : status === "reservada" ? "reservar" : "ativar"}`,
+    cancelText: "Cancelar",
+    danger: status === "vendida",
+  });
+  if (!okStatus) return;
 
   if (status === "vendida") {
     try { await deleteAllExceptCover(motoId); } catch {}
@@ -1102,7 +1446,9 @@ async function setMotoStatus(motoId, status) {
   }
 
   const { error } = await supabase.from("motos").update({ status }).eq("id", motoId);
-  if (error) { alert("Erro: " + error.message); return; }
+  if (error) { toast("Erro: " + error.message, "err"); return; }
+
+  toast(`"${motoId}" agora é ${labelMap[status]}`, "ok");
 
   ["disponivel","reservada","vendida","all","ativo"].forEach((s) => {
     try { localStorage.removeItem(`daniloMotosCache_${s}`); } catch {}
@@ -1286,7 +1632,7 @@ function quickFill() {
   if (!filled) {
     msg(els.rapidoMsg, "Não foi possível identificar os dados. Verifique o texto.", "err");
   } else {
-    msg(els.rapidoMsg, `${filled} campo(s) preenchido(s) ✅`, "ok");
+    msg(els.rapidoMsg, `${filled} campo(s) preenchido(s)`, "ok");
   }
 }
 
@@ -1308,7 +1654,7 @@ function conferirVazios() {
   });
 
   if (!vazios.length) {
-    msg(els.rapidoMsg, "Todos os campos principais estão preenchidos ✅", "ok");
+    msg(els.rapidoMsg, "Todos os campos principais estão preenchidos", "ok");
   } else {
     msg(els.rapidoMsg, `Campos vazios: ${vazios.map((c) => c.label).join(", ")}`, "warn");
   }
@@ -1324,6 +1670,70 @@ function bind() {
     els.multiFotos.addEventListener("change", async () => {
       await handleMultiUpload(els.multiFotos.files);
       els.multiFotos.value = "";
+    });
+  }
+
+  // Botões da action bar (Salvar / Descartar)
+  const btnSavePhotos = document.getElementById("btnSavePhotos");
+  if (btnSavePhotos) {
+    // Inicializa ícone do botão salvar com SVG
+    const ic = btnSavePhotos.querySelector(".__btnIcon");
+    if (ic) ic.innerHTML = icon("save", 18);
+    btnSavePhotos.addEventListener("click", () => {
+      const id = cleanId(els.id?.value);
+      if (id) commitPendingPhotos(id);
+    });
+  }
+  document.getElementById("btnDiscardPhotos")?.addEventListener("click", () => {
+    const id = cleanId(els.id?.value);
+    if (id) discardPendingPhotos(id);
+  });
+
+  // Atalho "Gerenciar fotos desta moto" no topo do form
+  document.getElementById("btnGotoFotos")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const id = cleanId(els.id?.value);
+    if (!id) {
+      toast("Preencha o ID da moto e salve antes de gerenciar fotos", "warn");
+      return;
+    }
+    const exists = motosCache.some((m) => m.id === id);
+    if (!exists) {
+      toast("Salve a moto primeiro antes de adicionar fotos", "warn");
+      return;
+    }
+    window.goScreen?.("screenFotos");
+    renderFotosGrid(id);
+  });
+
+  // Avisa antes de fechar a aba se há fotos pendentes
+  window.addEventListener("beforeunload", (e) => {
+    if (pendingCount() > 0) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  // Drag-and-drop real no dropZone
+  const dropZone = document.getElementById("dropZone");
+  if (dropZone) {
+    const setActive = (on) => {
+      dropZone.style.borderColor = on ? "#25D366" : "";
+      dropZone.style.background  = on ? "rgba(37,211,102,.08)" : "";
+    };
+    ["dragenter", "dragover"].forEach((ev) => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); setActive(true); });
+    });
+    ["dragleave", "drop"].forEach((ev) => {
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); setActive(false); });
+    });
+    dropZone.addEventListener("drop", async (e) => {
+      const files = e.dataTransfer?.files;
+      if (!files || !files.length) return;
+      const id = cleanId(els.id?.value);
+      if (!id) {
+        toast("Selecione uma moto antes de adicionar fotos", "warn");
+        return;
+      }
+      toast(`Recebido ${files.length} arquivo${files.length > 1 ? "s" : ""}, processando...`, "ok");
+      await handleMultiUpload(files);
     });
   }
 
@@ -1401,13 +1811,19 @@ function bind() {
       if (!id) return;
 
       if (els.status.value === "vendida") {
-        const ok = confirm("Marcar como VENDIDA e apagar todas as fotos extras (ficando só a capa)?");
+        const ok = await confirmDialog({
+          title: "Marcar como VENDIDA?",
+          message: "Isso vai apagar TODAS as fotos extras desta moto (1, 2, 3, 4).\nSó a capa fica.\nNão dá pra recuperar as fotos depois.",
+          confirmText: "Sim, marcar vendida",
+          cancelText: "Cancelar",
+          danger: true,
+        });
         if (!ok) return;
 
         try {
           msg(els.fotoMsg, "Apagando fotos extras...");
           const { deleted } = await deleteAllExceptCover(id);
-          msg(els.fotoMsg, `Fotos extras removidas ✅ (${deleted})`, "ok");
+          msg(els.fotoMsg, `Fotos extras removidas (${deleted})`, "ok");
 
           // marca updated_at pra site público atualizar a capa
           await touchUpdatedAt(id);
@@ -1465,3 +1881,5 @@ function bindNew() {
 bind();
 bindNew();
 refreshSessionUI();
+// Inicializa a barra de ações de fotos no estado "vazio"
+updateActionBar(null);
