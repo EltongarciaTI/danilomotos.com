@@ -24,8 +24,9 @@ const BUCKET = "motos";
 // Cria o client do Supabase (Auth + Database + Storage)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Email do unico administrador autorizado a acessar este painel
+// Emails autorizados a acessar o painel admin
 const ADMIN_EMAIL = "donodanilo100@gmail.com";
+const ALLOWED_EMAILS = new Set(["donodanilo100@gmail.com", "danilomotos12345@gmail.com"]);
 
 // ======================================================
 // ===== HELPERS BÁSICOS (DOM / MSG / FORMATAÇÃO)
@@ -702,9 +703,9 @@ async function login() {
     return;
   }
 
-  if (data.user?.email !== ADMIN_EMAIL) {
+  if (!ALLOWED_EMAILS.has(data.user?.email)) {
     await supabase.auth.signOut({ scope: 'local' });
-    msg(els.loginMsg, "Acesso negado. Apenas o administrador pode entrar aqui.", "err");
+    msg(els.loginMsg, "Acesso negado. Conta não autorizada.", "err");
     return;
   }
 
@@ -727,13 +728,13 @@ async function logout() {
 async function refreshSessionUI() {
   const { data } = await supabase.auth.getSession();
   const user = data.session?.user;
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = ALLOWED_EMAILS.has(user?.email);
   const logged = !!data.session && isAdmin;
 
-  // Sessao existe mas nao e o admin? Expulsa imediatamente.
+  // Sessao existe mas nao e um usuario autorizado? Expulsa imediatamente.
   if (data.session && !isAdmin) {
     await supabase.auth.signOut({ scope: 'local' });
-    msg(els.loginMsg, "Acesso restrito ao administrador.", "err");
+    msg(els.loginMsg, "Acesso restrito. Conta não autorizada.", "err");
     if (els.loginSection) els.loginSection.style.display = "";
     if (els.loginBox) els.loginBox.style.display = "grid";
     if (els.appBox) els.appBox.style.display = "none";
