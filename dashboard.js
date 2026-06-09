@@ -8,6 +8,9 @@ let currentRole = "admin";
 
 // ── DOM ──────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
+function escHTML(s) {
+  return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
 function hint(el, text, type = "") {
   if (!el) return;
   el.className = "hint" + (type ? " " + type : "");
@@ -1031,7 +1034,7 @@ function renderExpenseList() {
 
   container.innerHTML = page.map(e => {
     const moto = motosCache.find(m => m.id === e.motorcycle_id);
-    const motoTag = moto ? `<span style="font-size:11px;color:var(--blue);font-weight:700"> · ${moto.titulo||moto.id}</span>` : "";
+    const motoTag = moto ? `<span style="font-size:11px;color:var(--blue);font-weight:700"> · ${escHTML(moto.titulo||moto.id)}</span>` : "";
     const receipt = e.receipt_url ? `<img src="${e.receipt_url}" class="receiptThumb" onclick="openLightbox('${e.receipt_url}')" alt="comprovante"/>` : "";
     return `
       <div class="expenseItem">
@@ -1800,10 +1803,10 @@ function bindReports() {
 // ── FILL SELECTS ──────────────────────────────────────
 function fillMotoSelects() {
   const expM = $("expMoto");
-  if (expM) expM.innerHTML = `<option value="">Nenhuma</option>` + motosCache.map(m => `<option value="${m.id}">${m.titulo||m.id}</option>`).join("");
+  if (expM) expM.innerHTML = `<option value="">Nenhuma</option>` + motosCache.map(m => `<option value="${escHTML(m.id)}">${escHTML(m.titulo||m.id)}</option>`).join("");
 
   const mfM = $("mfMoto");
-  if (mfM) mfM.innerHTML = motosCache.map(m => `<option value="${m.id}">${m.titulo||m.id} [${m.status}]</option>`).join("");
+  if (mfM) mfM.innerHTML = motosCache.map(m => `<option value="${escHTML(m.id)}">${escHTML(m.titulo||m.id)} [${escHTML(m.status)}]</option>`).join("");
 
   const slM = $("slMoto");
   if (slM) {
@@ -1813,7 +1816,7 @@ function fillMotoSelects() {
     const filtered = slFilter === "todas"
       ? [...motosCache].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3))
       : motosCache.filter(m => m.status === slFilter);
-    slM.innerHTML = `<option value="">— Sem vínculo —</option>` + filtered.map(m => `<option value="${m.id}">${m.titulo||m.id} [${m.status}]</option>`).join("");
+    slM.innerHTML = `<option value="">— Sem vínculo —</option>` + filtered.map(m => `<option value="${escHTML(m.id)}">${escHTML(m.titulo||m.id)} [${escHTML(m.status)}]</option>`).join("");
   }
 }
 
@@ -1977,7 +1980,7 @@ function renderDocList(motoId) {
           <div style="font-size:11px;color:${statusColor[d.status] || "var(--muted)"};font-weight:800">${statusLabel[d.status] || d.status}${d.delay_days > 0 ? ` · ${d.delay_days} dia(s) de atraso` : ""}</div>
           ${d.location ? `<div style="font-size:11px;color:var(--muted)">📍 ${d.location}</div>` : ""}
           ${d.expiry_date ? `<div style="font-size:11px;color:var(--muted)">Vence: ${fmtDate(d.expiry_date)}</div>` : ""}
-          ${d.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${d.notes}</div>` : ""}
+          ${d.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${escHTML(d.notes)}</div>` : ""}
         </div>
         ${fileLink}
         <button class="btn-ghost btn-sm" onclick="editDoc(${d.id})" style="font-size:11px;white-space:nowrap">✏️</button>
