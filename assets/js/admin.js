@@ -703,7 +703,7 @@ async function login() {
   }
 
   if (data.user?.email !== ADMIN_EMAIL) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     msg(els.loginMsg, "Acesso negado. Apenas o administrador pode entrar aqui.", "err");
     return;
   }
@@ -713,7 +713,7 @@ async function login() {
 }
 
 async function logout() {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) {
     msg(els.loginMsg, "Erro ao sair: " + error.message, "err");
     return;
@@ -732,7 +732,7 @@ async function refreshSessionUI() {
 
   // Sessao existe mas nao e o admin? Expulsa imediatamente.
   if (data.session && !isAdmin) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     msg(els.loginMsg, "Acesso restrito ao administrador.", "err");
     if (els.loginSection) els.loginSection.style.display = "";
     if (els.loginBox) els.loginBox.style.display = "grid";

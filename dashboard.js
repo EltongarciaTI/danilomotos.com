@@ -2332,7 +2332,7 @@ async function init() {
   });
 
   $("btnLogout")?.addEventListener("click", async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     location.reload();
   });
 
