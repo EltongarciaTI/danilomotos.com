@@ -55,6 +55,7 @@ const els = {
   senha: $("senha"),
   btnLogin: $("btnLogin"),
   btnLogout: $("btnLogout"),
+  btnGoDash: $("btnGoDash"),
   loginMsg: $("loginMsg"),
 
   // formulário da moto
@@ -737,6 +738,7 @@ async function refreshSessionUI() {
     if (els.loginBox) els.loginBox.style.display = "grid";
     if (els.appBox) els.appBox.style.display = "none";
     if (els.btnLogout) els.btnLogout.style.display = "none";
+    if (els.btnGoDash) els.btnGoDash.style.display = "none";
     return;
   }
 
@@ -744,6 +746,7 @@ async function refreshSessionUI() {
   if (els.loginBox) els.loginBox.style.display = logged ? "none" : "grid";
   if (els.appBox) els.appBox.style.display = logged ? "" : "none";
   if (els.btnLogout) els.btnLogout.style.display = logged ? "" : "none";
+  if (els.btnGoDash) els.btnGoDash.style.display = logged ? "" : "none";
 
   if (logged) {
     await loadMotosAndRender();
@@ -1373,6 +1376,7 @@ function bind() {
   // Login / logout
   if (els.btnLogin) els.btnLogin.addEventListener("click", login);
   if (els.btnLogout) els.btnLogout.addEventListener("click", logout);
+  if (els.btnGoDash) els.btnGoDash.addEventListener("click", () => location.href = "dashboard.html");
 
   // CRUD
   if (els.btnSalvar) els.btnSalvar.addEventListener("click", salvar);
