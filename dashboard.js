@@ -4,6 +4,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./assets/js/config.js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const BUCKET_FIN = "financeiro";
+let currentRole = "admin";
 
 // ── DOM ──────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
@@ -450,9 +451,24 @@ async function renderOverview() {
   const sales    = filterByPeriod(salesCache, "sale_date", m, y);
   const prevSales= filterByPeriod(salesCache, "sale_date", pm, py);
 
-  const businessExp = expenses.filter(e => e.type === "business").reduce((s, e) => s + Number(e.amount), 0);
-  const personalExp = expenses.filter(e => e.type === "personal").reduce((s, e) => s + Number(e.amount), 0);
-  const totalExp = businessExp + personalExp;
+  // Gastos Fixos: soma diretamente dos templates cadastrados na tela "Gastos Fixos"
+  // (mesma fonte de dados = mesmos valores que aparecem la).
+  const fixedExp = fixedExpensesCache.filter(f => f.active !== false).reduce((s, f) => s + Number(f.amount), 0);
+
+  // Gastos variaveis: exclui registros gerados automaticamente pelo "Aplicar Gastos Fixos"
+  // (esses ja estao contabilizados em fixedExp acima, evitando double-count).
+  const AUTO_NOTE = "Aplicado automaticamente (gasto fixo)";
+  const variableExp = expenses.filter(e => e.notes !== AUTO_NOTE);
+  const businessExp = variableExp.filter(e => e.type === "business").reduce((s, e) => s + Number(e.amount), 0);
+  const personalExp = variableExp.filter(e => e.type === "personal").reduce((s, e) => s + Number(e.amount), 0);
+
+  const soldMotoIds = sales.map(s => s.motorcycle_id).filter(Boolean);
+  const totalPurchasePrices = soldMotoIds.reduce((sum, mid) => {
+    const fin = motoFinCache.find(f => f.motorcycle_id === mid);
+    return sum + (fin?.purchase_price ? Number(fin.purchase_price) : 0);
+  }, 0);
+
+  const totalExp = businessExp + personalExp + fixedExp + totalPurchasePrices;
   const receita  = sales.reduce((s, v) => s + Number(v.sale_price), 0);
   const lucroLiq = receita - totalExp;
 
@@ -460,8 +476,6 @@ async function renderOverview() {
   const prevTotalExp = prevExp.reduce((s, e) => s + Number(e.amount), 0);
   const prevLucro    = prevReceita - prevTotalExp;
 
-  const fixedCats = ["Aluguel","Energia elétrica","Água","Internet","Funcionários"];
-  const fixedExp = expenses.filter(e => fixedCats.includes(e.category)).reduce((s, e) => s + Number(e.amount), 0);
   const estoque  = motosCache.filter(m => m.status === "ativo").length;
 
   // Atualiza valores com animação de contagem
@@ -473,6 +487,7 @@ async function renderOverview() {
   animateCount($("statVendidas"),      sales.length, false);
   animateCount($("statEstoque"),       estoque,      false);
   animateCount($("statFixos"),         fixedExp,     true);
+  animateCount($("statComprasMes"),    totalPurchasePrices, true);
 
   const ticketMedio = sales.length > 0 ? receita / sales.length : 0;
   animateCount($("statTicketMedio"), ticketMedio, true);
@@ -531,6 +546,20 @@ function renderAlerts(expenses, receita, lucroLiq) {
     const nomes = motosParadas.map(m => `${m.titulo || m.id} (${diasNoEstoque(m)}d)`).join(", ");
     alerts.push({ type: "warn", msg: `🏍️ ${motosParadas.length} moto(s) parada(s) há mais de 45 dias: ${nomes}` });
   }
+
+  // Alertas de gastos fixos com vencimento
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const gastosPendentes = expensesCache.filter(e => e.due_date && e.paid_status !== 'pago');
+  gastosPendentes.forEach(e => {
+    const venc = new Date(e.due_date + 'T00:00:00');
+    const diff = Math.round((venc - hoje) / 86400000);
+    const nome = e.description || e.category || 'Gasto';
+    if (diff < 0) {
+      alerts.push({ type: 'danger', msg: `🔴 Gasto vencido há ${Math.abs(diff)} dia(s): <strong>${nome}</strong> — ${BRL(e.amount)}` });
+    } else if (diff <= 3) {
+      alerts.push({ type: 'warn', msg: `⚠️ Vence em ${diff === 0 ? 'hoje' : diff + ' dia(s)'}: <strong>${nome}</strong> — ${BRL(e.amount)}` });
+    }
+  });
 
   const { atrasados, vencendo } = getDocAlerts();
   if (atrasados.length) {
@@ -835,7 +864,8 @@ function renderEstoque() {
 
   const totalValorEstoque = [...ativos, ...reservadas].reduce((s, m) => {
     const fin = motoFinCache.find(f => f.motorcycle_id === m.id);
-    return s + (fin?.purchase_price ? Number(fin.purchase_price) : Number(m.preco || 0));
+    const val = Number(fin?.purchase_price || m.preco || 0);
+    return s + (Number.isFinite(val) ? val : 0);
   }, 0);
 
   const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
@@ -881,23 +911,54 @@ function renderEstoque() {
 
     const dias = (moto.status === "ativo" || moto.status === "reservada") ? diasNoEstoque(moto) : null;
 
+    const lucroColor = lucro === null ? "var(--muted)" : lucro >= 0 ? "var(--green)" : "var(--red2)";
+    const lucroTxt   = lucro === null ? "—" : `${lucro >= 0 ? "+" : ""}${BRL(lucro)}`;
+
     return `
       <div class="motoCard">
         <div class="motoCardMain">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <div class="motoCardTitle">${moto.titulo || moto.id}</div>
             <span class="badge ${badgeClass}">${statusLabel}</span>
             ${dias !== null ? diasBadgeHtml(dias) : ""}
-            ${lucroTag}
           </div>
-          <div class="motoCardStats">
-            <div class="motoStatItem">
-              <div class="mLabel">${precoLabel}</div>
-              <div class="mVal">${precoDisplay}</div>
+
+          <!-- Painel financeiro expandido -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:var(--panel3);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:2px">
+            <div>
+              <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Compra</div>
+              <div style="font-size:14px;font-weight:900">${purchase ? BRL(purchase) : "—"}</div>
             </div>
-            ${totalCosts > 0 ? `<div class="motoStatItem"><div class="mLabel">Custos extras</div><div class="mVal" style="color:var(--red2)">${BRL(totalCosts)}</div></div>` : ""}
-            ${fin?.sold_at ? `<div class="motoStatItem"><div class="mLabel">Data venda</div><div class="mVal">${fmtDate(fin.sold_at)}</div></div>` : ""}
+            <div>
+              <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Gastos</div>
+              <div style="font-size:14px;font-weight:900;color:${totalCosts > 0 ? "var(--red2)" : "var(--muted)"}">${totalCosts > 0 ? BRL(totalCosts) : "—"}</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">${sale !== null ? "Vendida por" : "Venda"}</div>
+              <div style="font-size:14px;font-weight:900;color:${sale !== null ? "var(--blue)" : "var(--muted)"}">${sale !== null ? BRL(sale) : "—"}</div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Lucro</div>
+              <div style="font-size:15px;font-weight:900;color:${lucroColor}">${lucroTxt}</div>
+            </div>
           </div>
+          ${fin?.sold_at ? `<div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:6px">📅 Vendida em ${fmtDate(fin.sold_at)}</div>` : ""}
+
+          <!-- Lista de custos inline -->
+          ${costs.length > 0 ? `
+          <div style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">
+            <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Custos adicionais</div>
+            ${costs.map(c => `
+              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line2)">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.description}</div>
+                  <div style="font-size:10px;color:var(--muted);font-weight:600">${fmtDate(c.cost_date)}</div>
+                </div>
+                <div style="font-size:13px;font-weight:900;color:var(--red2);white-space:nowrap">${BRL(c.amount)}</div>
+                <button class="btn-ghost btn-sm" onclick="openMotoCostModal('${moto.id}',${c.id})" style="font-size:11px;padding:4px 8px">✏️</button>
+              </div>
+            `).join("")}
+          </div>` : ""}
         </div>
         <div class="motoCardActions">
           <select class="statusSel" onchange="changeStatusMoto('${moto.id}', this.value)" title="Alterar status">
@@ -905,8 +966,9 @@ function renderEstoque() {
             <option value="reservada" ${moto.status==="reservada"?"selected":""}>Reservada</option>
             <option value="vendida"   ${moto.status==="vendida"?"selected":""}>Vendida</option>
           </select>
-          <button class="btn-primary btn-sm" onclick="openFichaModal('${moto.id}')" style="font-size:12px">📋 Ficha Completa</button>
-          <button class="btn-ghost btn-sm" onclick="openMotoFinModal('${moto.id}')" style="font-size:12px">Ficha financeira</button>
+          ${moto.status !== "vendida" ? `<button class="btn-primary btn-sm" onclick="openSaleModalForMoto('${moto.id}')" style="font-size:12px">Vender</button>` : ""}
+          <button class="btn-primary btn-sm" onclick="openFichaModal('${moto.id}')" style="font-size:12px">Ficha</button>
+          <button class="btn-ghost btn-sm" onclick="openMotoFinModal('${moto.id}')" style="font-size:12px">Valores</button>
           <button class="btn-ghost btn-sm" onclick="openMotoCostModal('${moto.id}',null)" style="font-size:12px">+ Custo</button>
         </div>
       </div>
@@ -1012,6 +1074,8 @@ window.openExpenseModal = function(id) {
   $("expMoto").value     = e?.motorcycle_id || "";
   $("expDesc").value     = e?.description || "";
   $("expNotes").value    = e?.notes || "";
+  $("expDueDate").value  = e?.due_date || "";
+  $("expPaidStatus").value = e?.paid_status || "pendente";
   $("expReceiptUrl").value = e?.receipt_url || "";
   const prev = $("expReceiptPreview");
   if (prev) { prev.src = e?.receipt_url || ""; prev.style.display = e?.receipt_url ? "block" : "none"; }
@@ -1056,6 +1120,8 @@ $("btnSaveExpense")?.addEventListener("click", async () => {
     receipt_url: receipt_url || null,
     motorcycle_id: $("expMoto").value || null,
     notes: $("expNotes").value.trim() || null,
+    due_date: $("expDueDate").value || null,
+    paid_status: $("expPaidStatus").value || "pendente",
     updated_at: new Date().toISOString(),
   };
 
@@ -1077,7 +1143,10 @@ $("btnSaveExpense")?.addEventListener("click", async () => {
 $("btnDeleteExpense")?.addEventListener("click", async () => {
   const id = $("expId").value;
   if (!id || !confirm("Excluir este gasto?")) return;
-  await supabase.from("financial_expenses").delete().eq("id", id);
+  hint($("expMsg"), "Excluindo…");
+  const { error } = await supabase.from("financial_expenses").delete().eq("id", Number(id));
+  if (error) { hint($("expMsg"), "Erro ao excluir: " + error.message, "err"); toast("Erro ao excluir gasto.", "err"); return; }
+  toast("Gasto excluído.", "ok");
   await loadExpenses();
   renderExpenseList();
   renderOverview();
@@ -1265,7 +1334,10 @@ $("btnSaveMotoCost")?.addEventListener("click", async () => {
 $("btnDeleteMotoCost")?.addEventListener("click", async () => {
   const id = $("mcId").value;
   if (!id || !confirm("Excluir este custo?")) return;
-  await supabase.from("motorcycle_costs").delete().eq("id", id);
+  hint($("mcMsg"), "Excluindo…");
+  const { error } = await supabase.from("motorcycle_costs").delete().eq("id", Number(id));
+  if (error) { hint($("mcMsg"), "Erro ao excluir: " + error.message, "err"); toast("Erro ao excluir custo.", "err"); return; }
+  toast("Custo excluído.", "ok");
   await loadMotoCosts();
   renderMotoFinList();
   $("modalMotoCost").classList.remove("open");
@@ -1306,6 +1378,17 @@ function renderSalesList() {
   }).join("");
 }
 
+window.openSaleModalForMoto = function(motoId) {
+  openSaleModal(null);
+  // Ativa filtro "todas" para garantir que a moto apareca no select
+  document.querySelectorAll("[data-sl-filter]").forEach(b => b.classList.remove("active"));
+  document.querySelector('[data-sl-filter="todas"]')?.classList.add("active");
+  fillMotoSelects();
+  const sel = $("slMoto");
+  if (sel) { sel.value = motoId; }
+  updateSaleCalc();
+};
+
 window.openSaleModal = function(id) {
   const s = id ? salesCache.find(x => x.id === id) : null;
   $("modalSaleTitle").textContent = s ? "Editar Venda" : "Registrar Venda";
@@ -1317,6 +1400,8 @@ window.openSaleModal = function(id) {
   $("slId").value      = s?.id || "";
   $("slMoto").value    = s?.motorcycle_id || "";
   $("slAmount").value  = s?.sale_price ? Number(s.sale_price).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : "";
+  const _slFin = motoFinCache.find(f => f.motorcycle_id === (s?.motorcycle_id || ""));
+  if ($("slPurchase")) $("slPurchase").value = _slFin?.purchase_price ? Number(_slFin.purchase_price).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : "";
   $("slDate").value    = s?.sale_date || todayISO();
   $("slPayment").value = s?.payment_method || "";
   $("slNotes").value   = s?.notes || "";
@@ -1326,10 +1411,44 @@ window.openSaleModal = function(id) {
   $("btnDeleteSale").style.display = s ? "" : "none";
   hint($("slMsg"), "");
   $("modalSale").classList.add("open");
+  updateSaleCalc();
 };
 
 $("btnNovaVenda")?.addEventListener("click", () => openSaleModal(null));
 $("modalSaleClose")?.addEventListener("click", () => $("modalSale").classList.remove("open"));
+
+function updateSaleCalc() {
+  const motoId   = $("slMoto")?.value;
+  const vendaVal = parseBRL($("slAmount")?.value || "0");
+  const gastosEl = $("slGastosDisplay");
+  const lucroEl  = $("slLucroDisplay");
+  if (!gastosEl) return;
+
+  if (!motoId) {
+    gastosEl.textContent = "—"; lucroEl.textContent = "—";
+    lucroEl.style.color = "var(--green)";
+    return;
+  }
+  const fin   = motoFinCache.find(f => f.motorcycle_id === motoId);
+  const costs = motoCostsCache.filter(c => c.motorcycle_id === motoId);
+
+  const purchaseInp = $("slPurchase");
+  if (purchaseInp && !purchaseInp.value && fin?.purchase_price) {
+    purchaseInp.value = Number(fin.purchase_price).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  }
+
+  const compra = parseBRL(purchaseInp?.value || "0") || (fin?.purchase_price ? Number(fin.purchase_price) : 0);
+  const gastos = costs.reduce((s, c) => s + Number(c.amount), 0);
+  const lucro  = vendaVal - compra - gastos;
+
+  gastosEl.textContent = gastos ? BRL(gastos) : "—";
+  lucroEl.textContent  = vendaVal ? BRL(lucro) : "—";
+  lucroEl.style.color  = lucro >= 0 ? "var(--green)" : "var(--red2)";
+}
+
+$("slMoto")?.addEventListener("change", () => { const p = $("slPurchase"); if (p) p.value = ""; updateSaleCalc(); });
+$("slAmount")?.addEventListener("input", updateSaleCalc);
+$("slPurchase")?.addEventListener("input", updateSaleCalc);
 
 $("slReceiptFile")?.addEventListener("change", function() {
   const file = this.files?.[0];
@@ -1368,18 +1487,38 @@ $("btnSaveSale")?.addEventListener("click", async () => {
     ({ error: err } = await supabase.from("financial_sales").insert(payload));
   }
   if (err) { hint($("slMsg"), "Erro: " + err.message, "err"); toast("Erro ao salvar venda.", "err"); return; }
+
+  // Sincroniza motorcycle_financials para o card do Estoque refletir a venda
+  const motoId = $("slMoto").value;
+  if (motoId) {
+    const purchaseAmt = parseBRL($("slPurchase")?.value || "0") || null;
+    await supabase.from("motorcycle_financials").upsert({
+      motorcycle_id: motoId,
+      ...(purchaseAmt !== null ? { purchase_price: purchaseAmt } : {}),
+      sale_price: amount,
+      sold_at: $("slDate").value,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "motorcycle_id" });
+    // Muda status da moto para vendida
+    await supabase.from("motos").update({ status: "vendida" }).eq("id", motoId);
+  }
+
   hint($("slMsg"), "Venda registrada ✅", "ok");
   toast("Venda registrada com sucesso!", "ok");
-  await loadSales();
+  await Promise.all([loadSales(), loadMotoFin(), loadMotos()]);
   renderSalesList();
   renderOverview();
+  renderEstoque();
   setTimeout(() => $("modalSale").classList.remove("open"), 600);
 });
 
 $("btnDeleteSale")?.addEventListener("click", async () => {
   const id = $("slId").value;
   if (!id || !confirm("Excluir esta venda?")) return;
-  await supabase.from("financial_sales").delete().eq("id", id);
+  hint($("slMsg"), "Excluindo…");
+  const { error } = await supabase.from("financial_sales").delete().eq("id", Number(id));
+  if (error) { hint($("slMsg"), "Erro ao excluir: " + error.message, "err"); toast("Erro ao excluir venda.", "err"); return; }
+  toast("Venda excluída.", "ok");
   await loadSales();
   renderSalesList();
   renderOverview();
@@ -2202,6 +2341,14 @@ async function init() {
   });
 }
 
+function applyRoleUI() {
+  document.body.dataset.role = currentRole;
+  if (currentRole !== "admin") {
+    document.querySelectorAll("[data-admin-only]").forEach(el => { el.style.display = "none"; });
+    if (typeof window.goScreen === "function") window.goScreen("screenEstoque");
+  }
+}
+
 async function showApp() {
   $("loginSection").style.display = "none";
   $("appWrapper").classList.add("visible");
@@ -2223,12 +2370,16 @@ async function showApp() {
   hideSkeleton();
   hideLoadBar();
 
+  const { data: { user: _authUser } } = await supabase.auth.getUser();
+  currentRole = _authUser?.email === "donodanilo100@gmail.com" ? "admin" : "funcionario";
+  applyRoleUI();
+
   fillMotoSelects();
   bindFilters();
   bindEstoqueFilters();
   bindReports();
 
-  [$("expAmount"), $("mfPurchase"), $("mfSale"), $("slAmount"),
+  [$("expAmount"), $("mfPurchase"), $("mfSale"), $("slAmount"), $("slPurchase"),
    $("goalBusiness"), $("goalPersonal"), $("goalProfit"), $("mcAmount"), $("fxAmount")]
     .forEach(inp => { if (inp) maskMoney(inp); });
 

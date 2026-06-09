@@ -1177,7 +1177,7 @@
     <!-- Sidebar desktop -->
     <nav id="sideNav">
       <div class="sideLabel">Principal</div>
-      <button class="sideBtn active" data-screen="screenOverview" type="button">
+      <button class="sideBtn active" data-screen="screenOverview" data-admin-only="true" type="button">
         <!-- Ícone: grid/dashboard moderno -->
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Visão Geral
@@ -1187,43 +1187,42 @@
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         Estoque
       </button>
+      <button class="sideBtn" id="btnNovaVendaSide" type="button" onclick="openSaleModal(null)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5A2.5 2.5 0 0 1 12 8h.5a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5H12a2.5 2.5 0 0 0 2.5-2"/></svg>
+        Registrar Venda
+      </button>
       <div class="sideLabel" style="margin-top:6px">Financeiro</div>
-      <button class="sideBtn" data-screen="screenExpenses" type="button">
+      <button class="sideBtn" data-screen="screenExpenses" data-admin-only="true" type="button">
         <!-- Ícone: carteira/gastos moderno -->
         <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M2 10h20"/></svg>
         Gastos
       </button>
-      <button class="sideBtn" data-screen="screenMotos" type="button">
-        <!-- Ícone: ficha/clipboard moderno -->
-        <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-        Ficha por Moto
-      </button>
-      <button class="sideBtn" data-screen="screenSales" type="button">
+      <button class="sideBtn" data-screen="screenSales" data-admin-only="true" type="button">
         <!-- Ícone: gráfico de venda subindo -->
         <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/><polyline points="14 9 18 9 18 13"/></svg>
         Vendas
       </button>
-      <button class="sideBtn" data-screen="screenGoals" type="button">
+      <button class="sideBtn" data-screen="screenGoals" data-admin-only="true" type="button">
         <!-- Ícone: alvo/meta moderno -->
         <svg viewBox="0 0 24 24"><path d="M22 12h-4"/><path d="M6 12H2"/><path d="M12 6V2"/><path d="M12 22v-4"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="8" opacity=".3"/></svg>
         Metas
       </button>
-      <button class="sideBtn" data-screen="screenReports" type="button">
+      <button class="sideBtn" data-screen="screenReports" data-admin-only="true" type="button">
         <!-- Ícone: gráfico de barras relatório -->
         <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/><path d="M3 3h18"/></svg>
         Relatórios
       </button>
-      <button class="sideBtn" data-screen="screenFixedExpenses" type="button">
+      <button class="sideBtn" data-screen="screenFixedExpenses" data-admin-only="true" type="button">
         <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
         Gastos Fixos
       </button>
-      <div class="sideSep"></div>
-      <div class="sideLabel" style="margin-top:2px">Ferramentas</div>
-      <button class="sideBtn calcBtn" id="btnCalcLucro" type="button">
+      <div class="sideSep" data-admin-only="true"></div>
+      <div class="sideLabel" style="margin-top:2px" data-admin-only="true">Ferramentas</div>
+      <button class="sideBtn calcBtn" id="btnCalcLucro" data-admin-only="true" type="button">
         <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
         Calculadora de Lucro
       </button>
-      <button class="sideBtn" onclick="location.href='admin.html'" type="button">
+      <button class="sideBtn" data-admin-only="true" onclick="location.href='admin.html'" type="button">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         Painel Admin
       </button>
@@ -1296,6 +1295,11 @@
             <div class="miniDot" style="background:var(--orange)"></div>
             <div class="miniVal" style="color:var(--orange)" id="statFixos">R$ 0</div>
             <div class="miniLabel">Custos fixos</div>
+          </div>
+          <div class="miniCard">
+            <div class="miniDot" style="background:var(--red2)"></div>
+            <div class="miniVal" style="color:var(--red2)" id="statComprasMes">R$ 0</div>
+            <div class="miniLabel">Compras do mês</div>
           </div>
           <div class="miniCard">
             <div class="miniDot" style="background:var(--red2)"></div>
@@ -1560,7 +1564,7 @@
 
   <!-- Bottom nav mobile -->
   <nav id="bottomNav">
-    <button class="navBtn active" data-screen="screenOverview" type="button">
+    <button class="navBtn active" data-screen="screenOverview" data-admin-only="true" type="button">
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       Início
     </button>
@@ -1568,19 +1572,23 @@
       <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       Estoque
     </button>
-    <button class="navBtn" data-screen="screenExpenses" type="button">
+    <button class="navBtn" id="btnNovaVendaNav" type="button" onclick="openSaleModal(null)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5A2.5 2.5 0 0 1 12 8h.5a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5H12a2.5 2.5 0 0 0 2.5-2"/></svg>
+      Venda
+    </button>
+    <button class="navBtn" data-screen="screenExpenses" data-admin-only="true" type="button">
       <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/><path d="M2 10h20"/></svg>
       Gastos
     </button>
-    <button class="navBtn" data-screen="screenSales" type="button">
+    <button class="navBtn" data-screen="screenSales" data-admin-only="true" type="button">
       <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-2-2-4 4"/><polyline points="14 9 18 9 18 13"/></svg>
       Vendas
     </button>
-    <button class="navBtn" data-screen="screenReports" type="button">
+    <button class="navBtn" data-screen="screenReports" data-admin-only="true" type="button">
       <svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
       Relatórios
     </button>
-    <button class="navBtn" onclick="location.href='admin.html'" type="button">
+    <button class="navBtn" data-admin-only="true" onclick="location.href='admin.html'" type="button">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Admin
     </button>
@@ -1648,6 +1656,20 @@
     <div class="field">
       <label>Descrição</label>
       <input class="inp" id="expDesc" type="text" placeholder="Ex: Conta de luz de maio"/>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Data de Vencimento</label>
+        <input class="inp" id="expDueDate" type="date"/>
+      </div>
+      <div class="field">
+        <label>Status do pagamento</label>
+        <select class="sel" id="expPaidStatus">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="pago">✅ Pago</option>
+          <option value="vencido">🔴 Vencido</option>
+        </select>
+      </div>
     </div>
     <div class="field">
       <label>Observação</label>
@@ -1766,15 +1788,36 @@
       </div>
       <select class="sel" id="slMoto"></select>
     </div>
+
     <div class="row2">
+      <div class="field">
+        <label>Valor de Compra (R$)</label>
+        <input class="inp" id="slPurchase" type="text" placeholder="0,00" inputmode="decimal"/>
+      </div>
       <div class="field">
         <label>Valor de Venda (R$)</label>
         <input class="inp" id="slAmount" type="text" placeholder="0,00" inputmode="decimal"/>
       </div>
-      <div class="field">
-        <label>Data da Venda</label>
-        <input class="inp" id="slDate" type="date"/>
+    </div>
+
+    <!-- Resumo financeiro da moto (auto-carregado ao selecionar) -->
+    <div id="slCalcSection" style="background:var(--panel3);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:8px">
+      <div style="font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Resumo financeiro da moto</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px">Gastos da moto</div>
+          <div id="slGastosDisplay" style="font-size:15px;font-weight:900;color:var(--red2)">—</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px">Lucro líquido</div>
+          <div id="slLucroDisplay" style="font-size:16px;font-weight:900;color:var(--green)">—</div>
+        </div>
       </div>
+    </div>
+
+    <div class="field">
+      <label>Data da Venda</label>
+      <input class="inp" id="slDate" type="date"/>
     </div>
     <div class="field">
       <label>Forma de Pagamento</label>
@@ -2159,6 +2202,10 @@
   }
 
   function goScreen(id) {
+    const restricted = ["screenOverview","screenExpenses","screenFixedExpenses","screenSales","screenGoals","screenReports"];
+    if (document.body.dataset.role === "funcionario" && restricted.includes(id)) {
+      id = "screenEstoque";
+    }
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('[data-screen]').forEach(b => b.classList.remove('active'));
     const s = document.getElementById(id);

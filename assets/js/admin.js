@@ -24,6 +24,9 @@ const BUCKET = "motos";
 // Cria o client do Supabase (Auth + Database + Storage)
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Email do unico administrador autorizado a acessar este painel
+const ADMIN_EMAIL = "donodanilo100@gmail.com";
+
 // ======================================================
 // ===== HELPERS BÁSICOS (DOM / MSG / FORMATAÇÃO)
 // ======================================================
@@ -692,13 +695,19 @@ async function login() {
   const email = (els.email?.value || "").trim();
   const password = els.senha?.value || "";
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    msg(els.loginMsg, "Erro: " + error.message, "err");
+    msg(els.loginMsg, "Credenciais invalidas.", "err");
     return;
   }
 
-  msg(els.loginMsg, "Logado ✅", "ok");
+  if (data.user?.email !== ADMIN_EMAIL) {
+    await supabase.auth.signOut();
+    msg(els.loginMsg, "Acesso negado. Apenas o administrador pode entrar aqui.", "err");
+    return;
+  }
+
+  msg(els.loginMsg, "Bem-vindo, administrador!", "ok");
   await refreshSessionUI();
 }
 
@@ -713,10 +722,23 @@ async function logout() {
   await refreshSessionUI();
 }
 
-// Atualiza a interface dependendo se está logado ou não
+// Atualiza a interface dependendo se esta logado e se e o administrador
 async function refreshSessionUI() {
   const { data } = await supabase.auth.getSession();
-  const logged = !!data.session;
+  const user = data.session?.user;
+  const isAdmin = user?.email === ADMIN_EMAIL;
+  const logged = !!data.session && isAdmin;
+
+  // Sessao existe mas nao e o admin? Expulsa imediatamente.
+  if (data.session && !isAdmin) {
+    await supabase.auth.signOut();
+    msg(els.loginMsg, "Acesso restrito ao administrador.", "err");
+    if (els.loginSection) els.loginSection.style.display = "";
+    if (els.loginBox) els.loginBox.style.display = "grid";
+    if (els.appBox) els.appBox.style.display = "none";
+    if (els.btnLogout) els.btnLogout.style.display = "none";
+    return;
+  }
 
   if (els.loginSection) els.loginSection.style.display = logged ? "none" : "";
   if (els.loginBox) els.loginBox.style.display = logged ? "none" : "grid";
