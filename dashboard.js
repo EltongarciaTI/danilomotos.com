@@ -938,7 +938,8 @@ function renderEstoque() {
     return `
       <div class="motoCard">
         <img class="motoCardImg" src="${motoCoverUrl(moto)}" alt="${escHTML(moto.titulo || moto.id)}"
-             loading="lazy" onerror="this.onerror=null;this.src='${MOTO_IMG_PLACEHOLDER}'">
+             loading="lazy" onclick="openLightbox(this.src)"
+             onerror="this.onerror=null;this.src='${MOTO_IMG_PLACEHOLDER}'">
         <div class="motoCardMain">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <div class="motoCardTitle">${moto.titulo || moto.id}</div>
