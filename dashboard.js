@@ -4,6 +4,24 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./assets/js/config.js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const BUCKET_FIN = "financeiro";
+const STORAGE_MOTOS_BASE = `${SUPABASE_URL}/storage/v1/object/public/motos`;
+const MOTO_IMG_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#1a1c20"/>
+      <g fill="none" stroke="#3a3d44" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M28 62l12-13 11 9 11-15 11 9"/>
+        <circle cx="32" cy="66" r="5"/>
+        <circle cx="68" cy="66" r="5"/>
+      </g>
+    </svg>`.replace(/\s+/g, " ")
+  );
+function motoCoverUrl(m) {
+  const capaPath = (m.capa_path && String(m.capa_path).trim()) ? String(m.capa_path).replace(/^\/+/, "") : "";
+  const coverRel = capaPath || `${m.id}/capa.jpg`;
+  return `${STORAGE_MOTOS_BASE}/${coverRel}`;
+}
 let currentRole = "admin";
 
 // ── DOM ──────────────────────────────────────────────
@@ -302,7 +320,7 @@ function chartPanelBg()   { return isLight() ? "#ffffff" : "#0d0f13"; }
 // ── SUPABASE DATA ────────────────────────────────────
 async function loadMotos() {
   try {
-    const { data } = await supabase.from("motos").select("id,titulo,status,preco,created_at").order("created_at", { ascending: false });
+    const { data } = await supabase.from("motos").select("id,titulo,status,preco,created_at,capa_path").order("created_at", { ascending: false });
     motosCache = data || [];
   } catch { motosCache = []; }
 }
@@ -919,6 +937,8 @@ function renderEstoque() {
 
     return `
       <div class="motoCard">
+        <img class="motoCardImg" src="${motoCoverUrl(moto)}" alt="${escHTML(moto.titulo || moto.id)}"
+             loading="lazy" onerror="this.onerror=null;this.src='${MOTO_IMG_PLACEHOLDER}'">
         <div class="motoCardMain">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
             <div class="motoCardTitle">${moto.titulo || moto.id}</div>

@@ -467,6 +467,8 @@
       gap: 14px; transition: border-color .15s;
     }
     .motoCard:hover { border-color: rgba(255,255,255,.12); }
+    .motoCardImg { width: 84px; height: 84px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); flex-shrink: 0; background: var(--panel3); }
+    @media (max-width: 480px) { .motoCardImg { width: 64px; height: 64px; } }
     .motoCardMain { flex: 1; min-width: 0; }
     .motoCardTitle { font-size: 15px; font-weight: 900; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .motoCardStats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
